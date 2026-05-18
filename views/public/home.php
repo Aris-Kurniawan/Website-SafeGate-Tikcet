@@ -128,7 +128,7 @@ ob_start();
                 $date = $ticket['date'];
                 $price = $ticket['price'];
                 $originalPrice = $ticket['originalPrice'];
-                include '../../components/ticket_card.php';
+                include __DIR__ . '/../../components/ticket_card.php';
             }
             ?>
         </div>
@@ -137,5 +137,5 @@ ob_start();
 
 <?php
 $content = ob_get_clean();
-require_once '../../layouts/public_layout.php';
+require_once __DIR__ . '/../../layouts/public_layout.php';
 ?>
