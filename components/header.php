@@ -1,28 +1,28 @@
-<header class="w-full py-6 px-8 border-b border-gray-800/50 bg-safegate-bg/80 backdrop-blur-md sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto flex items-center justify-between">
+<header class="w-100 py-3 px-4 border-bottom border-secondary bg-safegate-bg sticky-top" style="z-index: 1030; opacity: 0.95;">
+    <div class="container-fluid max-w-7xl mx-auto d-flex align-items-center justify-content-between">
         <!-- Logo -->
-        <div class="flex items-center gap-2">
-            <div class="w-3 h-3 bg-safegate-neon rounded-full"></div>
-            <a href="index.php?page=home" class="text-xl font-bold tracking-tight text-white">SafeGate</a>
+        <div class="d-flex align-items-center gap-2">
+            <div class="bg-safegate-neon rounded-circle" style="width: 12px; height: 12px;"></div>
+            <a href="index.php?page=home" class="fs-4 fw-bold text-white text-decoration-none">SafeGate</a>
         </div>
 
         <!-- Navigation -->
-        <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
-            <a href="index.php?page=home" class="text-white relative group">
+        <nav class="d-none d-md-flex align-items-center gap-4 fs-6 fw-medium">
+            <a href="index.php?page=home" class="text-white text-decoration-none position-relative">
                 Events
-                <span class="absolute -bottom-2 left-0 w-full h-[2px] bg-safegate-neon"></span>
+                <span class="position-absolute start-0 w-100 bg-safegate-neon" style="bottom: -8px; height: 2px;"></span>
             </a>
-            <a href="index.php?page=penjualan" class="text-safegate-text-sec hover:text-white transition-colors">Penjualan</a>
-            <a href="index.php?page=cara_kerja" class="text-safegate-text-sec hover:text-white transition-colors">Cara Kerja</a>
+            <a href="index.php?page=penjualan" class="text-safegate-text-sec text-decoration-none">Penjualan</a>
+            <a href="index.php?page=cara_kerja" class="text-safegate-text-sec text-decoration-none">Cara Kerja</a>
         </nav>
 
         <!-- Actions -->
-        <div class="hidden md:flex items-center gap-4">
-            <button class="flex items-center gap-2 border border-safegate-success/30 text-safegate-success hover:bg-safegate-success/10 text-xs font-semibold px-4 py-2 rounded-full transition-colors">
-                <i class="ph-fill ph-shield-check text-base"></i> SECURED
+        <div class="d-none d-md-flex align-items-center gap-3">
+            <button class="btn btn-outline-success rounded-pill d-flex align-items-center gap-2 fw-semibold" style="font-size: 0.75rem; padding: 0.375rem 1rem;">
+                <i class="ph-fill ph-shield-check fs-6"></i> SECURED
             </button>
-            <a href="index.php?page=login" class="text-white text-sm font-medium hover:text-safegate-neon transition-colors">Login</a>
-            <a href="index.php?page=register" class="bg-safegate-neon hover:bg-[#c2e600] text-black text-sm font-bold px-6 py-2 rounded-full transition-all duration-300 transform hover:scale-[1.02]">
+            <a href="index.php?page=login" class="text-white text-decoration-none fs-6 fw-medium">Login</a>
+            <a href="index.php?page=register" class="btn btn-safegate-neon rounded-pill fw-bold" style="padding: 0.375rem 1.5rem;">
                 Sign Up
             </a>
         </div>

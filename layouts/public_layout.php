@@ -9,32 +9,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'safegate-neon': '#D9FF00',
-                        'safegate-bg': '#090B10',
-                        'safegate-surface': '#12161F',
-                        'safegate-success': '#00FFA3',
-                        'safegate-danger': '#FF4C4C',
-                        'safegate-text-sec': '#8E95A3'
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="assets/css/style.css" rel="stylesheet">
 
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
-<body class="bg-safegate-bg text-white font-sans antialiased selection:bg-safegate-neon selection:text-black">
+<body>
     
     <?php include_once __DIR__ . '/../components/header.php'; ?>
 

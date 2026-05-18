@@ -1,0 +1,78 @@
+:root {
+    --safegate-neon: #D9FF00;
+    --safegate-bg: #090B10;
+    --safegate-surface: #12161F;
+    --safegate-success: #00FFA3;
+    --safegate-danger: #FF4C4C;
+    --safegate-text-sec: #8E95A3;
+}
+
+body {
+    background-color: var(--safegate-bg);
+    color: white;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+    background-color: var(--safegate-neon);
+    color: black;
+}
+
+a {
+    text-decoration: none;
+}
+
+/* Custom Text Colors */
+.text-safegate-neon { color: var(--safegate-neon) !important; }
+.text-safegate-text-sec { color: var(--safegate-text-sec) !important; }
+.text-safegate-success { color: var(--safegate-success) !important; }
+
+/* Custom Backgrounds */
+.bg-safegate-neon { background-color: var(--safegate-neon) !important; color: black !important; }
+.bg-safegate-bg { background-color: var(--safegate-bg) !important; }
+.bg-safegate-surface { background-color: var(--safegate-surface) !important; }
+
+/* Buttons & Hovers */
+.btn-safegate-neon {
+    background-color: var(--safegate-neon);
+    color: black;
+    font-weight: bold;
+    border: none;
+    transition: all 0.3s ease;
+}
+.btn-safegate-neon:hover {
+    background-color: #c2e600;
+    transform: scale(1.02);
+}
+
+.btn-outline-safegate-neon {
+    border: 1px solid var(--safegate-neon);
+    color: var(--safegate-neon);
+    background: transparent;
+    transition: all 0.3s ease;
+}
+.btn-outline-safegate-neon:hover {
+    background-color: var(--safegate-neon);
+    color: black;
+}
+
+/* Form inputs reset for search bar */
+input:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Card image zoom effect */
+.card-img-zoom {
+    transition: transform 0.5s ease;
+}
+.card-hover:hover .card-img-zoom {
+    transform: scale(1.05);
+}
+.card-hover {
+    transition: border-color 0.3s ease;
+}
+.card-hover:hover {
+    border-color: #495057 !important;
+}

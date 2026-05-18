@@ -6,38 +6,38 @@ $date = isset($date) ? $date : 'Date • Location';
 $price = isset($price) ? $price : '100.000';
 $originalPrice = isset($originalPrice) ? $originalPrice : '150.000';
 ?>
-<div class="bg-safegate-surface border border-gray-800/50 rounded-2xl overflow-hidden flex flex-col group hover:border-gray-700 transition-colors">
+<div class="card bg-safegate-surface border-secondary rounded-4 overflow-hidden h-100 card-hover text-white">
     <!-- Image Wrapper -->
-    <div class="h-48 w-full overflow-hidden relative">
-        <img src="<?= $image ?>" alt="<?= $title ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+    <div class="position-relative" style="height: 12rem; overflow: hidden;">
+        <img src="<?= $image ?>" alt="<?= $title ?>" class="w-100 h-100 object-fit-cover card-img-zoom">
         <!-- Badge Layer -->
-        <div class="absolute top-4 left-4 flex items-center gap-1.5 bg-safegate-neon text-black text-[10px] font-bold px-2.5 py-1 rounded-sm shadow-sm">
+        <div class="position-absolute bg-safegate-neon text-black fw-bold rounded shadow-sm d-flex align-items-center gap-1" style="top: 1rem; left: 1rem; padding: 0.25rem 0.5rem; font-size: 0.65rem;">
             <i class="ph-fill ph-check-circle"></i> VERIFIED
         </div>
     </div>
     
     <!-- Content Body -->
-    <div class="p-6 flex-1 flex flex-col">
-        <h3 class="text-xl font-medium text-white mb-2"><?= $title ?></h3>
-        <p class="text-xs text-safegate-text-sec mb-5 flex items-center gap-1.5 font-medium">
-            <i class="ph ph-calendar-blank text-sm"></i> <?= $date ?>
+    <div class="card-body d-flex flex-column p-4">
+        <h5 class="card-title fs-5 fw-medium mb-2"><?= $title ?></h5>
+        <p class="card-text text-safegate-text-sec mb-4 d-flex align-items-center gap-2" style="font-size: 0.75rem;">
+            <i class="ph ph-calendar-blank fs-6"></i> <?= $date ?>
         </p>
         
-        <div class="flex gap-2.5 mb-7">
-            <span class="text-[9px] font-bold text-gray-300 bg-gray-800/40 border border-gray-700 px-3 py-1.5 rounded-full uppercase tracking-widest">KYC Secured</span>
-            <span class="text-[9px] font-bold text-gray-300 bg-gray-800/40 border border-gray-700 px-3 py-1.5 rounded-full uppercase tracking-widest">Escrow Active</span>
+        <div class="d-flex gap-2 mb-4">
+            <span class="badge border border-secondary text-light text-uppercase" style="background: rgba(142, 149, 163, 0.2); font-size: 0.6rem; letter-spacing: 0.05em; padding: 0.4em 0.8em;">KYC Secured</span>
+            <span class="badge border border-secondary text-light text-uppercase" style="background: rgba(142, 149, 163, 0.2); font-size: 0.6rem; letter-spacing: 0.05em; padding: 0.4em 0.8em;">Escrow Active</span>
         </div>
         
         <!-- Footer / Price -->
-        <div class="mt-auto flex items-end justify-between border-t border-gray-800/50 pt-5">
+        <div class="mt-auto d-flex align-items-end justify-content-between border-top border-secondary pt-3">
             <div>
-                <p class="text-[9px] text-safegate-neon font-bold uppercase tracking-widest mb-1.5">Face Value Cap</p>
-                <div class="flex items-baseline gap-2">
-                    <span class="text-[22px] font-medium text-white tabular-nums">Rp.<?= $price ?></span>
-                    <span class="text-xs text-gray-500 line-through tabular-nums decoration-gray-500">Rp.<?= $originalPrice ?></span>
+                <p class="text-safegate-neon fw-bold text-uppercase mb-1" style="font-size: 0.6rem; letter-spacing: 0.05em;">Face Value Cap</p>
+                <div class="d-flex align-items-baseline gap-2">
+                    <span class="fs-5 fw-medium text-white">Rp.<?= $price ?></span>
+                    <span class="text-decoration-line-through text-secondary" style="font-size: 0.75rem;">Rp.<?= $originalPrice ?></span>
                 </div>
             </div>
-            <button class="border border-safegate-neon text-safegate-neon hover:bg-safegate-neon hover:text-black font-semibold text-xs px-5 py-2.5 rounded-full transition-all duration-300 mb-1">
+            <button class="btn btn-outline-safegate-neon rounded-pill fw-semibold" style="font-size: 0.75rem; padding: 0.375rem 1.25rem;">
                 BUY
             </button>
         </div>
