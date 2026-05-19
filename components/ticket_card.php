@@ -1,4 +1,4 @@
-<<<<<<< HEAD <?php
+<?php
 // Default values if variables are not passed
 $image = isset($image) ? $image : 'https://images.unsplash.com/photo-1540039155733-d7696f4ad9b2?auto=format&fit=crop&q=80&w=800';
 $title = isset($title) ? $title : 'Event Title';
@@ -53,6 +53,4 @@ $originalPrice = isset($originalPrice) ? $originalPrice : '150.000';
                 </button>
             </div>
         </div>
-    </div>
-    =======
-    >>>>>>> parent of df6580f (update frontend untuk bagian home dan penjualan)
+    </div>
