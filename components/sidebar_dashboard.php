@@ -1,40 +1,35 @@
-<aside class="bg-safegate-surface h-screen w-64 p-6 text-white flex flex-col border-r border-gray-800/50">
-    <!-- Brand / Dashboard Title -->
-    <div class="mb-10">
-        <h2 class="text-2xl font-semibold tracking-tight text-white">SafeGate Dashboard</h2>
-        <p class="text-safegate-success text-sm">Verified Vendor</p>
+<?php
+$asset_prefix = isset($asset_prefix) ? $asset_prefix : ((strpos($_SERVER['SCRIPT_NAME'], 'views/') !== false) ? '../../' : '');
+$dashboard_page = isset($dashboard_page) ? $dashboard_page : '';
+?>
+<aside class="sg-sidebar" aria-label="Seller dashboard sidebar">
+    <div class="sg-seller-card">
+        <div class="sg-seller-avatar" aria-hidden="true"></div>
+        <div>
+            <strong>SafeGate<br>Dashboard</strong>
+            <span>Verified Vendor</span>
+        </div>
     </div>
 
-    <!-- Navigation -->
-    <nav class="flex flex-col gap-3 text-sm font-medium">
-        <a href="index.php?page=sell_ticket" 
-           class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-safegate-bg transition-colors">
-            <i class="ph ph-ticket text-safegate-neon"></i>
-            <span>Sell Tickets</span>
+    <nav class="sg-sidebar-nav">
+        <a class="<?= $dashboard_page === 'sell_ticket' ? 'is-active' : '' ?>" href="<?= $asset_prefix ?>index.php?page=sell_ticket">
+            <iconify-icon icon="ph:plus-circle"></iconify-icon>
+            <span>Sell<br>Tickets</span>
         </a>
-
-        <a href="index.php?page=transaction" 
-           class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-safegate-bg transition-colors">
-            <i class="ph ph-list-checks text-safegate-neon"></i>
+        <a class="<?= $dashboard_page === 'transaction' ? 'is-active' : '' ?>" href="<?= $asset_prefix ?>index.php?page=transaction">
+            <iconify-icon icon="ph:calendar-dots"></iconify-icon>
             <span>Transaction History</span>
-        </a>
-
-        <a href="#" 
-           class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-safegate-bg transition-colors">
-            <i class="ph ph-question text-safegate-neon"></i>
-            <span>Help Center</span>
-        </a>
-
-        <a href="index.php?page=logout" 
-           class="flex items-center gap-2 px-3 py-2 rounded-lg text-safegate-danger hover:bg-red-600 transition-colors">
-            <i class="ph ph-sign-out"></i>
-            <span>Log Out</span>
         </a>
     </nav>
 
-    <!-- Footer Info -->
-    <div class="mt-auto pt-6 border-t border-gray-800/50 text-xs text-safegate-text-sec leading-relaxed">
-        <p>256-bit AES Encryption</p>
-        <p>SafeGate Escrow Active</p>
+    <div class="sg-sidebar-footer">
+        <a href="#">
+            <iconify-icon icon="ph:question"></iconify-icon>
+            <span>Help<br>Center</span>
+        </a>
+        <a href="<?= $asset_prefix ?>index.php?page=home">
+            <iconify-icon icon="ph:sign-out"></iconify-icon>
+            <span>Log<br>Out</span>
+        </a>
     </div>
 </aside>
