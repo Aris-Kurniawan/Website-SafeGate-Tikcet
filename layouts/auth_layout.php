@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,14 +8,18 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Custom CSS -->
-    <link href="assets/css/style.css" rel="stylesheet">
+    <link href="assets/css/style.css?v=<?= time() ?>" rel="stylesheet">
 </head>
+
 <body>
-    
+
     <!-- Bagian Auth Layout sengaja dibuat minimalis tanpa header navigasi dan footer kompleks -->
 
     <!-- Render the content captured from the view -->
     <?= isset($content) ? $content : '' ?>
 
+    <!-- Custom Animation Script for Auth Pages -->
+    <script src="assets/js/auth_animation.js"></script>
 </body>
+
 </html>

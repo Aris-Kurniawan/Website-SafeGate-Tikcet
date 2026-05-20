@@ -404,7 +404,7 @@ input:focus {
     overflow: hidden;
 }
 
-.sg-ledger-total div + div {
+.sg-ledger-total div+div {
     border-left: 2px solid rgba(255, 255, 255, 0.09);
     padding-left: 42px;
 }
@@ -557,14 +557,14 @@ input:focus {
 
 .sg-ticket-thumb-neon {
     background:
-        linear-gradient(90deg, transparent 12%, rgba(217,255,0,.8) 13% 15%, transparent 16% 22%, rgba(64,224,255,.8) 23% 25%, transparent 26%),
+        linear-gradient(90deg, transparent 12%, rgba(217, 255, 0, .8) 13% 15%, transparent 16% 22%, rgba(64, 224, 255, .8) 23% 25%, transparent 26%),
         radial-gradient(circle at 50% 55%, #c7f7ff 0 5px, #2d8397 6px 14px, #061c27 16px 100%);
 }
 
 .sg-ticket-thumb-ball {
     background:
-        radial-gradient(circle at 50% 50%, transparent 0 14px, rgba(0,0,0,.42) 15px 16px, transparent 17px),
-        linear-gradient(90deg, transparent 47%, rgba(0,0,0,.38) 48% 52%, transparent 53%),
+        radial-gradient(circle at 50% 50%, transparent 0 14px, rgba(0, 0, 0, .42) 15px 16px, transparent 17px),
+        linear-gradient(90deg, transparent 47%, rgba(0, 0, 0, .38) 48% 52%, transparent 53%),
         radial-gradient(circle, #ff8b32 0 47%, #f4f0e9 48% 100%);
 }
 
@@ -963,7 +963,7 @@ input:focus {
     background: #0a1220;
 }
 
-.sg-fairness-box > div:first-child {
+.sg-fairness-box>div:first-child {
     display: flex;
     justify-content: space-between;
     gap: 16px;
@@ -1012,7 +1012,7 @@ input:focus {
     justify-content: space-between;
 }
 
-.sg-upload-title > span {
+.sg-upload-title>span {
     display: flex;
     gap: 18px;
 }
@@ -1173,7 +1173,7 @@ input:focus {
 }
 
 .sg-escrow-note p,
-.sg-payout-card > p,
+.sg-payout-card>p,
 .sg-encryption-card p {
     margin: 8px 0 0;
     color: #838c9d;
@@ -1214,7 +1214,7 @@ input:focus {
     color: var(--safegate-danger);
 }
 
-.sg-payout-card > p {
+.sg-payout-card>p {
     text-align: center;
     text-transform: uppercase;
     font-size: 8px;
@@ -1614,7 +1614,7 @@ input:focus {
     background: rgba(255, 255, 255, 0.07);
 }
 
-.sg-sell-v2 .sg-fairness-box > div:first-child {
+.sg-sell-v2 .sg-fairness-box>div:first-child {
     align-items: center;
 }
 
@@ -1676,7 +1676,7 @@ input:focus {
     font-size: inherit;
 }
 
-.sg-sell-v2 .sg-upload-drop > iconify-icon {
+.sg-sell-v2 .sg-upload-drop>iconify-icon {
     display: none;
 }
 
@@ -1817,7 +1817,7 @@ input:focus {
     vertical-align: middle;
 }
 
-.sg-sell-v2 .sg-payout-card > p:last-child {
+.sg-sell-v2 .sg-payout-card>p:last-child {
     max-width: 240px;
     margin: 28px auto 0;
     color: #56667d;
@@ -1910,4 +1910,23 @@ input:focus {
         grid-column: 2;
         text-align: left;
     }
+}
+
+/* --- Auth Pages Specific Styles --- */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #1e2025 inset !important;
+    -webkit-text-fill-color: white !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+.form-check-input:checked {
+    background-color: var(--safegate-neon);
+    border-color: var(--safegate-neon);
+}
+
+input::placeholder {
+    color: #8d929b !important;
 }

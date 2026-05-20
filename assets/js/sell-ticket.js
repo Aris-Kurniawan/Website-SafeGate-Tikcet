@@ -14,7 +14,7 @@ const uploadDrop = document.getElementById('uploadDrop');
 const uploadStatus = document.getElementById('uploadStatus');
 const eventSearch = document.getElementById('eventSearch');
 const eventList = document.getElementById('eventList');
-const eventButtons = Array.from(document.querySelectorAll('.sg-event-option'));
+const eventButtons = Array.from(document.querySelectorAll('.sg-event -option'));
 const stepItems = Array.from(document.querySelectorAll('#listingStepper li'));
 
 function formatRupiah(value) {

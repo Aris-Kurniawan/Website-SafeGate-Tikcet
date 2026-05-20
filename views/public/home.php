@@ -57,21 +57,6 @@ ob_start();
                     SEARCH
                 </button>
             </div>
-
-            <!-- <div class="search-item">
-                <i class="ph ph-calendar"></i>
-                <input type="text" placeholder="Tanggal">
-            </div>
-
-            <div class="search-item">
-                <i class="ph ph-map-pin"></i>
-                <input type="text" placeholder="Tempat">
-            </div> -->
-
-            <!-- <button class="search-btn">
-                SEARCH
-            </button> -->
-
         </div>
 
         <!-- Right Content / Image -->
@@ -101,21 +86,6 @@ ob_start();
             </div>
         </div>
     </div>
-
-
-    <!-- <div class="hero-right">
-
-        <img src="assets/images/hero.jpg" alt="Hero">
-
-        <div class="verification-box">
-
-            <h2>99.8%</h2>
-            <span>VERIFIKASI SUKSES</span>
-
-        </div>
-
-    </div> -->
-
 </section>
 
 <!-- Marketplace Section -->
