@@ -22,6 +22,7 @@ ob_start();
                 </span>
                 <span class="text-safegate-neon fst-italic pe-2">Harga Terjamin.</span><br>
                 Tanpa Penipuan.
+                </span>
             </h1>
 
             <p class="text-safegate-text-sec mb-5" style="font-size: 0.95rem; line-height: 1.6; max-width: 28rem;">
@@ -56,6 +57,21 @@ ob_start();
                     SEARCH
                 </button>
             </div>
+
+            <!-- <div class="search-item">
+                <i class="ph ph-calendar"></i>
+                <input type="text" placeholder="Tanggal">
+            </div>
+
+            <div class="search-item">
+                <i class="ph ph-map-pin"></i>
+                <input type="text" placeholder="Tempat">
+            </div> -->
+
+            <!-- <button class="search-btn">
+                SEARCH
+            </button> -->
+
         </div>
 
         <!-- Right Content / Image -->
@@ -85,6 +101,21 @@ ob_start();
             </div>
         </div>
     </div>
+
+
+    <!-- <div class="hero-right">
+
+        <img src="assets/images/hero.jpg" alt="Hero">
+
+        <div class="verification-box">
+
+            <h2>99.8%</h2>
+            <span>VERIFIKASI SUKSES</span>
+
+        </div>
+
+    </div> -->
+
 </section>
 
 <!-- Marketplace Section -->
