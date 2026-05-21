@@ -11,8 +11,8 @@ $tickets = [
         "title" => "Midnight Symphony Tour",
         "image" => "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&q=80&w=800",
         "date" => "October 24, 2024 • The Neon Citadel, LA",
-        "price" => "180.00",
-        "originalPrice" => "250.00"
+        "price" => "180.000",
+        "originalPrice" => "250.000"
     ],
     [
         "title" => "Tour Konser Senior",

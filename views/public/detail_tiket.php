@@ -12,33 +12,28 @@ $date = isset($_GET['date']) ? htmlspecialchars($_GET['date']) : 'October 24, 20
 $location = isset($_GET['location']) ? htmlspecialchars($_GET['location']) : 'The Neon Citadel, Los Angeles';
 
 // Clean price inputs to treat them numerically or format as raw
-$raw_price = isset($_GET['price']) ? $_GET['price'] : '180.00';
+$raw_price = isset($_GET['price']) ? $_GET['price'] : '180.000';
 
 // Parse price format: check if it's IDR or USDC
-$is_usdc = true;
-$price_val = 180.00;
-$currency_suffix = " USDC";
-$currency_prefix = "";
+$is_usdc = false;
+$price_val = 180000;
+$currency_suffix = "";
+$currency_prefix = "Rp. ";
 
 // Clean formatting to extract pure numeric values
 $clean_price = str_replace(['Rp.', 'Rp', ' ', ','], '', $raw_price);
-if (strpos($clean_price, '.') !== false && substr_count($clean_price, '.') == 1) {
-    $price_val = (float)$clean_price;
-    $is_usdc = true;
-} else {
-    $clean_price_no_dot = str_replace('.', '', $clean_price);
-    if (is_numeric($clean_price_no_dot)) {
-        $val = (float)$clean_price_no_dot;
-        if ($val > 1000) {
-            $price_val = $val;
-            $is_usdc = false;
-            $currency_suffix = "";
-            $currency_prefix = "Rp. ";
-        } else {
-            $price_val = $val;
-            $is_usdc = true;
+if (strpos($clean_price, '.') !== false) {
+    $parts = explode('.', $clean_price);
+    if (count($parts) == 2 && strlen($parts[1]) == 3) {
+        $price_val = (float)str_replace('.', '', $clean_price);
+    } else {
+        $price_val = (float)$clean_price;
+        if ($price_val < 1000) {
+            $price_val = $price_val * 1000;
         }
     }
+} else {
+    $price_val = (float)$clean_price;
 }
 
 // Calculate breakdown dynamically
@@ -352,7 +347,7 @@ $kursi = isset($_GET['kursi']) ? htmlspecialchars($_GET['kursi']) : '14';
             alert("Silakan masukkan penawaran yang valid!");
             return;
         }
-        alert("Sukses! Tawaran Anda sebesar " + parseFloat(input.value).toFixed(2) + " " + currency + " telah didaftarkan dalam sistem lelang SafeGate.");
+        alert("Sukses! Tawaran Anda sebesar Rp. " + Math.round(parseFloat(input.value)).toLocaleString('id-ID') + " telah didaftarkan dalam sistem lelang SafeGate.");
         input.value = "";
     }
 
