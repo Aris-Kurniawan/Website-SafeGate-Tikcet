@@ -15,11 +15,17 @@ ob_start();
         <div class="w-100 mx-auto" style="max-width: 420px;">
 
             <!-- Brand -->
-            <div class="d-flex align-items-center mb-5">
-                <div class="rounded-circle me-2"
-                    style="width: 14px; height: 14px; background-color: var(--safegate-neon); box-shadow: 0 0 12px rgba(217, 255, 0, 0.6);">
+            <div class="d-flex align-items-center mb-5 gap-3">
+                <div class="safegate-logo-box" style="width: 38px; height: 38px; border-radius: 10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#090B10"
+                        stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"
+                        style="width: 20px; height: 20px;">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
                 </div>
-                <h3 class="mb-0 fw-bold text-white fs-4" style="letter-spacing: -0.04em;">SafeGate</h3>
+                <h3 class="mb-0 fw-bold text-white fs-4"
+                    style="letter-spacing: -0.04em; font-family: 'Inter', sans-serif;">SafeGate</h3>
             </div>
 
             <!-- Header -->

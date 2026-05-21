@@ -99,6 +99,22 @@ input:focus {
     color: var(--safegate-neon) !important;
 }
 
+/* Premium SafeGate Logo Box & Brand Styling */
+.safegate-logo-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--safegate-neon) !important;
+    color: #090B10 !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 0 15px rgba(217, 255, 0, 0.3);
+}
+
+.safegate-logo-box:hover {
+    transform: scale(1.06) rotate(3deg);
+    box-shadow: 0 0 25px rgba(217, 255, 0, 0.55);
+}
+
 /* Letter spacing */
 .letter-spacing-tight {
     letter-spacing: -0.02em;

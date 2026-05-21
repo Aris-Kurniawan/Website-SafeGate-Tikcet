@@ -2,10 +2,16 @@
     style="border-color: rgba(255,255,255,0.05) !important; z-index: 1030; opacity: 0.95;">
     <div class="container-fluid mx-auto d-flex align-items-center justify-content-between" style="max-width: 1200px;">
         <!-- Logo -->
-        <div class="d-flex align-items-center gap-2">
-            <div class="bg-safegate-neon rounded-circle" style="width: 10px; height: 10px;"></div>
-            <a href="index.php?page=home"
-                class="fs-5 fw-bold text-white text-decoration-none letter-spacing-tight">SafeGate</a>
+        <div class="d-flex align-items-center gap-3">
+            <a href="index.php?page=home" class="d-flex align-items-center gap-2 text-decoration-none">
+                <div class="safegate-logo-box" style="width: 28px; height: 28px; border-radius: 7px; box-shadow: 0 0 12px rgba(217, 255, 0, 0.35);">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#090B10" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                </div>
+                <span class="fs-5 fw-bold text-white letter-spacing-tight">SafeGate</span>
+            </a>
         </div>
 
         <!-- Navigation -->
