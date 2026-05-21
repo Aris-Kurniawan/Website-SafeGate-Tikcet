@@ -353,8 +353,16 @@ $kursi = isset($_GET['kursi']) ? htmlspecialchars($_GET['kursi']) : '14';
 
     // Checkout modal trigger
     function checkoutTicket() {
-        const myModal = new bootstrap.Modal(document.getElementById('checkoutSuccessModal'));
-        myModal.show();
+        const title = encodeURIComponent("<?= $title ?>");
+        const price = encodeURIComponent("<?= $raw_price ?>");
+        const image = encodeURIComponent("<?= $image ?>");
+        const date = encodeURIComponent("<?= $date ?>");
+        const location = encodeURIComponent("<?= $location ?>");
+        const seksi = encodeURIComponent("<?= $seksi ?>");
+        const baris = encodeURIComponent("<?= $baris ?>");
+        const kursi = encodeURIComponent("<?= $kursi ?>");
+        
+        window.location.href = `index.php?page=pembayaran&title=${title}&price=${price}&image=${image}&date=${date}&location=${location}&seksi=${seksi}&baris=${baris}&kursi=${kursi}`;
     }
 </script>
 

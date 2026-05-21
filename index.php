@@ -7,6 +7,7 @@ $routes = [
     'cara_kerja' => __DIR__ . '/views/public/cara_kerja.php',
     'penjualan' => __DIR__ . '/views/public/penjualan.php',
     'detail_tiket' => __DIR__ . '/views/public/detail_tiket.php',
+    'pembayaran' => __DIR__ . '/views/public/pembayaran.php',
     'login' => __DIR__ . '/views/public/login.php',
     'signup' => __DIR__ . '/views/public/signup.php',
     'sell_ticket' => __DIR__ . '/views/seller/sell_ticket.php',
