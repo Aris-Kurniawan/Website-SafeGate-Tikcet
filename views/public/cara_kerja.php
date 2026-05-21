@@ -183,31 +183,7 @@ ob_start();
     }
 </style>
 
-<!-- JS dynamic navbar highlighting to safely execute client-side state changes without changing original core layout/header files -->
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const navLinks = document.querySelectorAll("header nav a");
-        navLinks.forEach(link => {
-            const href = link.getAttribute("href");
-            if (href && href.includes("page=cara_kerja")) {
-                link.classList.remove("text-safegate-text-sec");
-                link.classList.add("text-white", "position-relative");
-                link.style.color = "var(--safegate-neon)";
-                // Add custom active underline matching Figma design exactly
-                if (!link.querySelector(".nav-active-bar")) {
-                    link.innerHTML += `<span class="nav-active-bar position-absolute start-0 w-100 bg-safegate-neon" style="bottom: -10px; height: 2px; box-shadow: 0 0 10px var(--safegate-neon);"></span>`;
-                }
-            } else {
-                // Remove active classes and styles from other links to prevent visual conflicts
-                link.classList.remove("text-white");
-                link.classList.add("text-safegate-text-sec");
-                link.style.color = "";
-                const activeBar = link.querySelector(".position-absolute");
-                if (activeBar) activeBar.remove();
-            }
-        });
-    });
-</script>
+
 
 <?php
 // 3. Simpan konten ke dalam variabel

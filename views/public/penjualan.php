@@ -127,30 +127,7 @@ $tickets = [
     </div>
 
 </section>
-
-<!-- Active Navbar Highlighting Script -->
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const navLinks = document.querySelectorAll("header nav a");
-        navLinks.forEach(link => {
-            const href = link.getAttribute("href");
-            if (href && href.includes("page=penjualan")) {
-                link.classList.remove("text-safegate-text-sec");
-                link.classList.add("text-white", "position-relative");
-                link.style.color = "var(--safegate-neon)";
-                if (!link.querySelector(".nav-active-bar")) {
-                    link.innerHTML += `<span class="nav-active-bar position-absolute start-0 w-100 bg-safegate-neon" style="bottom: -10px; height: 2px; box-shadow: 0 0 10px var(--safegate-neon);"></span>`;
-                }
-            } else {
-                link.classList.remove("text-white");
-                link.classList.add("text-safegate-text-sec");
-                link.style.color = "";
-                const activeBar = link.querySelector(".nav-active-bar");
-                if (activeBar) activeBar.remove();
-            }
-        });
-    });
-
     // Real-time client-side search filtering
     function filterCards() {
         const query = document.getElementById("search-input").value.toLowerCase();

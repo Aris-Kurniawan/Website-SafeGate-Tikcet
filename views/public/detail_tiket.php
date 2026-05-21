@@ -342,16 +342,6 @@ $kursi = isset($_GET['kursi']) ? htmlspecialchars($_GET['kursi']) : '14';
                 sEl.textContent = String(seconds).padStart(2, '0');
             }, 1000);
         }
-
-        // Active state clear on headers
-        const navLinks = document.querySelectorAll("header nav a");
-        navLinks.forEach(link => {
-            link.classList.remove("text-white");
-            link.classList.add("text-safegate-text-sec");
-            link.style.color = "";
-            const activeBar = link.querySelector(".bg-safegate-neon");
-            if (activeBar) activeBar.remove();
-        });
     });
 
     // Bid submit
