@@ -16,10 +16,6 @@ $routes = [
     'wallet' => __DIR__ . '/views/seller/wallet.php',
     'transaction' => __DIR__ . '/views/seller/transaction.php',
     'settings' => __DIR__ . '/views/seller/settings.php',
-    'admin_overview' => __DIR__ . '/views/admin/overview.php',
-    'admin_transactions' => __DIR__ . '/views/admin/transactions.php',
-    'admin_disputes' => __DIR__ . '/views/admin/disputes.php',
-    'admin_kyc' => __DIR__ . '/views/admin/kyc_center.php',
 ];
 
 if (!array_key_exists($page, $routes)) {
