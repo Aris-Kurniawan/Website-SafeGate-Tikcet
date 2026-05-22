@@ -27,9 +27,6 @@
 </head>
 <body class="sg-admin-shell">
     
-    <!-- Top Header Bar -->
-    <?php include_once __DIR__ . '/../components/admin_header.php'; ?>
-    
     <div class="sg-admin-frame">
         <!-- Sidebar Navigation -->
         <?php include_once __DIR__ . '/../components/admin_sidebar.php'; ?>
@@ -42,4 +39,3 @@
 
 </body>
 </html>
-

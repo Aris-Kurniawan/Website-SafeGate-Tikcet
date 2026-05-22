@@ -1,5 +1,6 @@
 <?php
 $page_title = "Login - SafeGate";
+$base_path = (strpos($_SERVER['SCRIPT_NAME'], 'views/') !== false) ? '../../' : '';
 ob_start();
 ?>
 <!-- Iconify -->
@@ -15,7 +16,7 @@ ob_start();
         <div class="w-100 mx-auto" style="max-width: 420px;">
 
             <!-- Brand -->
-            <div class="d-flex align-items-center mb-5 gap-3">
+            <a href="<?= $base_path ?>index.php?page=home" class="d-flex align-items-center mb-5 gap-3 text-decoration-none">
                 <div class="safegate-logo-box" style="width: 38px; height: 38px; border-radius: 10px;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#090B10"
                         stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"
@@ -26,7 +27,7 @@ ob_start();
                 </div>
                 <h3 class="mb-0 fw-bold text-white fs-4"
                     style="letter-spacing: -0.04em; font-family: 'Inter', sans-serif;">SafeGate</h3>
-            </div>
+            </a>
 
             <!-- Header -->
             <h1 class="fw-bolder text-white mb-2" style="font-size: 2.75rem; letter-spacing: -0.04em;">Welcome Back.
@@ -38,14 +39,14 @@ ob_start();
             <div class="d-flex rounded-3 p-1 mb-4" style="background-color: rgba(255,255,255,0.05);">
                 <button type="button" class="btn btn-safegate-neon flex-grow-1 rounded-3 py-2 fw-bold"
                     style="border: none;">Login</button>
-                <button type="button" onclick="triggerAuthTransition('index.php?page=signup')"
+                <button type="button" onclick="triggerAuthTransition('<?= $base_path ?>index.php?page=signup')"
                     class="btn text-white flex-grow-1 rounded-3 py-2 fw-bold opacity-75 hover-white"
                     style="background: transparent; border: none; transition: 0.3s;"
                     onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">Sign Up</button>
             </div>
 
             <!-- Form -->
-            <form action="index.php?page=home" method="POST">
+            <form action="<?= $base_path ?>index.php?page=home" method="POST">
                 <div class="mb-3 d-flex align-items-center rounded-3 input-group-custom"
                     style="background-color: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.05); transition: 0.3s;">
                     <div class="px-3 d-flex align-items-center" style="color: #6c757d;">
