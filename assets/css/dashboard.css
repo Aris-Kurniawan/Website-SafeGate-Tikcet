@@ -1,5 +1,5 @@
 /* Dashboard-specific layout polish.
-   Keep sidebar sizing in global-safegate.css; this file only tunes dashboard content. */
+   Keep sidebar sizing in global.css; this file only tunes dashboard content. */
 
 .sg-dashboard-main {
     min-width: 0;

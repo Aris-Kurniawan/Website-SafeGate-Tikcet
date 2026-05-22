@@ -18,7 +18,7 @@
     $assets_path = (strpos($_SERVER['SCRIPT_NAME'], 'views/') !== false) ? '../../assets' : 'assets';
     $asset_prefix = (strpos($_SERVER['SCRIPT_NAME'], 'views/') !== false) ? '../../' : '';
     ?>
-    <link href="<?= $assets_path ?>/css/global-safegate.css" rel="stylesheet">
+    <link href="<?= $assets_path ?>/css/global.css" rel="stylesheet">
     <link href="<?= $assets_path ?>/css/dashboard.css" rel="stylesheet">
 
     <!-- Global JS Utils -->
