@@ -146,6 +146,7 @@ $dashboard_page = isset($dashboard_page) ? $dashboard_page : '';
     padding: 8px;
     border-radius: 8px;
     transition: all 0.2s ease;
+    margin-left: auto !important;
 }
 
 .sg-sidebar-toggle:hover {
@@ -161,84 +162,191 @@ $dashboard_page = isset($dashboard_page) ? $dashboard_page : '';
     gap: 12px !important;
 }
 
-/* Collapsed Sidebar overrides */
-.sg-dashboard-frame.sg-sidebar-collapsed {
-    grid-template-columns: 80px 1fr !important;
+/* Width and responsive behavior for Desktop screens */
+@media (min-width: 861px) {
+    /* Widened sidebar layout to prevent text wrapping */
+    .sg-dashboard-frame {
+        grid-template-columns: 320px 1fr !important;
+        transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    
+    .sg-sidebar {
+        width: 320px !important;
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    
+    /* Collapsed Sidebar overrides */
+    .sg-dashboard-frame.sg-sidebar-collapsed {
+        grid-template-columns: 80px 1fr !important;
+    }
+
+    .sg-sidebar-collapsed .sg-sidebar {
+        width: 80px !important;
+    }
+
+    .sg-sidebar-collapsed .sg-sidebar-header {
+        padding: 24px 0 16px 0 !important; /* Top padding to prevent crowding the top page edge */
+        justify-content: center !important;
+        flex-direction: column-reverse !important; /* Place hamburger on top of the logo */
+        min-height: 110px !important;
+        gap: 12px !important;
+    }
+
+    .sg-sidebar-collapsed .sg-side-brand span {
+        display: none !important;
+    }
+
+    .sg-sidebar-collapsed .sg-sidebar-toggle {
+        margin-left: 0 !important;
+        margin-top: 0 !important;
+    }
+
+    /* Collapsed Seller Card overrides */
+    .sg-sidebar-collapsed .sg-seller-card {
+        padding: 20px 0 !important;
+        justify-content: center !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+    }
+    .sg-sidebar-collapsed .sg-seller-card div:not(.sg-seller-avatar) {
+        display: none !important;
+    }
+    .sg-sidebar-collapsed .sg-seller-avatar {
+        margin: 0 auto !important;
+    }
+
+    /* Collapsed Sidebar Navigation overrides */
+    .sg-sidebar-collapsed .sg-sidebar-nav {
+        padding: 16px 8px !important;
+        gap: 8px !important;
+    }
+    .sg-sidebar-collapsed .sg-sidebar-nav a {
+        padding: 0 !important;
+        justify-content: center !important;
+        min-height: 44px !important;
+        border-radius: 12px !important;
+    }
+    .sg-sidebar-collapsed .sg-sidebar-nav a span {
+        display: none !important;
+    }
+    .sg-sidebar-collapsed .sg-sidebar-nav a::after {
+        left: 2px !important;
+        right: auto !important;
+    }
+
+    /* Collapsed Nav Divider overrides */
+    .sg-sidebar-collapsed .sg-sidebar-nav hr {
+        margin: 6px 4px !important;
+    }
+
+    /* Collapsed Sidebar Footer overrides */
+    .sg-sidebar-collapsed .sg-sidebar-footer {
+        padding: 20px 0 !important;
+        justify-content: center !important;
+    }
+    .sg-sidebar-collapsed .sg-sidebar-footer a {
+        padding: 0 !important;
+        justify-content: center !important;
+    }
+    .sg-sidebar-collapsed .sg-sidebar-footer a span {
+        display: none !important;
+    }
 }
 
-.sg-sidebar {
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+/* Responsive Accordion/Dropdown behavior for Mobile/Tablet screens */
+@keyframes fadeInMobile {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.sg-sidebar-collapsed .sg-sidebar {
-    width: 80px !important;
-}
-
-.sg-sidebar-collapsed .sg-sidebar-header {
-    padding: 24px 0 16px 0 !important; /* Top padding to prevent crowding the top page edge */
-    justify-content: center !important;
-    flex-direction: column-reverse !important; /* Place hamburger on top of the logo */
-    min-height: 110px !important;
-    gap: 12px !important;
-}
-
-.sg-sidebar-collapsed .sg-side-brand span {
-    display: none !important;
-}
-
-.sg-sidebar-collapsed .sg-sidebar-toggle {
-    margin-top: 0 !important;
-}
-
-/* Collapsed Seller Card overrides */
-.sg-sidebar-collapsed .sg-seller-card {
-    padding: 20px 0 !important;
-    justify-content: center !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-}
-.sg-sidebar-collapsed .sg-seller-card div:not(.sg-seller-avatar) {
-    display: none !important;
-}
-.sg-sidebar-collapsed .sg-seller-avatar {
-    margin: 0 auto !important;
-}
-
-/* Collapsed Sidebar Navigation overrides */
-.sg-sidebar-collapsed .sg-sidebar-nav {
-    padding: 16px 8px !important;
-    gap: 8px !important;
-}
-.sg-sidebar-collapsed .sg-sidebar-nav a {
-    padding: 0 !important;
-    justify-content: center !important;
-    min-height: 44px !important;
-    border-radius: 12px !important;
-}
-.sg-sidebar-collapsed .sg-sidebar-nav a span {
-    display: none !important;
-}
-.sg-sidebar-collapsed .sg-sidebar-nav a::after {
-    left: 2px !important;
-    right: auto !important;
-}
-
-/* Collapsed Nav Divider overrides */
-.sg-sidebar-collapsed .sg-sidebar-nav hr {
-    margin: 6px 4px !important;
-}
-
-/* Collapsed Sidebar Footer overrides */
-.sg-sidebar-collapsed .sg-sidebar-footer {
-    padding: 20px 0 !important;
-    justify-content: center !important;
-}
-.sg-sidebar-collapsed .sg-sidebar-footer a {
-    padding: 0 !important;
-    justify-content: center !important;
-}
-.sg-sidebar-collapsed .sg-sidebar-footer a span {
-    display: none !important;
+@media (max-width: 860px) {
+    .sg-dashboard-frame {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: 1fr !important;
+        min-height: 100vh !important;
+    }
+    
+    .sg-sidebar {
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        position: relative !important;
+        top: 0 !important;
+        border-right: none !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        transition: all 0.3s ease-in-out !important;
+        z-index: 1000 !important;
+    }
+    
+    .sg-sidebar-header {
+        min-height: 70px !important;
+        padding: 0 20px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-direction: row !important;
+        border-bottom: none !important;
+    }
+    
+    .sg-sidebar-collapsed .sg-sidebar-header {
+        border-bottom: none !important;
+    }
+    
+    /* When collapsed on mobile, hide the menu content */
+    .sg-sidebar-collapsed .sg-sidebar-nav,
+    .sg-sidebar-collapsed .sg-seller-card,
+    .sg-sidebar-collapsed .sg-sidebar-footer {
+        display: none !important;
+    }
+    
+    /* When expanded on mobile, display the menu content vertically */
+    .sg-dashboard-frame:not(.sg-sidebar-collapsed) .sg-sidebar-nav,
+    .sg-dashboard-frame:not(.sg-sidebar-collapsed) .sg-seller-card,
+    .sg-dashboard-frame:not(.sg-sidebar-collapsed) .sg-sidebar-footer {
+        display: flex !important;
+        animation: fadeInMobile 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+    
+    .sg-dashboard-frame:not(.sg-sidebar-collapsed) .sg-seller-card {
+        padding: 20px !important;
+        min-height: auto !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    }
+    
+    .sg-dashboard-frame:not(.sg-sidebar-collapsed) .sg-sidebar-nav {
+        display: grid !important;
+        padding: 16px 20px !important;
+        gap: 8px !important;
+    }
+    
+    .sg-dashboard-frame:not(.sg-sidebar-collapsed) .sg-sidebar-footer {
+        padding: 20px 20px !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    }
+    
+    /* Overrides for mobile to keep items looking clean and proportional */
+    .sg-sidebar-collapsed .sg-side-brand span {
+        display: block !important;
+    }
+    
+    .sg-sidebar-toggle {
+        margin-top: 0 !important;
+    }
+    
+    .sg-dashboard-main {
+        padding: 16px !important;
+    }
+    
+    .sg-dashboard-main > section {
+        zoom: 1 !important; /* Reset zoom on mobile/tablets for pristine readability */
+    }
 }
 </style>
 <aside class="sg-sidebar" aria-label="Seller dashboard sidebar">
