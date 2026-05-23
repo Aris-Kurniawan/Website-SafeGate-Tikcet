@@ -1,0 +1,2309 @@
+/* assets/css/admin.css - Tema "Institutional Dark Mode" khusus Admin SafeGate */
+
+:root {
+    --admin-bg: #090B10;
+    --admin-surface: #12161F;
+    --admin-surface-card: #0F131C;
+    --admin-surface-hover: #171C27;
+    --admin-accent: #D9FF00;
+    --admin-accent-rgb: 217, 255, 0;
+    --admin-accent-glow: rgba(217, 255, 0, 0.15);
+    --admin-accent-muted: rgba(217, 255, 0, 0.4);
+    --admin-text: #FFFFFF;
+    --admin-text-muted: #8E95A3;
+    --admin-border: rgba(255, 255, 255, 0.06);
+    --admin-border-focus: rgba(217, 255, 0, 0.3);
+    
+    /* Semantic Colors */
+    --admin-success: #00FFA3;
+    --admin-danger: #FF4C4C;
+    --admin-danger-bg: rgba(255, 76, 76, 0.1);
+    --admin-danger-border: rgba(255, 76, 76, 0.2);
+    --admin-warning: #FFB800;
+    
+    /* Brand specific values from screenshot */
+    --admin-peach: #FF8E8E;
+    --admin-peach-bg: rgba(255, 142, 142, 0.1);
+    --admin-peach-border: rgba(255, 142, 142, 0.3);
+}
+
+/* --- Base & Scrollbar --- */
+body.sg-admin-shell {
+    background-color: var(--admin-bg);
+    color: var(--admin-text);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+body.sg-admin-shell::-webkit-scrollbar {
+    width: 8px;
+}
+body.sg-admin-shell::-webkit-scrollbar-track {
+    background: var(--admin-bg);
+}
+body.sg-admin-shell::-webkit-scrollbar-thumb {
+    background: #1C2230;
+    border-radius: 4px;
+}
+body.sg-admin-shell::-webkit-scrollbar-thumb:hover {
+    background: #2D364D;
+}
+
+/* --- Topbar Header Layout --- */
+.sg-admin-header {
+    height: 70px;
+    background-color: #080A0E;
+    border-bottom: 1px solid var(--admin-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-sizing: border-box;
+}
+
+.sg-admin-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sg-admin-header-logo-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+}
+
+.sg-admin-header-logo-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background-color: var(--admin-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 12px rgba(217, 255, 0, 0.3);
+    transition: transform 0.3s ease;
+}
+
+.sg-admin-header-logo-link:hover .sg-admin-header-logo-box {
+    transform: scale(1.05) rotate(3deg);
+}
+
+.sg-admin-header-title {
+    color: var(--admin-text);
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+}
+
+.sg-admin-header-separator {
+    width: 1px;
+    height: 16px;
+    background-color: rgba(255, 255, 255, 0.15);
+    margin: 0 4px;
+}
+
+.sg-admin-header-subtitle {
+    color: var(--admin-text-muted);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.sg-admin-header-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.sg-admin-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background-color: rgba(0, 255, 163, 0.05);
+    border: 1px solid rgba(0, 255, 163, 0.2);
+    border-radius: 20px;
+    color: var(--admin-success);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.sg-admin-status-pill iconify-icon {
+    font-size: 14px;
+}
+
+.sg-admin-icon-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--admin-text-muted);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.sg-admin-icon-btn:hover {
+    color: var(--admin-text);
+    background-color: var(--admin-surface);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.sg-admin-icon-btn iconify-icon {
+    font-size: 20px;
+}
+
+.sg-admin-badge-dot {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--admin-accent);
+    border-radius: 50%;
+    border: 2px solid #080A0E;
+    box-shadow: 0 0 6px var(--admin-accent);
+}
+
+.sg-admin-profile {
+    display: flex;
+    align-items: center;
+}
+
+.sg-admin-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    object-fit: cover;
+    background-color: var(--admin-surface);
+}
+
+/* --- Framework Frame Layout --- */
+.sg-admin-frame {
+    display: flex;
+    flex: 1;
+    min-height: calc(100vh - 70px);
+}
+
+/* --- Sidebar --- */
+.sg-admin-sidebar {
+    width: 260px;
+    background-color: #080A0E;
+    border-right: 1px solid var(--admin-border);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 32px 0 24px;
+    position: sticky;
+    top: 70px;
+    height: calc(100vh - 70px);
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.sg-admin-sidebar-header {
+    padding: 0 28px 24px;
+}
+
+.sg-admin-sidebar-header h2 {
+    color: var(--admin-text);
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0 0 4px;
+    letter-spacing: -0.03em;
+}
+
+.sg-admin-sidebar-header p {
+    color: var(--admin-text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    margin: 0;
+}
+
+.sg-admin-sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    padding: 12px 0;
+}
+
+.sg-admin-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 28px;
+    color: var(--admin-text-muted);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    position: relative;
+    transition: all 0.25s ease;
+}
+
+.sg-admin-menu-item iconify-icon {
+    font-size: 22px;
+    transition: transform 0.2s ease;
+}
+
+.sg-admin-menu-item:hover {
+    color: var(--admin-text);
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.sg-admin-menu-item:hover iconify-icon {
+    transform: translateX(2px);
+}
+
+.sg-admin-menu-item.is-active {
+    color: var(--admin-accent);
+    font-weight: 700;
+    background: linear-gradient(90deg, rgba(217, 255, 0, 0.05) 0%, transparent 100%);
+}
+
+.sg-admin-menu-item.is-active iconify-icon {
+    color: var(--admin-accent);
+}
+
+/* Neon indicator bar on the right side of the active element */
+.sg-admin-menu-item.is-active::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 10%;
+    height: 80%;
+    width: 2.5px;
+    background-color: var(--admin-accent);
+    border-radius: 4px 0 0 4px;
+    box-shadow: 0 0 8px var(--admin-accent);
+}
+
+.sg-admin-sidebar-footer {
+    padding: 16px 20px 0;
+    border-top: 1px solid var(--admin-border);
+}
+
+/* Emergency Lock Button styling matching screenshot */
+.sg-admin-emergency-btn {
+    width: 100%;
+    background-color: rgba(255, 76, 76, 0.05);
+    border: 1px solid var(--admin-danger-border);
+    color: var(--admin-danger);
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(255, 76, 76, 0.05);
+}
+
+.sg-admin-emergency-btn iconify-icon {
+    font-size: 16px;
+}
+
+.sg-admin-emergency-btn:hover {
+    background-color: var(--admin-danger);
+    color: #090B10;
+    border-color: var(--admin-danger);
+    box-shadow: 0 0 15px rgba(255, 76, 76, 0.4);
+    transform: translateY(-1px);
+}
+
+/* --- Main Content --- */
+.sg-admin-main {
+    flex: 1;
+    padding: 40px;
+    background: radial-gradient(circle at 50% 0%, rgba(217, 255, 0, 0.015), transparent 600px), #090B10;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    overflow-y: auto;
+}
+
+/* Page Command Title and Server Status */
+.sg-admin-title-section h1 {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    margin: 0 0 8px;
+}
+
+.sg-admin-server-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--admin-text-muted);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.sg-admin-server-status .sg-status-dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--admin-success);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--admin-success);
+}
+
+/* --- KPI Cards Layout --- */
+.sg-admin-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.sg-admin-kpi-card {
+    background-color: var(--admin-surface-card);
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 140px;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, transform 0.2s ease;
+}
+
+.sg-admin-kpi-card:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+}
+
+.sg-admin-kpi-info {
+    z-index: 2;
+}
+
+.sg-admin-kpi-label {
+    color: var(--admin-text-muted);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin: 0 0 12px;
+}
+
+.sg-admin-kpi-value {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 0 0 16px;
+    color: var(--admin-text);
+}
+
+.sg-admin-kpi-footer {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Upward Trend for Escrow Card */
+.sg-admin-trend-up {
+    color: var(--admin-accent);
+}
+
+.sg-admin-trend-up iconify-icon {
+    font-size: 14px;
+}
+
+/* Glowing text for Net Revenue Card */
+.sg-admin-glow-text {
+    color: var(--admin-accent);
+    text-shadow: 0 0 12px rgba(217, 255, 0, 0.45);
+}
+
+.sg-admin-smart-contract-text {
+    color: var(--admin-accent-muted);
+}
+
+/* Card Icons Watermark */
+.sg-admin-kpi-icon {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 36px;
+    color: rgba(255, 255, 255, 0.03);
+    z-index: 1;
+    pointer-events: none;
+    border: 1px solid rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sg-admin-kpi-card:hover .sg-admin-kpi-icon {
+    color: rgba(255, 255, 255, 0.06);
+    background-color: rgba(255, 255, 255, 0.01);
+}
+
+/* Pending KYC Card Custom elements */
+.sg-admin-kyc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 16px;
+}
+
+.sg-admin-kyc-header .sg-admin-kpi-value {
+    margin: 0;
+}
+
+.sg-admin-btn-review {
+    background-color: transparent;
+    border: 1px solid var(--admin-peach-border);
+    color: var(--admin-peach);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sg-admin-btn-review:hover {
+    background-color: var(--admin-peach);
+    color: #090B10;
+    box-shadow: 0 0 10px rgba(255, 142, 142, 0.3);
+}
+
+.sg-admin-progress-container {
+    width: 100%;
+    height: 6px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.sg-admin-progress-bar {
+    height: 100%;
+    background-color: var(--admin-peach);
+    border-radius: 3px;
+    box-shadow: 0 0 8px rgba(255, 142, 142, 0.5);
+}
+
+/* --- Row 2: Charts and Alerts Grid --- */
+.sg-admin-main-grid {
+    display: grid;
+    grid-template-columns: 1.8fr 1.2fr;
+    gap: 20px;
+}
+
+@media (max-width: 992px) {
+    .sg-admin-main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.sg-admin-panel {
+    background-color: var(--admin-surface-card);
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.sg-admin-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.sg-admin-panel-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--admin-text);
+}
+
+/* Volume indicator */
+.sg-admin-volume-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--admin-text-muted);
+    text-transform: uppercase;
+}
+
+.sg-admin-volume-indicator .sg-indicator-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: var(--admin-accent);
+    box-shadow: 0 0 6px var(--admin-accent);
+}
+
+/* --- Dynamic SVG Bar Chart Styling --- */
+.sg-admin-chart-wrapper {
+    width: 100%;
+    height: 280px;
+    position: relative;
+}
+
+.sg-chart-grid-line {
+    stroke: rgba(255, 255, 255, 0.03);
+    stroke-dasharray: 4 4;
+}
+
+.sg-chart-bar-rect {
+    fill: var(--admin-accent);
+    fill-opacity: 0.35;
+    stroke: var(--admin-accent);
+    stroke-width: 1.5px;
+    cursor: pointer;
+}
+
+.sg-chart-text-x {
+    fill: var(--admin-text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    text-anchor: middle;
+}
+
+/* System Alerts Card list styling */
+.sg-admin-alerts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sg-admin-alert-item {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.sg-admin-alert-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sg-admin-alert-icon.is-success {
+    background-color: rgba(0, 255, 163, 0.05);
+    border: 1px solid rgba(0, 255, 163, 0.15);
+    color: var(--admin-success);
+}
+
+.sg-admin-alert-icon.is-warning {
+    background-color: rgba(255, 184, 0, 0.05);
+    border: 1px solid rgba(255, 184, 0, 0.15);
+    color: var(--admin-warning);
+}
+
+.sg-admin-alert-icon.is-info {
+    background-color: rgba(0, 229, 255, 0.05);
+    border: 1px solid rgba(0, 229, 255, 0.15);
+    color: #00e5ff;
+}
+
+.sg-admin-alert-icon iconify-icon {
+    font-size: 16px;
+}
+
+.sg-admin-alert-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sg-admin-alert-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #E2E8F0;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.sg-admin-alert-time {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--admin-text-muted);
+}
+
+/* --- Row 3: Priority Action Queue Table --- */
+.sg-admin-table-panel {
+    background-color: var(--admin-surface-card);
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.sg-admin-table-header-row {
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.sg-admin-table-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.sg-admin-btn-export {
+    background-color: transparent;
+    border: 1px solid rgba(217, 255, 0, 0.2);
+    color: var(--admin-accent);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sg-admin-btn-export:hover {
+    background-color: rgba(217, 255, 0, 0.08);
+    border-color: var(--admin-accent);
+}
+
+.sg-admin-table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.sg-admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.sg-admin-table th {
+    padding: 16px 24px;
+    color: var(--admin-text-muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.sg-admin-table td {
+    padding: 18px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-bottom: 1px solid var(--admin-border);
+    vertical-align: middle;
+}
+
+.sg-admin-table tr:last-child td {
+    border-bottom: none;
+}
+
+.sg-admin-table tr {
+    transition: background-color 0.2s ease;
+}
+
+.sg-admin-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.01);
+}
+
+.sg-admin-timestamp {
+    color: var(--admin-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Badges for Case Type */
+.sg-admin-badge-case {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.sg-admin-badge-case.is-kyc {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #CBD5E1;
+}
+
+.sg-admin-badge-case.is-dispute {
+    background-color: var(--admin-peach-bg);
+    border-color: var(--admin-peach-border);
+    color: var(--admin-peach);
+}
+
+.sg-admin-badge-case.is-audit {
+    background-color: rgba(217, 255, 0, 0.03);
+    border-color: rgba(217, 255, 0, 0.15);
+    color: var(--admin-accent-muted);
+}
+
+/* User avatar and name inside description */
+.sg-admin-user-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sg-admin-user-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.sg-admin-user-name {
+    color: #E2E8F0;
+    font-weight: 600;
+}
+
+.sg-admin-case-desc {
+    color: #E2E8F0;
+    font-weight: 600;
+}
+
+/* Table Pill Action Buttons */
+.sg-admin-btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sg-admin-btn-action.is-green {
+    background-color: var(--admin-accent);
+    color: #090B10;
+}
+
+.sg-admin-btn-action.is-green:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 12px rgba(217, 255, 0, 0.4);
+}
+
+.sg-admin-btn-action.is-peach {
+    background-color: var(--admin-peach);
+    color: #090B10;
+}
+
+.sg-admin-btn-action.is-peach:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 12px rgba(255, 142, 142, 0.4);
+}
+
+.sg-admin-btn-more {
+    background: transparent;
+    border: none;
+    color: var(--admin-text-muted);
+    font-size: 20px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sg-admin-btn-more:hover {
+    color: var(--admin-text);
+}
+
+/* --- Global Transaction Ledger Page Additional Styles --- */
+
+.sg-admin-status-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background-color: rgba(0, 229, 255, 0.05);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    border-radius: 20px;
+    color: #00e5ff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.sg-admin-status-live .sg-status-dot-live {
+    width: 8px;
+    height: 8px;
+    background-color: #00e5ff;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #00e5ff;
+    animation: sg-pulse-live 2s infinite;
+}
+
+@keyframes sg-pulse-live {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.5);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(0, 229, 255, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(0, 229, 255, 0);
+    }
+}
+
+.sg-admin-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+    background-color: transparent;
+}
+
+.sg-admin-filter-input-group {
+    display: flex;
+    align-items: center;
+    background-color: var(--admin-surface-card);
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    padding: 0 16px;
+    height: 48px;
+    box-sizing: border-box;
+    flex: 1;
+    min-width: 240px;
+}
+
+.sg-admin-filter-input-group iconify-icon {
+    color: var(--admin-text-muted);
+    font-size: 18px;
+    margin-right: 12px;
+}
+
+.sg-admin-filter-input-group input {
+    background: transparent;
+    border: none;
+    color: var(--admin-text);
+    font-size: 14px;
+    width: 100%;
+    outline: none;
+}
+
+.sg-admin-filter-select {
+    background-color: var(--admin-surface-card);
+    border: 1px solid var(--admin-border);
+    color: var(--admin-text-muted);
+    border-radius: 8px;
+    padding: 0 16px;
+    height: 48px;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    min-width: 180px;
+    box-sizing: border-box;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238E95A3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 14px;
+    padding-right: 40px;
+}
+
+.sg-admin-filter-select:focus {
+    border-color: var(--admin-border-focus);
+    color: var(--admin-text);
+}
+
+.sg-admin-filter-date {
+    background-color: var(--admin-surface-card);
+    border: 1px solid var(--admin-border);
+    color: var(--admin-text-muted);
+    border-radius: 8px;
+    padding: 0 16px;
+    height: 48px;
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+    min-width: 150px;
+}
+
+.sg-admin-filter-date:focus {
+    border-color: var(--admin-border-focus);
+    color: var(--admin-text);
+}
+
+.sg-admin-filter-date::-webkit-calendar-picker-indicator {
+    filter: invert(0.6);
+    cursor: pointer;
+}
+
+.sg-admin-btn-export-csv {
+    background-color: transparent;
+    border: 1px solid rgba(217, 255, 0, 0.3);
+    color: var(--admin-accent);
+    height: 48px;
+    padding: 0 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    text-transform: uppercase;
+}
+
+.sg-admin-btn-export-csv:hover {
+    background-color: rgba(217, 255, 0, 0.08);
+    border-color: var(--admin-accent);
+}
+
+.sg-admin-btn-apply-filter {
+    background-color: var(--admin-accent);
+    border: none;
+    color: #090B10;
+    height: 48px;
+    padding: 0 24px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    text-transform: uppercase;
+}
+
+.sg-admin-btn-apply-filter:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 15px rgba(217, 255, 0, 0.4);
+}
+
+/* Custom Status Badges with Dots */
+.sg-badge-status-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+}
+
+.sg-badge-status-dot::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Payment Statuses */
+.sg-badge-status-dot.is-paid {
+    background-color: rgba(0, 255, 163, 0.04);
+    border-color: rgba(0, 255, 163, 0.2);
+    color: var(--admin-success);
+}
+
+.sg-badge-status-dot.is-paid::before {
+    background-color: var(--admin-success);
+    box-shadow: 0 0 6px var(--admin-success);
+}
+
+.sg-badge-status-dot.is-failed {
+    background-color: rgba(255, 76, 76, 0.04);
+    border-color: rgba(255, 76, 76, 0.2);
+    color: var(--admin-danger);
+}
+
+.sg-badge-status-dot.is-failed::before {
+    background-color: var(--admin-danger);
+    box-shadow: 0 0 6px var(--admin-danger);
+}
+
+.sg-badge-status-dot.is-pending {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: var(--admin-text-muted);
+}
+
+.sg-badge-status-dot.is-pending::before {
+    background-color: var(--admin-text-muted);
+}
+
+/* Escrow Statuses */
+.sg-badge-status-dot.is-released {
+    background-color: rgba(217, 255, 0, 0.04);
+    border-color: rgba(217, 255, 0, 0.2);
+    color: var(--admin-accent);
+}
+
+.sg-badge-status-dot.is-released::before {
+    background-color: var(--admin-accent);
+    box-shadow: 0 0 6px var(--admin-accent);
+}
+
+.sg-badge-status-dot.is-held {
+    background-color: rgba(0, 229, 255, 0.04);
+    border-color: rgba(0, 229, 255, 0.2);
+    color: #00e5ff;
+}
+
+.sg-badge-status-dot.is-held::before {
+    background-color: #00e5ff;
+    box-shadow: 0 0 6px #00e5ff;
+}
+
+.sg-badge-status-dot.is-na {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.sg-badge-status-dot.is-na::before {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Force Sync Action Button */
+.sg-admin-btn-sync {
+    background-color: rgba(0, 229, 255, 0.05);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    color: #00e5ff;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+}
+
+.sg-admin-btn-sync:hover {
+    background-color: #00e5ff;
+    color: #090B10;
+    border-color: #00e5ff;
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+}
+
+.sg-admin-btn-sync iconify-icon {
+    font-size: 14px;
+}
+
+/* Entities display styles */
+.sg-admin-entity-link {
+    color: var(--admin-accent);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.sg-admin-entity-link:hover {
+    color: #c2e600;
+    text-decoration: underline;
+}
+
+.sg-admin-entity-arrow {
+    color: var(--admin-text-muted);
+    margin: 0 6px;
+    font-weight: 600;
+}
+
+.sg-admin-entity-merchant {
+    color: var(--admin-text-muted);
+    font-weight: 500;
+}
+
+/* Amount styling */
+.sg-admin-amount-fee {
+    font-variant-numeric: tabular-nums;
+}
+
+.sg-admin-amount-fee .sg-fee-text {
+    font-size: 11px;
+    font-weight: 700;
+    color: #00e5ff;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Pagination Footer */
+.sg-admin-table-footer-row {
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--admin-border);
+}
+
+.sg-admin-record-count {
+    color: var(--admin-text-muted);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.sg-admin-pagination {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sg-admin-page-btn {
+    background-color: transparent;
+    border: 1px solid var(--admin-border);
+    color: var(--admin-text-muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.sg-admin-page-btn:hover:not(.is-disabled) {
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--admin-text);
+}
+
+.sg-admin-page-btn.is-active {
+    background-color: var(--admin-accent);
+    border-color: var(--admin-accent);
+    color: #090B10;
+    box-shadow: 0 0 10px rgba(217, 255, 0, 0.3);
+}
+
+.sg-admin-page-btn.is-disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Disputes Center Styles - Institutional Dark Mode
+   ========================================================================== */
+
+.sg-disputes-layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+    align-items: start;
+    width: 100%;
+}
+
+@media (max-width: 1100px) {
+    .sg-disputes-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Left Sidebar - Cases List */
+.sg-disputes-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sg-disputes-search-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.sg-disputes-search-wrapper iconify-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--admin-text-muted);
+    font-size: 20px;
+}
+
+.sg-disputes-search-input {
+    width: 100%;
+    background-color: var(--admin-surface-card);
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    padding: 14px 16px 14px 48px;
+    color: var(--admin-text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.sg-disputes-search-input:focus {
+    border-color: var(--admin-border-focus);
+    box-shadow: 0 0 8px rgba(217, 255, 0, 0.1);
+}
+
+/* Case Cards */
+.sg-disputes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.sg-disputes-list::-webkit-scrollbar {
+    width: 4px;
+}
+.sg-disputes-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+.sg-disputes-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+}
+
+.sg-dispute-card {
+    background-color: var(--admin-surface-card);
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-sizing: border-box;
+}
+
+.sg-dispute-card:hover {
+    background-color: var(--admin-surface-hover);
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+}
+
+.sg-dispute-card.is-active {
+    background-color: var(--admin-surface-hover);
+    border-color: var(--admin-accent);
+    box-shadow: 0 0 16px rgba(217, 255, 0, 0.08), inset 0 0 12px rgba(217, 255, 0, 0.02);
+}
+
+/* Neon left border for active cards */
+.sg-dispute-card.is-active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 15%;
+    height: 70%;
+    width: 3px;
+    background-color: var(--admin-accent);
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 8px var(--admin-accent);
+}
+
+.sg-dispute-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sg-dispute-badge {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.sg-dispute-badge.is-frozen {
+    background-color: rgba(217, 255, 0, 0.12);
+    color: var(--admin-accent);
+    border: 1px solid rgba(217, 255, 0, 0.2);
+}
+
+.sg-dispute-badge.is-pending {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: var(--admin-text-muted);
+    border: 1px solid var(--admin-border);
+}
+
+.sg-dispute-badge.is-resolved {
+    background-color: rgba(0, 255, 163, 0.1);
+    color: var(--admin-success);
+    border: 1px solid rgba(0, 255, 163, 0.2);
+}
+
+.sg-dispute-amount {
+    color: var(--admin-text);
+    font-size: 15px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.sg-dispute-card-body h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--admin-text);
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+}
+
+.sg-dispute-card-body p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--admin-text-muted);
+    font-weight: 500;
+}
+
+.sg-dispute-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--admin-text-muted);
+}
+
+.sg-dispute-card-footer span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Right Panel - Dispute Details */
+.sg-dispute-detail-view {
+    background-color: var(--admin-surface-card);
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    padding: 32px;
+    min-height: 500px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    position: relative;
+}
+
+.sg-dispute-detail-view.is-loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.sg-dispute-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--admin-border);
+    padding-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.sg-dispute-dossier-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sg-dispute-dossier-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--admin-text-muted);
+    text-transform: uppercase;
+}
+
+.sg-dispute-dossier-title {
+    font-size: 24px;
+    font-weight: 800;
+    margin: 0;
+    color: var(--admin-text);
+    letter-spacing: -0.03em;
+}
+
+.sg-dispute-escrow-pool {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sg-dispute-escrow-value {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--admin-accent);
+    letter-spacing: -0.02em;
+    text-shadow: 0 0 15px rgba(217, 255, 0, 0.2);
+}
+
+/* Claims Section */
+.sg-claim-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sg-claim-block-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sg-claim-block-title.is-buyer {
+    color: var(--admin-peach);
+}
+
+.sg-claim-block-title.is-seller {
+    color: var(--admin-warning);
+}
+
+.sg-claim-block-title iconify-icon {
+    font-size: 16px;
+}
+
+.sg-claim-content-box {
+    background-color: #0b0d13;
+    border-radius: 8px;
+    padding: 18px 20px;
+    box-sizing: border-box;
+}
+
+.sg-claim-content-box.is-buyer {
+    border: 1px solid rgba(255, 142, 142, 0.12);
+}
+
+.sg-claim-content-box.is-seller {
+    border: 1px solid rgba(255, 184, 0, 0.12);
+}
+
+.sg-claim-text {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #E2E8F0;
+    font-style: italic;
+    font-weight: 500;
+}
+
+.sg-evidence-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--admin-border);
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: var(--admin-text);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.2s ease;
+}
+
+.sg-evidence-link-btn:hover {
+    background-color: var(--admin-surface);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.sg-evidence-link-btn iconify-icon {
+    font-size: 14px;
+}
+
+/* System Metadata Grid */
+.sg-meta-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sg-meta-section-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--admin-text);
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.sg-metadata-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 768px) {
+    .sg-metadata-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.sg-metadata-card {
+    background-color: #0b0d13;
+    border: 1px solid var(--admin-border);
+    border-radius: 6px;
+    padding: 16px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sg-metadata-card-label {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--admin-text-muted);
+    text-transform: uppercase;
+}
+
+.sg-metadata-card-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--admin-text);
+}
+
+.sg-metadata-card-value.is-high {
+    color: var(--admin-success);
+}
+
+/* Escrow Override Judge Section */
+.sg-override-section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border-top: 1px solid var(--admin-border);
+    padding-top: 24px;
+}
+
+.sg-override-notice {
+    display: flex;
+    gap: 12px;
+    background-color: rgba(217, 255, 0, 0.02);
+    border: 1px solid rgba(217, 255, 0, 0.08);
+    border-radius: 6px;
+    padding: 16px;
+    color: var(--admin-text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.sg-override-notice iconify-icon {
+    font-size: 18px;
+    color: var(--admin-accent);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.sg-override-notice-strong {
+    color: var(--admin-text);
+    font-weight: 700;
+}
+
+.sg-decision-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 600px) {
+    .sg-decision-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+.sg-decision-card-btn {
+    background-color: #0b0d13;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    padding: 24px;
+    cursor: pointer;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-sizing: border-box;
+    outline: none;
+    font-family: inherit;
+}
+
+.sg-decision-card-btn iconify-icon {
+    font-size: 24px;
+    padding: 12px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--admin-border);
+    transition: all 0.25s ease;
+}
+
+.sg-decision-card-btn-title {
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+}
+
+.sg-decision-card-btn-desc {
+    font-size: 12px;
+    color: var(--admin-text-muted);
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* Style for Refund Card (Left) */
+.sg-decision-card-btn.is-refund:hover {
+    border-color: rgba(255, 76, 76, 0.35);
+    background-color: rgba(255, 76, 76, 0.01);
+    box-shadow: 0 4px 16px rgba(255, 76, 76, 0.04);
+}
+
+.sg-decision-card-btn.is-refund:hover iconify-icon {
+    color: var(--admin-danger);
+    background-color: rgba(255, 76, 76, 0.05);
+    border-color: rgba(255, 76, 76, 0.15);
+}
+
+.sg-decision-card-btn.is-refund .sg-decision-card-btn-title {
+    color: var(--admin-peach);
+}
+
+/* Style for Release Card (Right, Selected by default in mockup) */
+.sg-decision-card-btn.is-release {
+    border-color: var(--admin-accent);
+    box-shadow: 0 0 20px rgba(217, 255, 0, 0.08), inset 0 0 10px rgba(217, 255, 0, 0.02);
+}
+
+.sg-decision-card-btn.is-release iconify-icon {
+    color: var(--admin-accent);
+    background-color: rgba(217, 255, 0, 0.05);
+    border-color: rgba(217, 255, 0, 0.2);
+}
+
+.sg-decision-card-btn.is-release .sg-decision-card-btn-title {
+    color: var(--admin-accent);
+}
+
+.sg-decision-card-btn.is-release:hover {
+    box-shadow: 0 0 24px rgba(217, 255, 0, 0.12), inset 0 0 12px rgba(217, 255, 0, 0.03);
+    transform: translateY(-1px);
+}
+
+/* Toast Notification Styles */
+.sg-toast-container {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.sg-toast {
+    background-color: var(--admin-surface-card);
+    border: 1px solid var(--admin-border);
+    border-left: 4px solid var(--admin-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+    min-width: 320px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--admin-text);
+    font-size: 14px;
+    font-weight: 600;
+    animation: sg-toast-slide-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.sg-toast.is-danger {
+    border-left-color: var(--admin-danger);
+}
+
+.sg-toast.is-success {
+    border-left-color: var(--admin-success);
+}
+
+.sg-toast iconify-icon {
+    font-size: 20px;
+}
+
+.sg-toast.is-danger iconify-icon {
+    color: var(--admin-danger);
+}
+
+.sg-toast.is-success iconify-icon {
+    color: var(--admin-success);
+}
+
+@keyframes sg-toast-slide-in {
+    from {
+        transform: translateX(100%) translateY(0);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0) translateY(0);
+        opacity: 1;
+    }
+}
+
+.sg-toast.is-fade-out {
+    animation: sg-toast-fade-out 0.3s ease forwards;
+}
+
+@keyframes sg-toast-fade-out {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(20px);
+        opacity: 0;
+    }
+}
+
+/* ==========================================================================
+   KYC Identity Verification Center Styles - Institutional Dark Mode
+   ========================================================================== */
+
+.sg-kyc-layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+    align-items: start;
+    width: 100%;
+}
+
+@media (max-width: 1100px) {
+    .sg-kyc-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Left Sidebar - Submissions List */
+.sg-kyc-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background-color: var(--admin-surface-card);
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.sg-kyc-sidebar-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--admin-border);
+    padding-bottom: 16px;
+    margin-bottom: 8px;
+}
+
+.sg-kyc-sidebar-title {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--admin-text-muted);
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.sg-kyc-sidebar-filter {
+    background: transparent;
+    border: none;
+    color: var(--admin-text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+}
+
+.sg-kyc-sidebar-filter:hover {
+    color: var(--admin-text);
+}
+
+.sg-kyc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 55vh;
+    overflow-y: auto;
+}
+
+.sg-kyc-list::-webkit-scrollbar {
+    width: 4px;
+}
+.sg-kyc-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+.sg-kyc-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+}
+
+.sg-kyc-card {
+    background-color: #0b0d13;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-sizing: border-box;
+}
+
+.sg-kyc-card:hover {
+    background-color: var(--admin-surface-hover);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.sg-kyc-card.is-active {
+    background-color: var(--admin-surface-hover);
+    border-color: var(--admin-accent);
+    box-shadow: 0 0 16px rgba(217, 255, 0, 0.08);
+}
+
+.sg-kyc-card.is-active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 15%;
+    height: 70%;
+    width: 3px;
+    background-color: var(--admin-accent);
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 8px var(--admin-accent);
+}
+
+.sg-kyc-card-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--admin-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--admin-text-muted);
+    font-size: 18px;
+    flex-shrink: 0;
+    transition: all 0.25s ease;
+}
+
+.sg-kyc-card.is-active .sg-kyc-card-avatar {
+    color: var(--admin-accent);
+    border-color: var(--admin-accent-muted);
+    background-color: rgba(217, 255, 0, 0.03);
+}
+
+.sg-kyc-card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sg-kyc-card-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--admin-text);
+    margin: 0;
+}
+
+.sg-kyc-card-time {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--admin-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.sg-kyc-card-badge {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.sg-kyc-card-badge.is-pending {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: var(--admin-text-muted);
+    border: 1px solid var(--admin-border);
+}
+
+.sg-kyc-card-badge.is-approved {
+    background-color: rgba(0, 255, 163, 0.1);
+    color: var(--admin-success);
+    border: 1px solid rgba(0, 255, 163, 0.2);
+}
+
+.sg-kyc-card-badge.is-rejected {
+    background-color: var(--admin-danger-bg);
+    color: var(--admin-danger);
+    border: 1px solid var(--admin-danger-border);
+}
+
+.sg-kyc-archive-btn {
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--admin-border);
+    color: var(--admin-text);
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    transition: all 0.2s ease;
+    margin-top: 12px;
+}
+
+.sg-kyc-archive-btn:hover {
+    background-color: var(--admin-surface);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Right Panel - Investigation Area */
+.sg-kyc-investigation-view {
+    background-color: var(--admin-surface-card);
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    padding: 32px;
+    min-height: 500px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    position: relative;
+}
+
+.sg-kyc-investigation-view.is-loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.sg-kyc-investigation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--admin-border);
+    padding-bottom: 20px;
+}
+
+.sg-kyc-investigation-title-box {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sg-kyc-investigation-title-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--admin-text-muted);
+    text-transform: uppercase;
+}
+
+.sg-kyc-investigation-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--admin-text);
+}
+
+.sg-kyc-investigation-title span {
+    color: var(--admin-accent);
+}
+
+.sg-kyc-header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.sg-kyc-header-action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--admin-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--admin-text-muted);
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s ease;
+}
+
+.sg-kyc-header-action-btn:hover {
+    color: var(--admin-text);
+    background-color: var(--admin-surface);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Image Panels */
+.sg-kyc-image-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .sg-kyc-image-panels {
+        grid-template-columns: 1fr;
+    }
+}
+
+.sg-kyc-image-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sg-kyc-image-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: var(--admin-text-muted);
+    text-transform: uppercase;
+}
+
+.sg-kyc-image-container {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--admin-border);
+    background-color: #0b0d13;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    transition: border-color 0.25s ease;
+}
+
+.sg-kyc-image-container:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.sg-kyc-image {
+    width: 100%;
+    height: 190px;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+}
+
+.sg-kyc-image-container:hover .sg-kyc-image {
+    transform: scale(1.02);
+}
+
+/* Application Data Field Table */
+.sg-kyc-data-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sg-kyc-data-section-title {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--admin-text-muted);
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.sg-kyc-data-box {
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    background-color: #0b0d13;
+    overflow: hidden;
+}
+
+.sg-kyc-data-row {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    border-bottom: 1px solid var(--admin-border);
+    align-items: center;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .sg-kyc-data-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+        padding: 16px 20px;
+        align-items: start;
+    }
+}
+
+.sg-kyc-data-row:last-child {
+    border-bottom: none;
+}
+
+.sg-kyc-data-label {
+    padding: 18px 20px;
+    color: var(--admin-text-muted);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .sg-kyc-data-label {
+        padding: 0;
+    }
+}
+
+.sg-kyc-data-value {
+    padding: 18px 20px;
+    color: var(--admin-text);
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+@media (max-width: 768px) {
+    .sg-kyc-data-value {
+        padding: 0;
+    }
+}
+
+.sg-kyc-badge-decrypted {
+    background-color: rgba(217, 255, 0, 0.12);
+    color: var(--admin-accent);
+    border: 1px solid rgba(217, 255, 0, 0.2);
+    font-size: 9px;
+    font-weight: 800;
+    padding: 3px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* Action Buttons */
+.sg-kyc-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+@media (max-width: 600px) {
+    .sg-kyc-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+.sg-kyc-btn-reject {
+    background-color: transparent;
+    border: 1px solid var(--admin-danger-border);
+    color: var(--admin-danger);
+    border-radius: 8px;
+    padding: 18px;
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    outline: none;
+    font-family: inherit;
+    box-shadow: 0 4px 12px rgba(255, 76, 76, 0.02);
+}
+
+.sg-kyc-btn-reject:hover {
+    background-color: var(--admin-danger-bg);
+    border-color: var(--admin-danger);
+    box-shadow: 0 0 15px rgba(255, 76, 76, 0.1);
+}
+
+.sg-kyc-btn-approve {
+    background-color: var(--admin-accent);
+    border: none;
+    color: #090B10;
+    border-radius: 8px;
+    padding: 18px;
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    font-family: inherit;
+    box-shadow: 0 4px 12px rgba(217, 255, 0, 0.1);
+}
+
+.sg-kyc-btn-approve:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 20px rgba(217, 255, 0, 0.35);
+}
+
+
