@@ -4,22 +4,14 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'admin_overview';
 ?>
 <aside class="sg-admin-sidebar">
     <div class="sg-admin-sidebar-header">
-        <a href="index.php?page=admin_overview" class="sg-admin-brand">
-            <iconify-icon icon="ph:shield-chevron-fill" style="color: var(--admin-accent); font-size: 28px;"></iconify-icon>
-            <span>SafeGate</span>
-        </a>
-        <span class="sg-admin-badge">Admin</span>
+        <h2>Admin Control</h2>
+        <p>Level 4 Authorization</p>
     </div>
     
     <nav class="sg-admin-sidebar-menu">
         <a href="index.php?page=admin_overview" class="sg-admin-menu-item <?= ($page === 'admin_overview') ? 'is-active' : '' ?>">
             <iconify-icon icon="ph:squares-four-fill"></iconify-icon>
-            <span>Overview</span>
-        </a>
-        
-        <a href="index.php?page=admin_transactions" class="sg-admin-menu-item <?= ($page === 'admin_transactions') ? 'is-active' : '' ?>">
-            <iconify-icon icon="ph:bank-fill"></iconify-icon>
-            <span>Transactions</span>
+            <span>Dashboard</span>
         </a>
         
         <a href="index.php?page=admin_disputes" class="sg-admin-menu-item <?= ($page === 'admin_disputes') ? 'is-active' : '' ?>">
@@ -27,16 +19,29 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'admin_overview';
             <span>Disputes</span>
         </a>
         
+        <a href="index.php?page=admin_transactions" class="sg-admin-menu-item <?= ($page === 'admin_transactions') ? 'is-active' : '' ?>">
+            <iconify-icon icon="ph:bank-fill"></iconify-icon>
+            <span>Transactions</span>
+        </a>
+        
         <a href="index.php?page=admin_kyc" class="sg-admin-menu-item <?= ($page === 'admin_kyc') ? 'is-active' : '' ?>">
             <iconify-icon icon="ph:user-focus-fill"></iconify-icon>
-            <span>KYC Center</span>
+            <span>Identity Verification</span>
         </a>
     </nav>
     
     <div class="sg-admin-sidebar-footer">
-        <a href="index.php?page=home" class="sg-admin-logout-btn">
-            <iconify-icon icon="ph:sign-out-bold"></iconify-icon>
-            <span>Keluar Portal</span>
-        </a>
+        <button class="sg-admin-emergency-btn" onclick="triggerEmergencyLock()">
+            <iconify-icon icon="ph:lock-keyhole-fill"></iconify-icon>
+            <span>Emergency Lock</span>
+        </button>
     </div>
 </aside>
+
+<script>
+function triggerEmergencyLock() {
+    if (confirm("WARNING: You are about to initiate EMERGENCY SYSTEM LOCKDOWN. All smart contracts will freeze and transactions will be suspended. Proceed?")) {
+        alert("Emergency lock activated! All nodes transitioned to safe mode.");
+    }
+}
+</script>
