@@ -1,5 +1,6 @@
 <?php
-$page_title = "Register - SafeGate";
+$page_title = "Sign Up - SafeGate";
+$base_path = (strpos($_SERVER['SCRIPT_NAME'], 'views/') !== false) ? '../../' : '';
 ob_start();
 ?>
 <!-- Iconify -->
@@ -8,14 +9,14 @@ ob_start();
 <div class="container-fluid p-0 min-vh-100 d-flex flex-column flex-lg-row-reverse overflow-hidden"
     style="background-color: var(--safegate-bg);">
 
-    <!-- Right Column: Form -->
+    <!-- Right Column: Form (Now on right due to flex-lg-row-reverse) -->
     <div id="auth-form"
         class="col-12 col-lg-6 d-flex flex-column justify-content-center px-4 px-md-5 py-5 position-relative z-2"
         style="transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.6s;">
         <div class="w-100 mx-auto" style="max-width: 420px;">
 
             <!-- Brand -->
-            <div class="d-flex align-items-center mb-4 gap-3">
+            <a href="<?= $base_path ?>index.php?page=home" class="d-flex align-items-center mb-4 gap-3 text-decoration-none">
                 <div class="safegate-logo-box" style="width: 38px; height: 38px; border-radius: 10px;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#090B10" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
@@ -23,7 +24,7 @@ ob_start();
                     </svg>
                 </div>
                 <h3 class="mb-0 fw-bold text-white fs-4" style="letter-spacing: -0.04em; font-family: 'Inter', sans-serif;">SafeGate</h3>
-            </div>
+            </a>
 
             <!-- Header -->
             <h1 class="fw-bolder text-white mb-2" style="font-size: 2.75rem; letter-spacing: -0.04em;">Initialize Access
@@ -33,7 +34,7 @@ ob_start();
 
             <!-- Tabs -->
             <div class="d-flex rounded-3 p-1 mb-4" style="background-color: rgba(255,255,255,0.05);">
-                <button type="button" onclick="triggerAuthTransition('index.php?page=login')"
+                <button type="button" onclick="triggerAuthTransition('<?= $base_path ?>index.php?page=login')"
                     class="btn text-white flex-grow-1 rounded-3 py-2 fw-bold opacity-75 hover-white"
                     style="background: transparent; border: none; transition: 0.3s;"
                     onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">Login</button>
@@ -42,7 +43,7 @@ ob_start();
             </div>
 
             <!-- Form -->
-            <form action="index.php?page=home" method="POST">
+            <form action="<?= $base_path ?>index.php?page=home" method="POST">
 
                 <div class="mb-2 d-flex align-items-center rounded-3 input-group-custom"
                     style="background-color: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.05); transition: 0.3s;">
@@ -221,6 +222,8 @@ ob_start();
         </div>
     </div>
 </div>
+
+
 
 <?php
 $content = ob_get_clean();

@@ -1,0 +1,288 @@
+<?php
+// 1. Definisikan judul halaman
+$page_title = "Pilih Metode Pembayaran - SafeGate";
+
+// 2. Mulai menangkap output konten (Output Buffering)
+ob_start();
+
+// Retrieve values from GET with fallback matching Figma mockup
+$title = isset($_GET['title']) ? htmlspecialchars($_GET['title']) : 'Midnight Symphony Tour';
+$image = isset($_GET['image']) ? htmlspecialchars($_GET['image']) : 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&q=80&w=800';
+$date = isset($_GET['date']) ? htmlspecialchars($_GET['date']) : '15 Agustus 2024, 20:00 WIB';
+$location = isset($_GET['location']) ? htmlspecialchars($_GET['location']) : 'Gelora Bung Karno, Jakarta';
+$seksi = isset($_GET['seksi']) ? htmlspecialchars($_GET['seksi']) : '102';
+$baris = isset($_GET['baris']) ? htmlspecialchars($_GET['baris']) : 'KK';
+$kursi = isset($_GET['kursi']) ? htmlspecialchars($_GET['kursi']) : '14';
+
+// Price parameters
+$raw_price = isset($_GET['price']) ? $_GET['price'] : '180.000';
+
+// Same parsing logic as detail_tiket.php to ensure matching values and currency formats
+$is_usdc = false;
+$price_val = 180000;
+$currency_suffix = "";
+$currency_prefix = "Rp. ";
+
+$clean_price = str_replace(['Rp.', 'Rp', ' ', ','], '', $raw_price);
+if (strpos($clean_price, '.') !== false) {
+    $parts = explode('.', $clean_price);
+    if (count($parts) == 2 && strlen($parts[1]) == 3) {
+        $price_val = (float)str_replace('.', '', $clean_price);
+    } else {
+        $price_val = (float)$clean_price;
+        if ($price_val < 1000) {
+            $price_val = $price_val * 1000;
+        }
+    }
+} else {
+    $price_val = (float)$clean_price;
+}
+
+// Calculate dynamic breakdown
+$service_fee = round($price_val * 0.25);
+$escrow_insurance = round($price_val * 0.11);
+$total_price = $price_val + $service_fee + $escrow_insurance;
+
+$disp_price = $currency_prefix . number_format($price_val, 0, ',', '.');
+$disp_service = $currency_prefix . number_format($service_fee, 0, ',', '.');
+$disp_escrow = $currency_prefix . number_format($escrow_insurance, 0, ',', '.');
+$disp_total = $currency_prefix . number_format($total_price, 0, ',', '.') . " IDR";
+?>
+
+<style>
+.sg-payment-selected {
+    border: 2px solid var(--safegate-neon) !important;
+    background: rgba(217, 255, 0, 0.04) !important;
+    box-shadow: 0 0 25px rgba(217, 255, 0, 0.1) !important;
+}
+.sg-payment-unselected {
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: rgba(18, 22, 31, 0.4) !important;
+}
+.sg-payment-unselected:hover {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    background: rgba(18, 22, 31, 0.6) !important;
+    transform: translateY(-2px);
+}
+</style>
+
+<!-- Payment Method Main Content -->
+<section class="container mx-auto py-5" style="max-width: 1200px; padding-left: 1.5rem; padding-right: 1.5rem; margin-top: 2rem; margin-bottom: 5rem;">
+    <div class="row g-5">
+        
+        <!-- Left column: Payment options selection -->
+        <div class="col-12 col-lg-7 d-flex flex-column gap-3">
+            
+            <!-- Back to Event Arrow link -->
+            <div>
+                <a href="index.php?page=detail_tiket&title=<?= urlencode($title) ?>&price=<?= urlencode($raw_price) ?>&image=<?= urlencode($image) ?>&date=<?= urlencode($date) ?>&location=<?= urlencode($location) ?>&seksi=<?= urlencode($seksi) ?>&baris=<?= urlencode($baris) ?>&kursi=<?= urlencode($kursi) ?>" 
+                   class="text-safegate-text-sec hover-neon d-inline-flex align-items-center gap-2 mb-4 text-decoration-none fw-bold text-uppercase" 
+                   style="letter-spacing: 0.08em; font-size: 0.75rem;">
+                    <iconify-icon icon="ph:arrow-left-bold" class="fs-6"></iconify-icon> KEMBALI KE ACARA
+                </a>
+            </div>
+
+            <!-- Title -->
+            <h1 class="display-5 fw-bold text-white mb-2 letter-spacing-tight">Pilih Metode Pembayaran</h1>
+            
+            <!-- Security lock label -->
+            <div class="d-flex align-items-center gap-2 mb-4 text-safegate-text-sec">
+                <iconify-icon icon="ph:lock-keyhole-fill" class="text-safegate-success fs-5"></iconify-icon>
+                <span class="fs-7">Semua transaksi dienkripsi dengan standar AES-256.</span>
+            </div>
+
+            <!-- List of Modular Payment Options -->
+            <div class="sg-payment-options-list">
+                <?php
+                // 1. Bank Transfer
+                $id = 'bank';
+                $icon = 'ph:bank-bold';
+                $title_opt = 'Transfer Bank';
+                $subtitle_opt = 'Virtual Account (BCA, Mandiri, BNI, BRI)';
+                $selected = false;
+                include __DIR__ . '/../../components/payment_option_card.php';
+
+                // 2. E-Wallet
+                $id = 'wallet';
+                $icon = 'ph:wallet-bold';
+                $title_opt = 'E-Wallet';
+                $subtitle_opt = 'DANA, GoPay, OVO, ShopeePay';
+                $selected = false;
+                include __DIR__ . '/../../components/payment_option_card.php';
+
+                // 3. Crypto Wallet (Selected by default)
+                $id = 'crypto';
+                $icon = 'ph:currency-btc-bold';
+                $title_opt = 'Crypto Wallet';
+                $subtitle_opt = 'USDC Network (Polygon / Ethereum)';
+                $selected = true;
+                include __DIR__ . '/../../components/payment_option_card.php';
+                ?>
+            </div>
+
+        </div>
+
+        <!-- Right column: Order Summary Card -->
+        <div class="col-12 col-lg-5">
+            <div class="sticky-top" style="top: 6.5rem; z-index: 10;">
+                
+                <div class="sg-summary-card">
+                    <!-- Section Title -->
+                    <h3 class="sg-summary-title" style="letter-spacing: 0.1em; font-size: 0.75rem;">RINGKASAN PESANAN</h3>
+
+                    <!-- Event Name -->
+                    <h4 class="text-white fw-bold mb-3 fs-5 letter-spacing-tight"><?= $title ?></h4>
+
+                    <!-- Event Metadata -->
+                    <div class="d-flex flex-column gap-2 mb-4 text-safegate-text-sec" style="font-size: 0.8rem;">
+                        <div class="d-flex align-items-center gap-2">
+                            <iconify-icon icon="ph:calendar-blank" class="text-safegate-neon fs-6"></iconify-icon>
+                            <span><?= $date ?></span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <iconify-icon icon="ph:map-pin" class="text-safegate-neon fs-6"></iconify-icon>
+                            <span><?= $location ?></span>
+                        </div>
+                    </div>
+
+                    <!-- Seating Info Box Grid -->
+                    <div class="row g-2 py-3 my-4" style="border-top: 1px solid rgba(255, 255, 255, 0.05); border-bottom: 1px solid rgba(255, 255, 255, 0.05); background: rgba(255,255,255,0.01); border-radius: 0.5rem;">
+                        <div class="col-4 text-center">
+                            <div class="text-safegate-text-sec fw-bold" style="letter-spacing: 0.08em; font-size: 0.65rem;">SEKSI</div>
+                            <div class="fw-bold text-white fs-5 mt-1"><?= $seksi ?></div>
+                        </div>
+                        <div class="col-4 text-center" style="border-left: 1px solid rgba(255, 255, 255, 0.05); border-right: 1px solid rgba(255, 255, 255, 0.05);">
+                            <div class="text-safegate-text-sec fw-bold" style="letter-spacing: 0.08em; font-size: 0.65rem;">BARIS</div>
+                            <div class="fw-bold text-white fs-5 mt-1"><?= $baris ?></div>
+                        </div>
+                        <div class="col-4 text-center">
+                            <div class="text-safegate-text-sec fw-bold" style="letter-spacing: 0.08em; font-size: 0.65rem;">KURSI</div>
+                            <div class="fw-bold text-white fs-5 mt-1"><?= $kursi ?></div>
+                        </div>
+                    </div>
+
+                    <!-- Breakdown details -->
+                    <div class="sg-summary-row mt-4">
+                        <span class="sg-summary-label">Harga Tiket Dasar</span>
+                        <span class="sg-summary-value"><?= $disp_price ?></span>
+                    </div>
+                    <div class="sg-summary-row">
+                        <span class="sg-summary-label">Biaya Layanan</span>
+                        <span class="sg-summary-value"><?= $disp_service ?></span>
+                    </div>
+                    <div class="sg-summary-row mb-4">
+                        <span class="sg-summary-label">Asuransi Escrow *</span>
+                        <span class="sg-summary-value"><?= $disp_escrow ?></span>
+                    </div>
+
+                    <!-- Total amount box -->
+                    <div class="sg-total-box d-flex flex-column align-items-start gap-1">
+                        <span class="text-safegate-text-sec fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.1em;">TOTAL PEMBAYARAN</span>
+                        <div class="sg-total-price"><?= $disp_total ?></div>
+                    </div>
+
+                    <!-- Buyer protection escrow badge component -->
+                    <div class="mb-4">
+                        <?php
+                        $escrow_title = "Perlindungan Pembeli";
+                        $escrow_text = "Dana Anda ditahan dengan aman di brankas Escrow hingga 24 jam setelah acara selesai.";
+                        $is_small = false;
+                        include __DIR__ . '/../../components/escrow_badge.php';
+                        ?>
+                    </div>
+
+                    <!-- Action Button -->
+                    <button type="button" onclick="executePayment()" class="btn btn-safegate-neon w-100 rounded-pill fw-bold py-3 text-uppercase letter-spacing-wide sg-btn-glow" style="font-size: 0.9rem;">
+                        KONFIRMASI & BAYAR SEKARANG
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- Success Modal / Popup Overlay -->
+<div class="modal fade" id="paymentSuccessModal" tabindex="-1" aria-hidden="true" style="backdrop-filter: blur(8px);">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg text-center p-5" style="background: var(--safegate-surface); border: 1px solid rgba(255,255,255,0.06) !important;">
+            <div class="d-flex align-items-center justify-content-center mx-auto rounded-circle mb-4 bg-safegate-neon" style="width: 72px; height: 72px; box-shadow: 0 0 20px rgba(217, 255, 0, 0.45);">
+                <iconify-icon icon="ph:check-bold" class="text-black fs-1 fw-bold"></iconify-icon>
+            </div>
+            <h3 class="h3 fw-bold text-white mb-2">Pembayaran Sukses!</h3>
+            <p class="text-safegate-text-sec mb-4 fs-6" style="line-height: 1.5;">
+                Selamat! Tiket Anda telah berhasil dikunci dan ditransfer secara aman. Protokol Escrow SafeGate aktif melindungi dana Anda.
+            </p>
+            <a href="index.php?page=penjualan" class="btn btn-outline-safegate-neon rounded-pill px-5 fw-bold py-2.5">
+                KEMBALI KE MARKETPLACE
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    let activePaymentMethod = 'crypto';
+
+    // Interactive function to switch payment method selections
+    function selectPaymentMethod(id) {
+        activePaymentMethod = id;
+        const cards = document.querySelectorAll('.sg-payment-option-card');
+        
+        cards.forEach(card => {
+            const cardId = card.getAttribute('data-id');
+            const iconBox = card.querySelector('.sg-method-icon-box');
+            const radioIndicator = card.querySelector('.sg-radio-indicator');
+            
+            // Remove right checkmark if exists
+            const checkmark = card.querySelector('.rounded-circle');
+            if (checkmark) {
+                checkmark.remove();
+            }
+
+            if (cardId === id) {
+                card.classList.remove('sg-payment-unselected');
+                card.classList.add('sg-payment-selected');
+                if (iconBox) iconBox.style.color = 'var(--safegate-neon)';
+                if (radioIndicator) {
+                    radioIndicator.innerHTML = '<iconify-icon icon="ph:radio-button-fill" class="text-safegate-neon fs-4"></iconify-icon>';
+                }
+                
+                // Add right checkmark dynamically
+                const checkmarkDiv = document.createElement('div');
+                checkmarkDiv.className = 'd-flex align-items-center justify-content-center rounded-circle flex-shrink-0';
+                checkmarkDiv.style.width = '28px';
+                checkmarkDiv.style.height = '28px';
+                checkmarkDiv.style.background = 'rgba(217, 255, 0, 0.1)';
+                checkmarkDiv.style.border = '1px solid rgba(217, 255, 0, 0.3)';
+                checkmarkDiv.style.color = 'var(--safegate-neon)';
+                checkmarkDiv.innerHTML = '<iconify-icon icon="ph:check-bold" class="fs-6"></iconify-icon>';
+                card.appendChild(checkmarkDiv);
+            } else {
+                card.classList.remove('sg-payment-selected');
+                card.classList.add('sg-payment-unselected');
+                if (iconBox) iconBox.style.color = 'var(--safegate-text-sec)';
+                if (radioIndicator) {
+                    radioIndicator.innerHTML = '<iconify-icon icon="ph:circle-bold" class="text-safegate-text-sec fs-4"></iconify-icon>';
+                }
+            }
+        });
+    }
+
+    // Trigger success payment callback
+    function executePayment() {
+        const myModal = new bootstrap.Modal(document.getElementById('paymentSuccessModal'));
+        myModal.show();
+    }
+</script>
+
+<!-- Bootstrap JS dependency bundle for Modal support -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<?php
+// 3. Simpan konten ke dalam variabel
+$content = ob_get_clean();
+
+// 4. Panggil Layout Publik yang sudah berisi Header dan Footer
+require_once __DIR__ . '/../../layouts/public_layout.php';
+?>
