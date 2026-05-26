@@ -5,14 +5,21 @@
  * Jangan pernah meletakkan file ini sembarangan, harus di dalam folder /core/.
  */
 
-// 1. Variabel Konfigurasi (Sesuaikan dengan XAMPP/MAMP milikmu)
-$host = '127.0.0.1';        // Alamat server database (localhost)
-$dbname = 'safegate_db';      // NAMA DATABASE-MU (Pastikan kamu sudah buat ini di phpMyAdmin)
-$username = 'root';             // Username default XAMPP biasanya 'root'
-$password = '';                 // Password default XAMPP biasanya kosong (biarkan kosong)
+$host     = getenv('MYSQLHOST') ?: 'localhost'; 
+$user     = getenv('MYSQLUSER') ?: 'root';
+$password = getenv('MYSQLPASSWORD') ?: '';
+$dbname   = getenv('MYSQLDATABASE') ?: 'safegate_db'; // Pastikan di server bernilai 'safegate_db'
+$port     = getenv('MYSQLPORT') ?: '3306'; 
 
+try {
+    $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
+    $koneksi = new PDO($dsn, $user, $password);
+    $koneksi->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Koneksi gagal: " . $e->getMessage());
+}
 // 2. Data Source Name (DSN) - Menentukan jenis mesin yang dipakai (MySQL)
-$dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
+$dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
 
 // 3. Konfigurasi Keamanan & Error Handling (Wajib untuk aplikasi finansial)
 $options = [

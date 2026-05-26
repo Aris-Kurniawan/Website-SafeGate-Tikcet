@@ -2,6 +2,8 @@
 // Router / Entry Point Utama
 $page = isset($_GET['page']) ? $_GET['page'] : 'home';
 
+require_once 'config/database.php';
+
 $routes = [
     'home' => __DIR__ . '/views/public/home.php',
     'cara_kerja' => __DIR__ . '/views/public/cara_kerja.php',
