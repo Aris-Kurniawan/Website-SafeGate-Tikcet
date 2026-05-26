@@ -40,6 +40,27 @@ $raw_price = $listing ? (string) ($listing['current_highest_bid'] ?: $listing['s
 $reserve_price = $listing ? (int) ($listing['reserve_price'] ?? 0) : 0;
 $current_bid_value = $listing ? (int) ($listing['current_highest_bid'] ?: $listing['starting_bid']) : 0;
 $reserve_met = !$listing || $reserve_price <= 0 || $current_bid_value >= $reserve_price;
+$current_user_id = sg_current_user_id();
+$is_own_listing = $listing && $current_user_id && (int) $listing['seller_id'] === (int) $current_user_id;
+
+if ($is_own_listing) {
+?>
+<section class="container mx-auto py-5" style="max-width: 900px; padding-left: 1.5rem; padding-right: 1.5rem; margin-top: 4rem; margin-bottom: 5rem;">
+    <div class="sg-glass rounded-4 p-5 text-center">
+        <iconify-icon icon="ph:storefront-bold" class="text-safegate-neon mb-3" style="font-size: 3rem;"></iconify-icon>
+        <h1 class="h3 fw-bold text-white mb-2">Ini Listing Milik Anda</h1>
+        <p class="text-safegate-text-sec mb-4">Tiket yang Anda jual tidak bisa dibeli dari akun sendiri. Kelola listing melalui dashboard seller.</p>
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+            <a href="index.php?page=active_listings" class="btn btn-safegate-neon rounded-pill fw-bold px-4">Kelola Listing</a>
+            <a href="index.php?page=penjualan" class="btn btn-outline-safegate-neon rounded-pill fw-bold px-4">Cari Tiket Lain</a>
+        </div>
+    </div>
+</section>
+<?php
+    $content = ob_get_clean();
+    require_once __DIR__ . '/../../layouts/public_layout.php';
+    return;
+}
 
 if ($listing && !$reserve_met) {
 ?>

@@ -21,22 +21,18 @@ function sg_role_home(?string $role = null): string
     if ($role === 'admin') {
         return 'admin_overview';
     }
-    if ($role === 'seller') {
-        return 'seller_overview';
-    }
-
-    return 'my_tickets';
+    return 'seller_overview';
 }
 
 function sg_require_route_access(string $page): void
 {
     $protectedRoutes = [
-        'seller_overview' => ['seller'],
-        'sell_ticket' => ['seller'],
-        'active_listings' => ['seller'],
-        'wallet' => ['seller'],
-        'transaction' => ['seller'],
-        'settings' => ['seller'],
+        'seller_overview' => ['buyer', 'seller'],
+        'sell_ticket' => ['buyer', 'seller'],
+        'active_listings' => ['buyer', 'seller'],
+        'wallet' => ['buyer', 'seller'],
+        'transaction' => ['buyer', 'seller'],
+        'settings' => ['buyer', 'seller'],
         'admin_overview' => ['admin'],
         'admin_transactions' => ['admin'],
         'admin_disputes' => ['admin'],
@@ -62,9 +58,9 @@ function sg_require_route_access(string $page): void
 
 function sg_handle_create_listing(): void
 {
-    $sellerId = sg_current_user_id('seller');
+    $sellerId = sg_current_user_id();
     if (!$sellerId || !sg_db()) {
-        sg_flash('Login sebagai seller dulu sebelum membuat listing.', 'error');
+        sg_flash('Login dulu sebelum membuat listing.', 'error');
         sg_redirect('login');
     }
 
@@ -150,13 +146,13 @@ function sg_handle_create_listing(): void
 
 function sg_handle_withdrawal(): void
 {
-    $sellerId = sg_current_user_id('seller');
+    $sellerId = sg_current_user_id();
     $amount = (int) preg_replace('/[^\d]/', '', (string) ($_POST['amount'] ?? '0'));
     $method = $_POST['method'] ?? 'bank_transfer';
     $destination = trim((string) ($_POST['destination_account'] ?? ''));
 
     if (!$sellerId || !sg_db()) {
-        sg_flash('Login sebagai seller dulu sebelum menarik dana.', 'error');
+        sg_flash('Login dulu sebelum menarik dana.', 'error');
         sg_redirect('login');
     }
 
@@ -182,11 +178,11 @@ function sg_handle_withdrawal(): void
 
 function sg_handle_kyc_submit(): void
 {
-    $sellerId = sg_current_user_id('seller');
+    $sellerId = sg_current_user_id();
     $nik = preg_replace('/[^\d]/', '', (string) ($_POST['nik'] ?? ''));
 
     if (!$sellerId || !sg_db()) {
-        sg_flash('Login sebagai seller dulu sebelum submit KYC.', 'error');
+        sg_flash('Login dulu sebelum submit KYC.', 'error');
         sg_redirect('login');
     }
 
@@ -224,6 +220,18 @@ function sg_handle_kyc_submit(): void
 
     if ($created) {
         sg_execute('UPDATE users SET nik = :nik WHERE id = :id', ['nik' => $nik, 'id' => $sellerId]);
+        $kyc = sg_fetch_one(
+            'SELECT id FROM kyc_verifications WHERE user_id = :user_id ORDER BY id DESC LIMIT 1',
+            ['user_id' => $sellerId]
+        );
+        if ($kyc) {
+            sg_execute(
+                'INSERT INTO seller_profiles (user_id, kyc_id)
+                 VALUES (:user_id, :kyc_id)
+                 ON DUPLICATE KEY UPDATE kyc_id = VALUES(kyc_id)',
+                ['user_id' => $sellerId, 'kyc_id' => $kyc['id']]
+            );
+        }
     }
 
     sg_flash($created ? 'Dokumen KYC berhasil dikirim ke database.' : 'KYC gagal dikirim: ' . sg_db_error(), $created ? 'success' : 'error');
@@ -314,9 +322,9 @@ function sg_handle_change_password(): void
 
 function sg_handle_seller_profile_update(): void
 {
-    $sellerId = sg_current_user_id('seller');
+    $sellerId = sg_current_user_id();
     if (!$sellerId) {
-        sg_flash('Login sebagai seller dulu sebelum mengubah profil.', 'error');
+        sg_flash('Login dulu sebelum mengubah profil.', 'error');
         sg_redirect('login');
     }
 
@@ -363,7 +371,7 @@ function sg_handle_register_passkey(): void
     );
 
     sg_flash($created ? 'Passkey berhasil dicatat ke database.' : 'Passkey gagal dibuat: ' . sg_db_error(), $created ? 'success' : 'error');
-    sg_redirect($_SESSION['role'] === 'seller' ? 'settings' : 'buyer_profile');
+    sg_redirect(($_SESSION['role'] ?? '') === 'admin' ? 'admin_overview' : 'settings');
 }
 
 function sg_handle_admin_kyc_decision(): void
@@ -392,14 +400,12 @@ function sg_handle_admin_kyc_decision(): void
     if ($updated && $decision === 'approved') {
         $kyc = sg_fetch_one('SELECT id, user_id FROM kyc_verifications WHERE id = :id', ['id' => $kycId]);
         if ($kyc) {
-            sg_execute('UPDATE users SET role = "seller" WHERE id = :id', ['id' => $kyc['user_id']]);
-            $profile = sg_fetch_one('SELECT id FROM seller_profiles WHERE user_id = :user_id', ['user_id' => $kyc['user_id']]);
-            if (!$profile) {
-                sg_execute(
-                    'INSERT INTO seller_profiles (user_id, kyc_id) VALUES (:user_id, :kyc_id)',
-                    ['user_id' => $kyc['user_id'], 'kyc_id' => $kyc['id']]
-                );
-            }
+            sg_execute(
+                'INSERT INTO seller_profiles (user_id, kyc_id)
+                 VALUES (:user_id, :kyc_id)
+                 ON DUPLICATE KEY UPDATE kyc_id = VALUES(kyc_id)',
+                ['user_id' => $kyc['user_id'], 'kyc_id' => $kyc['id']]
+            );
         }
     }
 
@@ -728,11 +734,7 @@ function sg_handle_login(): void
     if ($user['role'] === 'admin') {
         sg_redirect('admin_overview');
     }
-    if ($user['role'] === 'seller') {
-        sg_redirect('seller_overview');
-    }
-
-    sg_redirect('my_tickets');
+    sg_redirect('seller_overview');
 }
 
 function sg_handle_checkout_payment(): void
@@ -1124,13 +1126,13 @@ function sg_handle_dispute_message(): void
 
 function sg_handle_listing_status(): void
 {
-    $sellerId = sg_current_user_id('seller');
+    $sellerId = sg_current_user_id();
     $listingId = (int) ($_POST['listing_id'] ?? 0);
     $status = $_POST['listing_status'] ?? '';
     $allowed = ['active', 'paused', 'cancelled', 'promoted'];
 
     if (!$sellerId) {
-        sg_flash('Login sebagai seller dulu untuk mengelola listing.', 'error');
+        sg_flash('Login dulu untuk mengelola listing.', 'error');
         sg_redirect('login');
     }
 
@@ -1228,7 +1230,7 @@ function sg_handle_export_transactions(): void
 
 function sg_handle_export_seller_transactions(): void
 {
-    $sellerId = sg_current_user_id('seller');
+    $sellerId = sg_current_user_id();
     if (!$sellerId) {
         http_response_code(403);
         echo 'Forbidden';

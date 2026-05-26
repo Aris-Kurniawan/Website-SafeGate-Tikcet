@@ -3,7 +3,7 @@ require_once __DIR__ . '/../../core/safegate_repository.php';
 
 $page_title = 'Seller Overview - SafeGate';
 $dashboard_page = 'overview';
-$seller_id = sg_current_user_id('seller');
+$seller_id = sg_current_user_id();
 $metrics = sg_get_seller_overview($seller_id);
 $notifications = sg_get_notifications($seller_id, 5);
 $unread_notifications = sg_unread_notification_count($seller_id);

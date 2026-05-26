@@ -3,7 +3,7 @@ require_once __DIR__ . '/../../core/safegate_repository.php';
 
 $page_title = 'Account Settings - SafeGate';
 $dashboard_page = 'settings';
-$seller_id = sg_current_user_id('seller');
+$seller_id = sg_current_user_id();
 $profile = sg_get_seller_profile($seller_id);
 $flash = sg_flash();
 

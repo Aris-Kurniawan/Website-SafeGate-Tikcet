@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../core/safegate_repository.php';
 $page_title = 'Wallet & Escrow - SafeGate';
 $dashboard_page = 'wallet';
 
-$seller_id = sg_current_user_id('seller');
+$seller_id = sg_current_user_id();
 $metrics = sg_get_seller_overview($seller_id);
 $withdrawals = sg_get_seller_withdrawals($seller_id);
 $flash = sg_flash();
