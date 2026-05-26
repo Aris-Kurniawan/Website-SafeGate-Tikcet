@@ -4,6 +4,13 @@ $page_title = 'System Command Center - SafeGate';
 
 // Pastikan hanya admin level 4 yang masuk
 require_once __DIR__ . '/../../core/admin_middleware.php';
+require_once __DIR__ . '/../../core/safegate_repository.php';
+
+$admin_overview = sg_get_admin_overview();
+$admin_id = sg_current_user_id('admin');
+$notifications = sg_get_notifications($admin_id, 5);
+$unread_notifications = sg_unread_notification_count($admin_id);
+$action_queue = sg_get_admin_action_queue(8);
 
 ob_start();
 ?>
@@ -22,7 +29,7 @@ ob_start();
     <div class="sg-admin-kpi-card">
         <div class="sg-admin-kpi-info">
             <h2 class="sg-admin-kpi-label">Total Escrow Locked</h2>
-            <div class="sg-admin-kpi-value" data-rupiah="4250000000">Rp 4.250.000.000</div>
+            <div class="sg-admin-kpi-value" data-rupiah="<?= (int) $admin_overview['escrow_locked'] ?>"><?= sg_rupiah($admin_overview['escrow_locked']) ?></div>
             <div class="sg-admin-kpi-footer sg-admin-trend-up">
                 <iconify-icon icon="ph:trend-up-bold"></iconify-icon>
                 <span>+12.4% from last week</span>
@@ -37,7 +44,7 @@ ob_start();
     <div class="sg-admin-kpi-card">
         <div class="sg-admin-kpi-info">
             <h2 class="sg-admin-kpi-label">Net Revenue (5% Fee)</h2>
-            <div class="sg-admin-kpi-value sg-admin-glow-text" data-rupiah="212500000">Rp 212.500.000</div>
+            <div class="sg-admin-kpi-value sg-admin-glow-text" data-rupiah="<?= (int) $admin_overview['revenue'] ?>"><?= sg_rupiah($admin_overview['revenue']) ?></div>
             <div class="sg-admin-kpi-footer sg-admin-smart-contract-text">
                 <iconify-icon icon="ph:cpu-fill"></iconify-icon>
                 <span>Auto-calculated by Smart Contract</span>
@@ -53,7 +60,7 @@ ob_start();
         <div class="sg-admin-kpi-info">
             <h2 class="sg-admin-kpi-label">Pending KYC</h2>
             <div class="sg-admin-kyc-header">
-                <div class="sg-admin-kpi-value">14 Users</div>
+                <div class="sg-admin-kpi-value"><?= (int) $admin_overview['pending_kyc'] ?> Users</div>
                 <button class="sg-admin-btn-review" onclick="location.href='index.php?page=admin_kyc'">Review Now</button>
             </div>
             <div class="sg-admin-progress-container">
@@ -103,40 +110,38 @@ ob_start();
     <div class="sg-admin-panel">
         <div class="sg-admin-panel-header">
             <h3>System Alerts</h3>
+            <?php if ($unread_notifications > 0): ?>
+                <a href="index.php?sg_action=mark_notifications_read" style="color:#d9ff00; font-size:11px; font-weight:800; text-decoration:none; text-transform:uppercase;">Mark read</a>
+            <?php endif; ?>
         </div>
         <div class="sg-admin-alerts-list">
-            <!-- Alert 1 -->
-            <div class="sg-admin-alert-item">
-                <div class="sg-admin-alert-icon is-success">
-                    <iconify-icon icon="ph:check-bold"></iconify-icon>
+            <?php if ($notifications): ?>
+                <?php foreach ($notifications as $notification): ?>
+                    <?php
+                    $icon_class = $notification['type'] === 'dispute_opened' ? 'is-warning' : (($notification['type'] === 'payment_success' || $notification['type'] === 'kyc_approved') ? 'is-success' : 'is-info');
+                    $icon = $notification['type'] === 'dispute_opened' ? 'ph:warning-bold' : (($notification['type'] === 'payment_success' || $notification['type'] === 'kyc_approved') ? 'ph:check-bold' : 'ph:info-bold');
+                    ?>
+                    <div class="sg-admin-alert-item" style="<?= (int) $notification['is_read'] ? 'opacity:.55;' : '' ?>">
+                        <div class="sg-admin-alert-icon <?= $icon_class ?>">
+                            <iconify-icon icon="<?= $icon ?>"></iconify-icon>
+                        </div>
+                        <div class="sg-admin-alert-content">
+                            <p class="sg-admin-alert-text"><?= sg_h($notification['title']) ?></p>
+                            <span class="sg-admin-alert-time"><?= sg_h($notification['body']) ?> · <?= sg_h(sg_time_ago($notification['created_at'])) ?></span>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="sg-admin-alert-item">
+                    <div class="sg-admin-alert-icon is-info">
+                        <iconify-icon icon="ph:info-bold"></iconify-icon>
+                    </div>
+                    <div class="sg-admin-alert-content">
+                        <p class="sg-admin-alert-text">Belum ada alert database.</p>
+                        <span class="sg-admin-alert-time">Semua sistem nominal</span>
+                    </div>
                 </div>
-                <div class="sg-admin-alert-content">
-                    <p class="sg-admin-alert-text">Admin B approved KYC User #412</p>
-                    <span class="sg-admin-alert-time">2 mins ago</span>
-                </div>
-            </div>
-
-            <!-- Alert 2 -->
-            <div class="sg-admin-alert-item">
-                <div class="sg-admin-alert-icon is-warning">
-                    <iconify-icon icon="ph:warning-bold"></iconify-icon>
-                </div>
-                <div class="sg-admin-alert-content">
-                    <p class="sg-admin-alert-text">Dispute opened for Ticket #991</p>
-                    <span class="sg-admin-alert-time">14 mins ago</span>
-                </div>
-            </div>
-
-            <!-- Alert 3 -->
-            <div class="sg-admin-alert-item">
-                <div class="sg-admin-alert-icon is-info">
-                    <iconify-icon icon="ph:info-bold"></iconify-icon>
-                </div>
-                <div class="sg-admin-alert-content">
-                    <p class="sg-admin-alert-text">Large withdrawal detected: Rp 45M</p>
-                    <span class="sg-admin-alert-time">45 mins ago</span>
-                </div>
-            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -145,7 +150,7 @@ ob_start();
 <div class="sg-admin-table-panel">
     <div class="sg-admin-table-header-row">
         <h3 class="sg-admin-table-title">Priority Action Queue</h3>
-        <button class="sg-admin-btn-export" onclick="exportLedger()">Export Ledger</button>
+        <a class="sg-admin-btn-export" href="index.php?sg_action=export_transactions" style="text-decoration:none;">Export Ledger</a>
     </div>
     
     <div class="sg-admin-table-responsive">
@@ -159,68 +164,36 @@ ob_start();
                 </tr>
             </thead>
             <tbody>
-                <!-- Row 1: KYC REQUEST -->
-                <tr>
-                    <td class="sg-admin-timestamp">Oct 24, 14:32:01</td>
-                    <td>
-                        <span class="sg-admin-badge-case is-kyc">KYC REQUEST</span>
-                    </td>
-                    <td>
-                        <div class="sg-admin-user-cell">
-                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=80" alt="Alexander Sterling" class="sg-admin-user-avatar">
-                            <span class="sg-admin-user-name">Alexander Sterling</span>
-                        </div>
-                    </td>
-                    <td>
-                        <button class="sg-admin-btn-action is-green" onclick="location.href='index.php?page=admin_kyc'">Review</button>
-                    </td>
-                </tr>
-                
-                <!-- Row 2: ESCROW DISPUTE -->
-                <tr>
-                    <td class="sg-admin-timestamp">Oct 24, 14:15:44</td>
-                    <td>
-                        <span class="sg-admin-badge-case is-dispute">ESCROW DISPUTE</span>
-                    </td>
-                    <td>
-                        <span class="sg-admin-case-desc">Ticket #412A - Hardware Delivery Failure</span>
-                    </td>
-                    <td>
-                        <button class="sg-admin-btn-action is-peach" onclick="location.href='index.php?page=admin_disputes'">Investigate</button>
-                    </td>
-                </tr>
-                
-                <!-- Row 3: AUDIT LOG -->
-                <tr>
-                    <td class="sg-admin-timestamp">Oct 24, 13:58:20</td>
-                    <td>
-                        <span class="sg-admin-badge-case is-audit">AUDIT LOG</span>
-                    </td>
-                    <td>
-                        <span class="sg-admin-case-desc">System Kernel Update - Node #02 Success</span>
-                    </td>
-                    <td>
-                        <div style="display: flex; align-items: center; justify-content: flex-start;">
-                            <button class="sg-admin-btn-more" aria-label="More options" onclick="showMoreOptions('Oct 24, 13:58:20')">
-                                <iconify-icon icon="ph:dots-three-outline-fill"></iconify-icon>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
+                <?php if (!$action_queue): ?>
+                    <tr>
+                        <td colspan="4" style="padding: 28px; color: var(--admin-text-muted);">Belum ada KYC, dispute, atau audit log aktif dari database.</td>
+                    </tr>
+                <?php endif; ?>
+
+                <?php foreach ($action_queue as $queue_item): ?>
+                    <tr>
+                        <td class="sg-admin-timestamp"><?= sg_h(date('M d, H:i:s', strtotime($queue_item['timestamp']))) ?></td>
+                        <td>
+                            <span class="sg-admin-badge-case <?= sg_h($queue_item['class']) ?>"><?= sg_h($queue_item['type']) ?></span>
+                        </td>
+                        <td>
+                            <span class="sg-admin-case-desc"><?= sg_h($queue_item['description']) ?></span>
+                        </td>
+                        <td>
+                            <?php if ($queue_item['type'] === 'AUDIT LOG'): ?>
+                                <a class="sg-admin-btn-more" aria-label="View audit target" href="<?= sg_h($queue_item['action_link']) ?>" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">
+                                    <iconify-icon icon="<?= sg_h($queue_item['icon']) ?>"></iconify-icon>
+                                </a>
+                            <?php else: ?>
+                                <button class="sg-admin-btn-action <?= sg_h($queue_item['action_class']) ?>" onclick="location.href='<?= sg_h($queue_item['action_link']) ?>'"><?= sg_h($queue_item['action_label']) ?></button>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
             </tbody>
         </table>
     </div>
 </div>
-
-<script>
-function exportLedger() {
-    alert("Exporting SafeGate Global Ledger...\nDownload will start shortly in CSV format.");
-}
-
-function showMoreOptions(timestamp) {
-    alert("Audit log entry for " + timestamp + " is healthy.\nNo anomaly detected.");
-}
-</script>
 
 <?php
 $content = ob_get_clean();

@@ -12,10 +12,18 @@ const summaryEarning = document.getElementById('summaryEarning');
 const ticketFile = document.getElementById('ticketFile');
 const uploadDrop = document.getElementById('uploadDrop');
 const uploadStatus = document.getElementById('uploadStatus');
+const ticketPreview = document.getElementById('ticketPreview');
 const eventSearch = document.getElementById('eventSearch');
 const eventList = document.getElementById('eventList');
+const listingForm = document.getElementById('listingForm');
+const selectedEventId = document.getElementById('selectedEventId');
+const faceValueInput = document.getElementById('faceValueInput');
+const ticketSection = document.getElementById('ticketSection');
+const ticketRow = document.getElementById('ticketRow');
+const ticketSeat = document.getElementById('ticketSeat');
 const eventButtons = Array.from(document.querySelectorAll('.sg-event-option'));
 const stepItems = Array.from(document.querySelectorAll('#listingStepper li'));
+const allowedTicketExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'pkpass'];
 
 function formatRupiah(value) {
     return `Rp.${Math.round(value).toLocaleString('id-ID')}`;
@@ -69,6 +77,28 @@ function setUploadStatus(message, isError = false) {
     uploadStatus.classList.toggle('is-error', isError);
 }
 
+function resetTicketPreview() {
+    if (!ticketPreview) {
+        return;
+    }
+
+    ticketPreview.hidden = true;
+    ticketPreview.removeAttribute('src');
+    uploadDrop?.classList.remove('has-preview');
+}
+
+function showTicketPreview(file) {
+    if (!ticketPreview || !file || !file.type.startsWith('image/')) {
+        resetTicketPreview();
+        return false;
+    }
+
+    ticketPreview.src = URL.createObjectURL(file);
+    ticketPreview.hidden = false;
+    uploadDrop?.classList.add('has-preview');
+    return true;
+}
+
 if (priceInput) {
     priceInput.addEventListener('focus', () => {
         priceInput.value = parseRupiah(priceInput.value) || '';
@@ -91,6 +121,12 @@ eventButtons.forEach((button) => {
 
         const faceValue = Number(button.dataset.faceValue || 0);
         const sellingPrice = Number(button.dataset.sellingPrice || faceValue);
+        if (selectedEventId) {
+            selectedEventId.value = button.dataset.eventId || '';
+        }
+        if (faceValueInput) {
+            faceValueInput.value = faceValue;
+        }
         originalPriceInput.value = formatRupiah(faceValue);
         priceInput.dataset.faceValue = faceValue;
         priceInput.value = formatRupiah(sellingPrice);
@@ -125,19 +161,30 @@ if (ticketFile) {
         const file = ticketFile.files[0];
         if (!file) {
             setUploadStatus('');
+            resetTicketPreview();
             return;
         }
 
         if (file.size > 10 * 1024 * 1024) {
             ticketFile.value = '';
+            resetTicketPreview();
             setUploadStatus('File is larger than 10MB. Please upload a smaller ticket proof.', true);
             return;
         }
 
+        const extension = file.name.split('.').pop().toLowerCase();
+        if (!allowedTicketExtensions.includes(extension)) {
+            ticketFile.value = '';
+            resetTicketPreview();
+            setUploadStatus('Format file harus PDF, JPG, PNG, atau Apple Wallet Pass.', true);
+            return;
+        }
+
+        const hasPreview = showTicketPreview(file);
         setActiveStep('upload');
-        setUploadStatus('Encrypting ticket proof...');
+        setUploadStatus(hasPreview ? `Preview ${file.name} siap. Encrypting ticket proof...` : `${file.name} siap diupload. Preview hanya tersedia untuk JPG/PNG.`);
         setTimeout(() => {
-            setUploadStatus('Ticket proof encrypted and ready for server validation.');
+            setUploadStatus(hasPreview ? 'Preview ticket proof siap dan terenkripsi untuk validasi server.' : `${file.name} terenkripsi dan siap divalidasi server.`);
             setActiveStep('confirm');
         }, 900);
     });
@@ -161,6 +208,14 @@ if (uploadDrop) {
 
 if (listButton) {
     listButton.addEventListener('click', () => {
+        const seatComplete = [ticketSection, ticketRow, ticketSeat].every((input) => input && input.value.trim());
+        if (!seatComplete) {
+            listStatus.textContent = 'Isi section, row, dan seat dulu supaya nomor bangku tiket berbeda dan jelas.';
+            listStatus.classList.add('is-error');
+            setActiveStep('pricing');
+            return;
+        }
+
         const hasFile = ticketFile && ticketFile.files.length > 0;
         if (!hasFile) {
             setUploadStatus('Upload bukti tiket dulu sebelum listing.', true);
@@ -169,7 +224,8 @@ if (listButton) {
         }
 
         setActiveStep('confirm');
-        listStatus.textContent = 'Listing ready. Data ini sudah siap disambungkan ke database.';
+        listStatus.textContent = 'Menyimpan listing ke database...';
         listStatus.classList.remove('is-error');
+        listingForm?.submit();
     });
 }

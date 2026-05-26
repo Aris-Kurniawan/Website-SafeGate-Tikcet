@@ -2011,19 +2011,30 @@ body.sg-admin-shell::-webkit-scrollbar-thumb:hover {
 }
 
 .sg-kyc-archive-btn {
-    width: 100%;
+    width: auto;
+    max-width: 100%;
+    box-sizing: border-box;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
     background-color: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--admin-border);
     color: var(--admin-text);
-    padding: 14px;
+    padding: 14px 18px;
     border-radius: 8px;
     font-size: 13px;
+    line-height: 1.2;
     font-weight: 700;
     cursor: pointer;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     transition: all 0.2s ease;
     margin-top: 12px;
+    min-height: 48px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sg-kyc-archive-btn:hover {
@@ -2142,6 +2153,7 @@ body.sg-admin-shell::-webkit-scrollbar-thumb:hover {
     border: 1px solid var(--admin-border);
     background-color: #0b0d13;
     position: relative;
+    height: 190px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     transition: border-color 0.25s ease;
 }
@@ -2156,6 +2168,31 @@ body.sg-admin-shell::-webkit-scrollbar-thumb:hover {
     object-fit: cover;
     display: block;
     transition: transform 0.4s ease;
+}
+
+.sg-kyc-image[hidden] {
+    display: none !important;
+}
+
+.sg-kyc-image-empty {
+    height: 190px;
+    display: grid;
+    place-items: center;
+    gap: 10px;
+    align-content: center;
+    color: var(--admin-text-muted);
+    background: rgba(255, 255, 255, 0.018);
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.sg-kyc-image-empty iconify-icon {
+    color: var(--admin-accent);
+    font-size: 30px;
+    opacity: 0.75;
 }
 
 .sg-kyc-image-container:hover .sg-kyc-image {

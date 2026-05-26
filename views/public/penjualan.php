@@ -1,12 +1,32 @@
 <?php
+require_once __DIR__ . '/../../core/safegate_repository.php';
+
 // 1. Definisikan judul halaman
 $page_title = "Marketplace Tiket - SafeGate";
 
 // 2. Mulai menangkap output konten (Output Buffering)
 ob_start();
 
-// List of available tickets
-$tickets = [
+// Fallback tickets kalau database masih kosong.
+$search = trim((string) ($_GET['q'] ?? ''));
+$category = $_GET['category'] ?? 'all';
+$sort = $_GET['sort'] ?? 'featured';
+$dateFilter = trim((string) ($_GET['date'] ?? ''));
+$locationFilter = trim((string) ($_GET['location'] ?? ''));
+$tickets = sg_get_marketplace_listings([
+    'q' => $search,
+    'category' => $category,
+    'sort' => $sort,
+    'date' => $dateFilter,
+    'location' => $locationFilter,
+]);
+$tickets = sg_get_marketplace_listings([
+    'q' => $search,
+    'category' => $category,
+    'sort' => $sort,
+    'date' => $dateFilter,
+    'location' => $locationFilter,
+]) ?: [
     [
         "title" => "Midnight Symphony Tour",
         "image" => "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&q=80&w=800",
@@ -50,6 +70,21 @@ $tickets = [
         "originalPrice" => "180.000"
     ]
 ];
+$databaseTickets = sg_get_marketplace_listings([
+    'q' => $search,
+    'category' => $category,
+    'sort' => $sort,
+    'date' => $dateFilter,
+    'location' => $locationFilter,
+]);
+if (!empty($databaseTickets)) {
+    $tickets = $databaseTickets;
+} elseif ($search !== '') {
+    $tickets = array_values(array_filter($tickets, function ($ticket) use ($search) {
+        $haystack = strtolower(($ticket['title'] ?? '') . ' ' . ($ticket['date'] ?? ''));
+        return strpos($haystack, strtolower($search)) !== false;
+    }));
+}
 ?>
 
 <!-- Marketplace Section -->
@@ -65,13 +100,14 @@ $tickets = [
     </div>
 
     <!-- Interactive Filters & Search bar (High Fidelity Mockup) -->
-    <div class="p-3 rounded-4 mb-5 sg-glass">
+    <form class="p-3 rounded-4 mb-5 sg-glass" action="index.php" method="get">
+        <input type="hidden" name="page" value="penjualan">
         <div class="row g-3 align-items-center">
             <!-- Search field -->
             <div class="col-12 col-md-5">
                 <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-dark bg-opacity-50 border border-secondary border-opacity-25">
                     <iconify-icon icon="ph:magnifying-glass" class="text-safegate-neon fs-5"></iconify-icon>
-                    <input type="text" id="search-input" onkeyup="filterCards()" placeholder="Cari nama event..." class="bg-transparent border-0 text-white w-100 shadow-none p-0" style="font-size: 0.85rem;">
+                    <input type="text" id="search-input" name="q" value="<?= sg_h($search) ?>" placeholder="Cari nama event..." class="bg-transparent border-0 text-white w-100 shadow-none p-0" style="font-size: 0.85rem;">
                 </div>
             </div>
             
@@ -79,11 +115,11 @@ $tickets = [
             <div class="col-6 col-md-3">
                 <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-dark bg-opacity-50 border border-secondary border-opacity-25">
                     <iconify-icon icon="ph:tag-bold" class="text-safegate-text-sec fs-5"></iconify-icon>
-                    <select class="bg-transparent border-0 text-white w-100 shadow-none p-0" style="font-size: 0.85rem; cursor: pointer; outline: none;">
-                        <option class="bg-safegate-surface" value="all">Semua Kategori</option>
-                        <option class="bg-safegate-surface" value="concert">Konser Musik</option>
-                        <option class="bg-safegate-surface" value="sports">Olahraga</option>
-                        <option class="bg-safegate-surface" value="festival">Festival</option>
+                    <select name="category" class="bg-transparent border-0 text-white w-100 shadow-none p-0" style="font-size: 0.85rem; cursor: pointer; outline: none;">
+                        <option class="bg-safegate-surface" value="all" <?= $category === 'all' ? 'selected' : '' ?>>Semua Kategori</option>
+                        <option class="bg-safegate-surface" value="concert" <?= $category === 'concert' ? 'selected' : '' ?>>Konser Musik</option>
+                        <option class="bg-safegate-surface" value="sports" <?= $category === 'sports' ? 'selected' : '' ?>>Olahraga</option>
+                        <option class="bg-safegate-surface" value="festival" <?= $category === 'festival' ? 'selected' : '' ?>>Festival</option>
                     </select>
                 </div>
             </div>
@@ -92,16 +128,16 @@ $tickets = [
             <div class="col-6 col-md-4">
                 <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-dark bg-opacity-50 border border-secondary border-opacity-25">
                     <iconify-icon icon="ph:sort-ascending-bold" class="text-safegate-text-sec fs-5"></iconify-icon>
-                    <select class="bg-transparent border-0 text-white w-100 shadow-none p-0" style="font-size: 0.85rem; cursor: pointer; outline: none;">
-                        <option class="bg-safegate-surface" value="featured">Rekomendasi Utama</option>
-                        <option class="bg-safegate-surface" value="price-asc">Harga Terendah</option>
-                        <option class="bg-safegate-surface" value="price-desc">Harga Tertinggi</option>
-                        <option class="bg-safegate-surface" value="date">Tanggal Terdekat</option>
+                    <select name="sort" class="bg-transparent border-0 text-white w-100 shadow-none p-0" style="font-size: 0.85rem; cursor: pointer; outline: none;">
+                        <option class="bg-safegate-surface" value="featured" <?= $sort === 'featured' ? 'selected' : '' ?>>Rekomendasi Utama</option>
+                        <option class="bg-safegate-surface" value="price-asc" <?= $sort === 'price-asc' ? 'selected' : '' ?>>Harga Terendah</option>
+                        <option class="bg-safegate-surface" value="price-desc" <?= $sort === 'price-desc' ? 'selected' : '' ?>>Harga Tertinggi</option>
+                        <option class="bg-safegate-surface" value="date" <?= $sort === 'date' ? 'selected' : '' ?>>Tanggal Terdekat</option>
                     </select>
                 </div>
             </div>
         </div>
-    </div>
+    </form>
 
     <!-- Ticket Cards Grid -->
     <div class="row g-4" id="ticket-grid">
@@ -113,6 +149,7 @@ $tickets = [
                 $date = $ticket['date'];
                 $price = $ticket['price'];
                 $originalPrice = $ticket['originalPrice'];
+                $listingId = $ticket['id'] ?? '';
                 include __DIR__ . '/../../components/ticket_card.php';
                 ?>
             </div>
@@ -151,6 +188,26 @@ $tickets = [
             emptyState.classList.add("d-none");
         }
     }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const searchInput = document.getElementById("search-input");
+        const form = searchInput?.closest("form");
+        let submitTimer;
+
+        function scheduleSubmit() {
+            window.clearTimeout(submitTimer);
+            submitTimer = window.setTimeout(() => {
+                form?.requestSubmit();
+            }, 450);
+        }
+
+        searchInput?.addEventListener("input", filterCards);
+        searchInput?.addEventListener("input", scheduleSubmit);
+        form?.querySelectorAll("select").forEach((select) => {
+            select.addEventListener("change", () => form.requestSubmit());
+        });
+        filterCards();
+    });
 </script>
 
 <?php

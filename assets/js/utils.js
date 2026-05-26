@@ -20,4 +20,41 @@ document.addEventListener("DOMContentLoaded", () => {
         const val = el.getAttribute("data-rupiah");
         el.textContent = formatRupiah(val);
     });
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const revealTargets = document.querySelectorAll([
+        ".sg-glass",
+        ".sg-panel",
+        ".sg-summary-card",
+        ".sg-ticket-card",
+        ".card-hover",
+        ".sg-wallet-balance-card",
+        ".sg-metric-card",
+        ".sg-admin-card",
+        ".sg-table-card",
+        ".sg-sell-card",
+        ".sg-settings-card"
+    ].join(","));
+
+    if (reduceMotion || !("IntersectionObserver" in window)) {
+        revealTargets.forEach(el => el.classList.add("is-visible"));
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+        });
+    }, {
+        threshold: 0.08,
+        rootMargin: "0px 0px -24px 0px"
+    });
+
+    revealTargets.forEach((el, index) => {
+        el.classList.add("sg-lift-in");
+        el.style.transitionDelay = `${Math.min(index % 6, 5) * 35}ms`;
+        observer.observe(el);
+    });
 });

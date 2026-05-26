@@ -1,62 +1,53 @@
 <?php
+require_once __DIR__ . '/../../core/safegate_repository.php';
+
 $page_title = 'Transaction History - SafeGate';
 $dashboard_page = 'transaction';
 
-$summary = [
-    'buy' => 'Rp. 12,450.000',
-    'sell' => 'Rp.8.290.000',
-];
+$seller_id = sg_current_user_id('seller');
+if (!$seller_id && ($_SESSION['role'] ?? '') === 'seller') {
+    $seller_id = sg_ensure_demo_user('seller');
+    $_SESSION['user_id'] = $seller_id;
+}
+$search = trim((string) ($_GET['q'] ?? ''));
+$dateRange = $_GET['date_range'] ?? 'Last 30 Days';
+$statusFilter = $_GET['status'] ?? 'All Status';
+$currentPage = max(1, (int) ($_GET['p'] ?? 1));
+$requestedPage = $currentPage;
+$perPage = 10;
+$ledger = sg_get_seller_transactions($seller_id, [
+    'q' => $search,
+    'date_range' => $dateRange,
+    'status' => $statusFilter,
+    'limit' => $perPage,
+    'offset' => ($currentPage - 1) * $perPage,
+]);
+$summary = $ledger['summary'];
+$transactions = $ledger['transactions'];
+$totalTransactions = (int) ($ledger['total'] ?? count($transactions));
+$totalPages = max(1, (int) ceil($totalTransactions / $perPage));
+$currentPage = min($currentPage, $totalPages);
+if ($requestedPage !== $currentPage && $totalTransactions > 0) {
+    $ledger = sg_get_seller_transactions($seller_id, [
+        'q' => $search,
+        'date_range' => $dateRange,
+        'status' => $statusFilter,
+        'limit' => $perPage,
+        'offset' => ($currentPage - 1) * $perPage,
+    ]);
+    $summary = $ledger['summary'];
+    $transactions = $ledger['transactions'];
+}
 
-$transactions = [
-    [
-        'title' => 'Neon Pulse Music Festival',
-        'id' => 'SG-TX-882190',
-        'date' => 'Oct 24, 2023',
-        'time' => '14:22 PM',
-        'type' => 'BUY',
-        'amount' => 'Rp.450.000',
-        'note' => 'INCL. PROCESSING',
-        'status' => 'COMPLETED',
-        'status_class' => 'completed',
-        'thumb' => 'neon',
-    ],
-    [
-        'title' => 'NBA Finals: Game 7',
-        'id' => 'SG-TX-773124',
-        'date' => 'Oct 24, 2023',
-        'time' => '14:22 PM',
-        'type' => 'SELL',
-        'amount' => 'Rp.1.200.000',
-        'note' => 'ESCROW LOCKED',
-        'status' => 'PENDING',
-        'status_class' => 'pending',
-        'thumb' => 'ball',
-    ],
-    [
-        'title' => 'The Phantom of the Opera',
-        'id' => 'SG-TX-666091',
-        'date' => 'Oct 24, 2023',
-        'time' => '14:22 PM',
-        'type' => 'BUY',
-        'amount' => 'Rp.225.000',
-        'note' => 'REFUND INITIATED',
-        'status' => 'CANCELLED',
-        'status_class' => 'cancelled',
-        'thumb' => 'opera',
-    ],
-    [
-        'title' => 'Premier League: London Derby',
-        'id' => 'SG-TX-551229',
-        'date' => 'Oct 24, 2023',
-        'time' => '14:22 PM',
-        'type' => 'BUY',
-        'amount' => 'Rp.1.800.000',
-        'note' => 'VERIFIED DIRECT',
-        'status' => 'COMPLETED',
-        'status_class' => 'completed',
-        'thumb' => 'stadium',
-    ],
-];
+$transactionPageUrl = static function (int $page) use ($search, $dateRange, $statusFilter): string {
+    return 'index.php?' . http_build_query([
+        'page' => 'transaction',
+        'q' => $search,
+        'date_range' => $dateRange,
+        'status' => $statusFilter,
+        'p' => max(1, $page),
+    ]);
+};
 
 ob_start();
 ?>
@@ -79,31 +70,36 @@ ob_start();
         </div>
     </div>
 
-    <form class="sg-filter-bar" action="#" method="get">
+    <form class="sg-filter-bar" action="index.php" method="get">
+        <input type="hidden" name="page" value="transaction">
+        <input type="hidden" name="p" value="1">
         <label class="sg-search-field">
             <iconify-icon icon="ph:magnifying-glass"></iconify-icon>
-            <input type="search" name="q" placeholder="Search event name or ID...">
+            <input type="search" name="q" value="<?= sg_h($search) ?>" placeholder="Search event name or ID..." autocomplete="off">
         </label>
         <label class="sg-select-field">
             <iconify-icon icon="ph:calendar-blank"></iconify-icon>
             <select name="date_range">
-                <option>Last 30 Days</option>
-                <option>Last 90 Days</option>
-                <option>This Year</option>
+                <option <?= $dateRange === 'Last 30 Days' ? 'selected' : '' ?>>Last 30 Days</option>
+                <option <?= $dateRange === 'Last 90 Days' ? 'selected' : '' ?>>Last 90 Days</option>
+                <option <?= $dateRange === 'This Year' ? 'selected' : '' ?>>This Year</option>
             </select>
         </label>
         <label class="sg-select-field">
             <iconify-icon icon="ph:funnel-simple"></iconify-icon>
             <select name="status">
-                <option>All Status</option>
-                <option>Completed</option>
-                <option>Pending</option>
-                <option>Cancelled</option>
+                <option <?= $statusFilter === 'All Status' ? 'selected' : '' ?>>All Status</option>
+                <option <?= $statusFilter === 'Completed' ? 'selected' : '' ?>>Completed</option>
+                <option <?= $statusFilter === 'Pending' ? 'selected' : '' ?>>Pending</option>
+                <option <?= $statusFilter === 'Cancelled' ? 'selected' : '' ?>>Cancelled</option>
             </select>
         </label>
-        <button class="sg-icon-button" type="button" aria-label="Download transactions">
-            <iconify-icon icon="ph:download-simple"></iconify-icon>
+        <button class="sg-icon-button" type="submit" aria-label="Apply transaction filter" title="Apply filter">
+            <iconify-icon icon="ph:magnifying-glass-bold"></iconify-icon>
         </button>
+        <a class="sg-icon-button" href="index.php?sg_action=export_seller_transactions&q=<?= urlencode($search) ?>&date_range=<?= urlencode($dateRange) ?>&status=<?= urlencode($statusFilter) ?>" aria-label="Download transactions" title="Download CSV" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">
+            <iconify-icon icon="ph:download-simple"></iconify-icon>
+        </a>
     </form>
 
     <section class="sg-transaction-card">
@@ -115,6 +111,17 @@ ob_start();
             <span>Status</span>
             <span>Actions</span>
         </div>
+
+        <?php if (!$transactions): ?>
+            <article class="sg-transaction-row sg-transaction-empty">
+                <div>
+                    <div>
+                        <h2>Belum ada transaksi yang cocok</h2>
+                        <p>Coba ubah search, date range, atau status filter.</p>
+                    </div>
+                </div>
+            </article>
+        <?php endif; ?>
 
         <?php foreach ($transactions as $transaction): ?>
             <article class="sg-transaction-row">
@@ -142,19 +149,35 @@ ob_start();
                     </span>
                 </div>
                 <div>
-                    <button class="sg-details-button" type="button">View<br>Details</button>
+                    <a class="sg-details-button" href="index.php?page=transaction_detail&code=<?= urlencode($transaction['id']) ?>" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">View<br>Details</a>
                 </div>
             </article>
         <?php endforeach; ?>
 
         <div class="sg-table-footer">
-            <strong>Showing 1 to 4 of 124 transactions</strong>
+            <strong>
+                <?php if ($totalTransactions > 0): ?>
+                    Showing <?= (($currentPage - 1) * $perPage) + 1 ?> to <?= min($currentPage * $perPage, $totalTransactions) ?> of <?= $totalTransactions ?> transactions from database
+                <?php else: ?>
+                    Showing 0 transactions from database
+                <?php endif; ?>
+            </strong>
             <nav class="sg-pagination" aria-label="Transaction pages">
-                <button type="button" disabled>&lsaquo;</button>
-                <button type="button" class="is-active">1</button>
-                <button type="button">2</button>
-                <button type="button">3</button>
-                <button type="button">&rsaquo;</button>
+                <?php if ($currentPage > 1): ?>
+                    <a href="<?= sg_h($transactionPageUrl($currentPage - 1)) ?>" aria-label="Previous page">&lsaquo;</a>
+                <?php else: ?>
+                    <button type="button" disabled>&lsaquo;</button>
+                <?php endif; ?>
+
+                <?php for ($pageNumber = 1; $pageNumber <= $totalPages; $pageNumber++): ?>
+                    <a href="<?= sg_h($transactionPageUrl($pageNumber)) ?>" class="<?= $pageNumber === $currentPage ? 'is-active' : '' ?>"><?= $pageNumber ?></a>
+                <?php endfor; ?>
+
+                <?php if ($currentPage < $totalPages): ?>
+                    <a href="<?= sg_h($transactionPageUrl($currentPage + 1)) ?>" aria-label="Next page">&rsaquo;</a>
+                <?php else: ?>
+                    <button type="button" disabled>&rsaquo;</button>
+                <?php endif; ?>
             </nav>
         </div>
     </section>

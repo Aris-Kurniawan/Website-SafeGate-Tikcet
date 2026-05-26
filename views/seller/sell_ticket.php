@@ -1,39 +1,13 @@
 <?php
+require_once __DIR__ . '/../../core/safegate_repository.php';
+
 $page_title = 'Sell Your Ticket - SafeGate';
 $dashboard_page = 'sell_ticket';
 $extra_scripts = ['assets/js/sell-ticket.js'];
 
-$selected_event = [
-    'title' => 'The Eras Tour - London',
-    'date' => 'August 17, 2024',
-    'time' => '19:00 BST',
-    'venue' => 'Wembley Stadium, London, UK',
-    'face_value' => 1500000,
-    'selling_price' => 1000000,
-    'service_fee_rate' => 0.05,
-];
-
-$event_options = [
-    $selected_event,
-    [
-        'title' => 'Coldplay Music of the Spheres',
-        'date' => 'September 08, 2024',
-        'time' => '20:00 WIB',
-        'venue' => 'GBK Stadium, Jakarta',
-        'face_value' => 950000,
-        'selling_price' => 1010000,
-        'service_fee_rate' => 0.05,
-    ],
-    [
-        'title' => 'Premier League: London Derby',
-        'date' => 'October 12, 2024',
-        'time' => '18:30 BST',
-        'venue' => 'London Stadium, UK',
-        'face_value' => 1800000,
-        'selling_price' => 1890000,
-        'service_fee_rate' => 0.05,
-    ],
-];
+$event_options = sg_get_events_for_listing();
+$selected_event = $event_options[0];
+$flash = sg_flash();
 
 ob_start();
 ?>
@@ -44,7 +18,15 @@ ob_start();
         <p>Daftarkan aset tiket Anda dengan aman melalui protokol enkripsi SafeGate.</p>
     </header>
 
-    <div class="sg-auction-grid">
+    <?php if ($flash): ?>
+        <p class="sg-list-status <?= $flash['type'] === 'error' ? 'is-error' : '' ?>"><?= sg_h($flash['message']) ?></p>
+    <?php endif; ?>
+
+    <form id="listingForm" class="sg-auction-grid" action="index.php?page=sell_ticket" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="sg_action" value="create_listing">
+        <input id="selectedEventId" type="hidden" name="event_id" value="<?= sg_h($selected_event['id'] ?? '') ?>">
+        <input id="faceValueInput" type="hidden" name="face_value" value="<?= (int) $selected_event['face_value'] ?>">
+
         <div class="sg-auction-stack">
             <section class="sg-panel sg-auction-panel">
                 <div class="sg-step-title">
@@ -62,25 +44,26 @@ ob_start();
                         <button
                             type="button"
                             class="sg-event-option sg-auction-event <?= $index === 0 ? 'is-selected' : '' ?>"
-                            data-title="<?= htmlspecialchars($event_option['title']) ?>"
-                            data-date="<?= htmlspecialchars($event_option['date']) ?>"
-                            data-time="<?= htmlspecialchars($event_option['time']) ?>"
-                            data-face-value="<?= $event_option['face_value'] ?>"
-                            data-selling-price="<?= $event_option['selling_price'] ?>"
+                            data-event-id="<?= sg_h($event_option['id'] ?? '') ?>"
+                            data-title="<?= sg_h($event_option['title']) ?>"
+                            data-date="<?= sg_h($event_option['date']) ?>"
+                            data-time="<?= sg_h($event_option['time']) ?>"
+                            data-face-value="<?= (int) $event_option['face_value'] ?>"
+                            data-selling-price="<?= (int) $event_option['selling_price'] ?>"
                             <?= $index === 0 ? '' : 'hidden' ?>
                         >
                             <span class="sg-event-preview">
                                 <span>Official Listing</span>
                             </span>
                             <span class="sg-auction-event-copy">
-                                <strong><?= htmlspecialchars($event_option['title']) ?></strong>
-                                <em><iconify-icon icon="ph:map-pin"></iconify-icon> <?= htmlspecialchars($event_option['venue']) ?></em>
-                                <em><iconify-icon icon="ph:calendar"></iconify-icon> <?= htmlspecialchars($event_option['date']) ?> · <?= htmlspecialchars($event_option['time']) ?></em>
-                                <small>"Join Taylor Swift for a legendary journey through her musical eras. This ticket grants access to the North Stand, Section 102."</small>
+                                <strong><?= sg_h($event_option['title']) ?></strong>
+                                <em><iconify-icon icon="ph:map-pin"></iconify-icon> <?= sg_h($event_option['venue']) ?></em>
+                                <em><iconify-icon icon="ph:calendar"></iconify-icon> <?= sg_h($event_option['date']) ?> - <?= sg_h($event_option['time']) ?></em>
+                                <small>"<?= sg_h($event_option['description'] ?? 'Official SafeGate verified event listing.') ?>"</small>
                             </span>
                             <span class="sg-face-value">
                                 <small>Face Value</small>
-                                <b>Rp <?= number_format($event_option['face_value'], 0, ',', '.') ?></b>
+                                <b><?= sg_rupiah($event_option['face_value']) ?></b>
                             </span>
                         </button>
                     <?php endforeach; ?>
@@ -99,22 +82,40 @@ ob_start();
                 <div class="sg-auction-input-grid">
                     <label>
                         <span>Starting Bid (Rp)</span>
-                        <input id="sellingPrice" type="text" inputmode="numeric" value="<?= $selected_event['selling_price'] ?>" data-face-value="<?= $selected_event['face_value'] ?>">
+                        <input id="sellingPrice" name="starting_bid" type="text" inputmode="numeric" value="<?= (int) $selected_event['selling_price'] ?>" data-face-value="<?= (int) $selected_event['face_value'] ?>">
                     </label>
                     <label>
                         <span>Reserve Price (Rp)</span>
-                        <input type="text" placeholder="Min. price to sell">
+                        <input name="reserve_price" type="text" placeholder="Min. price to sell">
                     </label>
                     <label>
                         <span>Duration</span>
-                        <select><option>24 Hours</option><option>3 Days</option><option>7 Days</option></select>
+                        <select name="duration">
+                            <option value="24">24 Hours</option>
+                            <option value="72">3 Days</option>
+                            <option value="168">7 Days</option>
+                        </select>
                     </label>
                 </div>
-                <input id="originalPrice" type="hidden" value="Rp.<?= number_format($selected_event['face_value'], 0, ',', '.') ?>">
+                <div class="sg-auction-input-grid sg-seat-input-grid">
+                    <label>
+                        <span>Section</span>
+                        <input id="ticketSection" name="section" type="text" value="102" maxlength="20" required>
+                    </label>
+                    <label>
+                        <span>Row</span>
+                        <input id="ticketRow" name="row" type="text" value="A" maxlength="20" required>
+                    </label>
+                    <label>
+                        <span>Seat</span>
+                        <input id="ticketSeat" name="seat" type="text" value="1" maxlength="20" required>
+                    </label>
+                </div>
+                <input id="originalPrice" type="hidden" value="<?= sg_rupiah($selected_event['face_value']) ?>">
                 <div class="sg-auction-fairness" id="fairnessBox">
                     <div><span>Fairness Indicator</span><strong id="fairnessLabel">Fair Market Price</strong></div>
                     <div class="sg-fairness-track"><i id="fairnessMeter"></i></div>
-                    <p id="fairnessMessage"><iconify-icon icon="ph:info"></iconify-icon> Anti-Scalping System: Reserve Price tidak boleh melebihi Rp 1.650.000 (+10% dari Harga Asli).</p>
+                    <p id="fairnessMessage"><iconify-icon icon="ph:info"></iconify-icon> Anti-Scalping System: Reserve Price tidak boleh melebihi 110% dari Harga Asli.</p>
                 </div>
             </section>
 
@@ -124,10 +125,11 @@ ob_start();
                     <span>Step 03/03</span>
                 </div>
                 <label class="sg-upload-drop sg-auction-upload" id="uploadDrop">
-                    <input id="ticketFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.pkpass">
+                    <input id="ticketFile" name="ticket_proof" type="file" accept=".pdf,.jpg,.jpeg,.png,.pkpass">
                     <span class="sg-upload-icon"><iconify-icon icon="ph:file-arrow-up"></iconify-icon></span>
-                    <strong>Upload Digital Ticket (PDF/JPG)</strong>
-                    <span>Max 10MB. Dilengkapi enkripsi end-to-end AES-256.</span>
+                    <img id="ticketPreview" class="sg-ticket-proof-preview" src="" alt="Ticket proof preview" hidden>
+                    <strong>Upload Digital Ticket (PDF/JPG/PNG)</strong>
+                    <span>Max 10MB. PDF, JPG, PNG, atau Apple Wallet Pass.</span>
                 </label>
                 <p class="sg-upload-status" id="uploadStatus" aria-live="polite"></p>
             </section>
@@ -149,12 +151,12 @@ ob_start();
                     <span>Network Load: 14%</span>
                     <span>ID: 882-QX-90</span>
                 </div>
-                <span id="summarySelling" hidden>Rp.<?= number_format($selected_event['selling_price'], 0, ',', '.') ?></span>
+                <span id="summarySelling" hidden><?= sg_rupiah($selected_event['selling_price']) ?></span>
                 <span id="summaryFee" hidden></span>
                 <span id="summaryEarning" hidden></span>
             </section>
         </aside>
-    </div>
+    </form>
 </section>
 
 <?php

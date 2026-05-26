@@ -1,12 +1,13 @@
 <?php
+require_once __DIR__ . '/../../core/safegate_repository.php';
+
 $page_title = 'Wallet & Escrow - SafeGate';
 $dashboard_page = 'wallet';
 
-$withdrawals = [
-    ['date' => '24 Okt<br>2023', 'method' => 'Bank<br>Transfer', 'amount' => 'Rp<br>1.500.000', 'status' => 'Processing', 'class' => 'processing'],
-    ['date' => '22 Okt<br>2023', 'method' => 'DANA', 'amount' => 'Rp 450.000', 'status' => 'Success', 'class' => 'success'],
-    ['date' => '19 Okt<br>2023', 'method' => 'USDC<br>Wallet', 'amount' => 'Rp<br>2.000.000', 'status' => 'Failed', 'class' => 'failed'],
-];
+$seller_id = sg_current_user_id('seller');
+$metrics = sg_get_seller_overview($seller_id);
+$withdrawals = sg_get_seller_withdrawals($seller_id);
+$flash = sg_flash();
 
 ob_start();
 ?>
@@ -17,11 +18,15 @@ ob_start();
         <p>Kelola pendapatan dan lakukan penarikan dana dengan aman.</p>
     </header>
 
+    <?php if ($flash): ?>
+        <p class="sg-list-status <?= $flash['type'] === 'error' ? 'is-error' : '' ?>"><?= sg_h($flash['message']) ?></p>
+    <?php endif; ?>
+
     <div class="sg-wallet-balance-grid">
         <article class="sg-wallet-balance-card">
             <div>
                 <span>Escrow Balance</span>
-                <strong>Rp 12.500.000</strong>
+                <strong><?= sg_rupiah($metrics['escrow_balance']) ?></strong>
             </div>
             <iconify-icon icon="ph:lock-key"></iconify-icon>
             <div class="sg-release-row"><span>Release Progress</span><b>76% Locked</b></div>
@@ -31,7 +36,7 @@ ob_start();
         <article class="sg-wallet-balance-card is-available">
             <div>
                 <span>Available Balance</span>
-                <strong>Rp 4.250.000</strong>
+                <strong><?= sg_rupiah($metrics['available_balance']) ?></strong>
                 <small><iconify-icon icon="ph:seal-check"></iconify-icon> Ready for withdrawal</small>
             </div>
             <iconify-icon icon="ph:wallet"></iconify-icon>
@@ -39,26 +44,29 @@ ob_start();
     </div>
 
     <div class="sg-wallet-grid">
-        <section class="sg-panel sg-withdraw-panel">
+        <form class="sg-panel sg-withdraw-panel" action="index.php?page=wallet" method="post">
+            <input type="hidden" name="sg_action" value="withdrawal">
             <h2><iconify-icon icon="ph:money"></iconify-icon> Withdraw Funds</h2>
             <label>
                 <span>Metode Pencairan</span>
-                <select>
-                    <option>Transfer Bank (BCA, Mandiri, BNI)</option>
-                    <option>DANA</option>
-                    <option>USDC Wallet</option>
+                <select name="method">
+                    <option value="bank_transfer">Transfer Bank (BCA, Mandiri, BNI)</option>
+                    <option value="dana">DANA</option>
+                    <option value="gopay">GoPay</option>
+                    <option value="ovo">OVO</option>
+                    <option value="usdc">USDC Wallet</option>
                 </select>
             </label>
             <label>
                 <span>Nomor Rekening / Wallet Address</span>
-                <input type="text" placeholder="Masukkan detail tujuan...">
+                <input name="destination_account" type="text" placeholder="Masukkan detail tujuan..." required>
             </label>
             <label>
                 <span>Nominal Penarikan (Rp)</span>
-                <input type="text" placeholder="Rp    Min. 60.000">
+                <input name="amount" type="text" inputmode="numeric" placeholder="Rp    Min. 60.000" required>
             </label>
-            <button type="button" disabled>Tarik Dana <iconify-icon icon="ph:lightning"></iconify-icon></button>
-        </section>
+            <button type="submit">Tarik Dana <iconify-icon icon="ph:lightning"></iconify-icon></button>
+        </form>
 
         <section class="sg-panel sg-withdraw-table">
             <div class="sg-panel-title-row">
@@ -68,6 +76,11 @@ ob_start();
             <table>
                 <thead><tr><th>Tanggal</th><th>Metode</th><th>Jumlah</th><th>Status</th></tr></thead>
                 <tbody>
+                    <?php if (!$withdrawals): ?>
+                        <tr>
+                            <td colspan="4" style="color: var(--safegate-text-sec);">Belum ada riwayat penarikan dari database.</td>
+                        </tr>
+                    <?php endif; ?>
                     <?php foreach ($withdrawals as $withdrawal): ?>
                         <tr>
                             <td><?= $withdrawal['date'] ?></td>

@@ -29,9 +29,7 @@
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
 </head>
 <body class="bg-safegate-bg text-white sg-dashboard-shell sg-page-<?= htmlspecialchars($dashboard_page ?? 'dashboard') ?>">
-    
-    <!-- Topbar (Optional, can be included from components if extracted) -->
-    
+
     <div class="sg-dashboard-frame">
         <!-- Sidebar Navigation -->
         <?php 

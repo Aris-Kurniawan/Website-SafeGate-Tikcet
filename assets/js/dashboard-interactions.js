@@ -146,12 +146,8 @@
             }
         }
 
-        form?.addEventListener('submit', (event) => event.preventDefault());
         search?.addEventListener('input', updateRows);
         statusSelect?.addEventListener('change', updateRows);
-        qs('select[name="date_range"]', form)?.addEventListener('change', () => {
-            showToast('Filter tanggal siap disambungkan ke database.');
-        });
 
         qsa('.sg-details-button').forEach((button) => {
             button.addEventListener('click', () => {
@@ -166,31 +162,12 @@
             });
         });
 
-        qs('.sg-icon-button')?.addEventListener('click', () => {
-            const csv = ['Event,ID,Date,Type,Amount,Status'].concat(rows.map((row) => [
-                qs('.sg-event-cell h2', row)?.textContent || '',
-                qs('.sg-event-cell p', row)?.textContent.replace('ID: ', '') || '',
-                qs('.sg-date-cell strong', row)?.textContent || '',
-                qs('.sg-type-pill', row)?.textContent || '',
-                qs('.sg-amount-cell strong', row)?.textContent || '',
-                qs('.sg-status', row)?.textContent.trim() || '',
-            ].map((value) => `"${value.replace(/"/g, '""')}"`).join(','))).join('\n');
-
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-            link.download = 'safegate-transactions.csv';
-            link.click();
-            URL.revokeObjectURL(link.href);
-            showToast('CSV transaksi dibuat.');
-        });
-
         qsa('.sg-pagination button:not([disabled])').forEach((button) => {
             button.addEventListener('click', () => {
                 qsa('.sg-pagination button').forEach((item) => item.classList.remove('is-active'));
                 if (!/[‹›]/.test(button.textContent.trim())) {
                     button.classList.add('is-active');
                 }
-                showToast('Pagination demo siap disambungkan ke database.');
             });
         });
     }
@@ -204,7 +181,6 @@
         const destination = inputs[0];
         const amount = inputs[1];
         const button = qs('button', panel);
-        const tbody = qs('.sg-withdraw-table tbody');
 
         function validate() {
             const value = parseNumber(amount.value);
@@ -223,33 +199,14 @@
             amount.value = value ? formatRupiah(value) : '';
         });
 
-        button?.addEventListener('click', () => {
-            const value = parseNumber(amount.value);
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>Hari ini</td>
-                <td>${method.value.split(' ')[0]}</td>
-                <td><strong>${formatRupiah(value)}</strong></td>
-                <td><span class="sg-withdraw-status is-processing">Processing</span></td>
-            `;
-            tbody?.prepend(row);
-            destination.value = '';
-            amount.value = '';
-            validate();
-            showToast('Permintaan tarik dana masuk antrean verifikasi.');
-        });
-
-        qs('.sg-withdraw-table a')?.addEventListener('click', (event) => {
-            event.preventDefault();
-            showToast('Riwayat lengkap siap ditarik dari database.');
-        });
+        button?.addEventListener('click', validate);
     }
 
     function initActiveListings() {
         if (!body.classList.contains('sg-page-active_listings')) return;
 
         qsa('.sg-listing-card').forEach((card) => {
-            const button = qs('button', card);
+            const button = qs(':scope > button', card);
             button?.addEventListener('click', () => {
                 let actions = qs('.sg-listing-actions', card);
                 if (!actions) {
@@ -266,7 +223,7 @@
                         if (!actionButton) return;
                         const title = qs('h2', card)?.textContent || 'Listing';
                         const action = actionButton.dataset.action;
-                        showToast(`${title}: ${action} siap disambungkan ke backend.`);
+                        showToast(`${title}: ${action}`);
                     });
                 }
                 actions.classList.toggle('is-open');
@@ -279,21 +236,43 @@
         if (!body.classList.contains('sg-page-settings')) return;
 
         const kycPanel = qs('.sg-kyc-panel');
-        const nik = qs('input', kycPanel);
-        const submit = qs('button', kycPanel);
+        const kycForm = kycPanel;
+        const nik = qs('input[name="nik"]', kycPanel);
+        const submit = qs('button[type="submit"]', kycPanel);
         const drop = qs('.sg-doc-drop', kycPanel);
         const danger = qs('.sg-danger-label', kycPanel);
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = '.jpg,.jpeg,.png,.pdf';
-        fileInput.hidden = true;
-        drop?.appendChild(fileInput);
+        const fileInput = qs('input[type="file"]', kycPanel);
+        const preview = qs('#kycPreview', kycPanel);
+        const title = qs('strong', drop);
+        const status = qs('small', drop);
+        const defaultTitle = title?.textContent || 'Drag & drop or click to upload';
+        const defaultStatus = status?.textContent || 'Upload front side of your National ID (JPG, PNG, PDF - Max 5MB)';
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
 
         function validateKyc() {
-            const validNik = /^\d{16}$/.test(nik.value.trim());
-            const hasFile = fileInput.files.length > 0;
-            submit.disabled = !(validNik && hasFile);
-            submit.classList.toggle('is-ready', validNik && hasFile);
+            const validNik = nik ? /^\d{16}$/.test(nik.value.trim()) : false;
+            const hasFile = fileInput && fileInput.files.length > 0;
+            submit?.classList.toggle('is-ready', validNik && hasFile);
+            return { validNik, hasFile };
+        }
+
+        function setKycStatus(message, isError = false) {
+            if (!status) return;
+            status.textContent = message;
+            status.style.color = isError ? '#ff6868' : '';
+        }
+
+        function resetKycPreview(resetText = false) {
+            if (preview) {
+                preview.hidden = true;
+                preview.style.display = 'none';
+                preview.removeAttribute('src');
+            }
+            drop?.classList.remove('has-preview');
+            if (resetText) {
+                if (title) title.textContent = defaultTitle;
+                setKycStatus(defaultStatus);
+            }
         }
 
         nik?.addEventListener('input', () => {
@@ -301,44 +280,110 @@
             validateKyc();
         });
 
-        drop?.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', () => {
-            const file = fileInput.files[0];
-            if (!file) return;
-            qs('strong', drop).textContent = file.name;
-            qs('small', drop).textContent = 'Dokumen siap dikirim untuk verifikasi.';
+        function handleKycFile(file) {
+            if (!file) {
+                resetKycPreview(true);
+                validateKyc();
+                return;
+            }
+
+            const extension = file.name.split('.').pop().toLowerCase();
+            if (!allowedExtensions.includes(extension)) {
+                fileInput.value = '';
+                resetKycPreview();
+                if (title) title.textContent = defaultTitle;
+                setKycStatus('Format harus JPG, PNG, atau PDF.', true);
+                validateKyc();
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                fileInput.value = '';
+                resetKycPreview();
+                if (title) title.textContent = defaultTitle;
+                setKycStatus('Ukuran file maksimal 5MB.', true);
+                validateKyc();
+                return;
+            }
+
+            if (title) title.textContent = file.name;
+            const isImage = ['jpg', 'jpeg', 'png'].includes(extension);
+            if (isImage && preview) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    preview.src = reader.result;
+                    preview.hidden = false;
+                    preview.style.display = 'block';
+                    drop?.classList.add('has-preview');
+                };
+                reader.readAsDataURL(file);
+                setKycStatus('Preview KTP siap. Dokumen bisa dikirim untuk verifikasi.');
+            } else {
+                resetKycPreview();
+                if (title) title.textContent = file.name;
+                setKycStatus(`${file.name} siap dikirim untuk verifikasi. Preview hanya tersedia untuk JPG/PNG.`);
+            }
             validateKyc();
+        }
+
+        drop?.addEventListener('click', (event) => {
+            if (event.target === fileInput) return;
+            fileInput?.click();
         });
 
-        submit?.addEventListener('click', () => {
-            danger.innerHTML = '<iconify-icon icon="ph:clock"></iconify-icon> Status: Waiting Review';
-            danger.classList.add('is-warning');
-            showToast('Dokumen KYC tersimpan untuk review admin.');
+        fileInput?.addEventListener('change', () => {
+            handleKycFile(fileInput.files[0]);
+        });
+
+        ['dragenter', 'dragover'].forEach((eventName) => {
+            drop?.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                drop.classList.add('is-dragging');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach((eventName) => {
+            drop?.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                drop.classList.remove('is-dragging');
+            });
+        });
+
+        drop?.addEventListener('drop', (event) => {
+            const file = event.dataTransfer?.files?.[0];
+            if (!file || !fileInput) return;
+            const transfer = new DataTransfer();
+            transfer.items.add(file);
+            fileInput.files = transfer.files;
+            handleKycFile(file);
+        });
+
+        kycForm?.addEventListener('submit', (event) => {
+            const { validNik, hasFile } = validateKyc();
+            if (!validNik || !hasFile) {
+                event.preventDefault();
+                const message = !validNik ? 'Isi NIK 16 digit dulu sebelum submit KYC.' : 'Upload dokumen KTP dulu sebelum submit.';
+                setKycStatus(message, true);
+                showToast(message, 'error');
+                return;
+            }
+            if (danger) {
+                danger.innerHTML = '<iconify-icon icon="ph:clock"></iconify-icon> Status: Waiting Review';
+                danger.classList.add('is-warning');
+            }
+            showToast('Dokumen KYC sedang dikirim untuk review admin.');
         });
         validateKyc();
 
         const profilePanel = qs('.sg-profile-panel');
-        const editButton = qs('.sg-panel-title-row button', profilePanel);
         const profileInputs = qsa('input', profilePanel);
-        profileInputs.forEach((input) => input.readOnly = true);
-        editButton?.addEventListener('click', () => {
-            const editing = profilePanel.classList.toggle('is-editing');
-            profileInputs.forEach((input) => input.readOnly = !editing);
-            editButton.innerHTML = editing
-                ? '<iconify-icon icon="ph:check"></iconify-icon>'
-                : '<iconify-icon icon="ph:pencil-simple"></iconify-icon>';
-            showToast(editing ? 'Mode edit profil aktif.' : 'Perubahan profil tersimpan lokal.');
+        profileInputs.forEach((input) => {
+            if (input.name) {
+                input.readOnly = false;
+            }
         });
 
-        qs('.sg-change-photo')?.addEventListener('click', () => {
-            showToast('Upload foto profil siap disambungkan ke storage.');
-        });
 
-        qsa('.sg-security-grid button').forEach((button) => {
-            button.addEventListener('click', () => {
-                showToast(`${button.textContent.trim()} siap disambungkan ke auth backend.`);
-            });
-        });
     }
 
     document.addEventListener('DOMContentLoaded', () => {

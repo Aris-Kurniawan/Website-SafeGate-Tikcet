@@ -2,14 +2,53 @@
 // views/admin/transactions.php - Buku Besar Transaksi SafeGate Admin
 $page_title = 'Global Transaction Ledger - SafeGate Admin';
 
-// Satpam Check
 require_once __DIR__ . '/../../core/admin_middleware.php';
+require_once __DIR__ . '/../../core/safegate_repository.php';
 
-// Ambil filter query parameter jika di-submit untuk UX yang dinamis
-$search_val = isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '';
-$pay_status_val = isset($_GET['payment_status']) ? $_GET['payment_status'] : 'all';
-$escrow_status_val = isset($_GET['escrow_status']) ? $_GET['escrow_status'] : 'all';
-$date_val = isset($_GET['date']) ? htmlspecialchars($_GET['date']) : '';
+$search_val = isset($_GET['search']) ? trim((string) $_GET['search']) : '';
+$pay_status_val = $_GET['payment_status'] ?? 'all';
+$escrow_status_val = $_GET['escrow_status'] ?? 'all';
+$date_val = isset($_GET['date']) ? trim((string) $_GET['date']) : '';
+$current_page = max(1, (int) ($_GET['p'] ?? 1));
+$per_page = 10;
+$transaction_filters = [
+    'search' => $search_val,
+    'payment_status' => $pay_status_val,
+    'escrow_status' => $escrow_status_val,
+    'date' => $date_val,
+];
+$total_transactions = sg_count_admin_transactions($transaction_filters);
+$total_pages = max(1, (int) ceil($total_transactions / $per_page));
+$current_page = min($current_page, $total_pages);
+$transactions = sg_get_admin_transactions($transaction_filters + [
+    'limit' => $per_page,
+    'offset' => ($current_page - 1) * $per_page,
+]);
+$flash = sg_flash();
+
+$admin_tx_page_url = static function (int $page) use ($search_val, $pay_status_val, $escrow_status_val, $date_val): string {
+    return 'index.php?' . http_build_query([
+        'page' => 'admin_transactions',
+        'search' => $search_val,
+        'payment_status' => $pay_status_val,
+        'escrow_status' => $escrow_status_val,
+        'date' => $date_val,
+        'p' => max(1, $page),
+    ]);
+};
+
+$volume_24h = 0;
+$pending_count = 0;
+$failed_count = 0;
+foreach ($transactions as $transaction) {
+    $volume_24h += (int) $transaction['total_amount'];
+    if ($transaction['payment_status'] === 'pending' || $transaction['escrow_status'] === 'holding') {
+        $pending_count++;
+    }
+    if ($transaction['payment_status'] === 'failed' || $transaction['payment_status'] === 'refunded') {
+        $failed_count++;
+    }
+}
 
 ob_start();
 ?>
@@ -27,97 +66,87 @@ ob_start();
     </div>
 </div>
 
-<!-- KPI Cards Grid -->
+<?php if ($flash): ?>
+    <div style="margin-top: 18px; padding: 14px 16px; border-radius: 14px; font-weight: 800; font-size: 13px; color: <?= ($flash['type'] ?? 'success') === 'error' ? '#ff6868' : '#d9ff00' ?>; background: <?= ($flash['type'] ?? 'success') === 'error' ? 'rgba(255, 85, 85, .08)' : 'rgba(217, 255, 0, .08)' ?>; border: 1px solid <?= ($flash['type'] ?? 'success') === 'error' ? 'rgba(255, 85, 85, .2)' : 'rgba(217, 255, 0, .18)' ?>;">
+        <?= sg_h($flash['message']) ?>
+    </div>
+<?php endif; ?>
+
 <div class="sg-admin-kpi-grid" style="margin-top: 24px;">
-    <!-- 24H Volume -->
     <div class="sg-admin-kpi-card">
         <div class="sg-admin-kpi-info">
-            <h2 class="sg-admin-kpi-label">24h Volume</h2>
-            <div class="sg-admin-kpi-value" style="color: var(--admin-accent);" data-rupiah="128500000">Rp 128.500.000</div>
+            <h2 class="sg-admin-kpi-label">Visible Volume</h2>
+            <div class="sg-admin-kpi-value" style="color: var(--admin-accent);"><?= sg_rupiah($volume_24h) ?></div>
             <div class="sg-admin-kpi-footer sg-admin-trend-up">
                 <iconify-icon icon="ph:trend-up-bold"></iconify-icon>
-                <span>+14.2% from previous cycle</span>
+                <span>From current filter result</span>
             </div>
         </div>
-        <div class="sg-admin-kpi-icon">
-            <iconify-icon icon="ph:chart-bar-fill"></iconify-icon>
-        </div>
+        <div class="sg-admin-kpi-icon"><iconify-icon icon="ph:chart-bar-fill"></iconify-icon></div>
     </div>
 
-    <!-- Pending Settlements -->
     <div class="sg-admin-kpi-card">
         <div class="sg-admin-kpi-info">
             <h2 class="sg-admin-kpi-label">Pending Settlements</h2>
-            <div class="sg-admin-kpi-value" style="color: #00e5ff;">42 Transaksi</div>
+            <div class="sg-admin-kpi-value" style="color: #00e5ff;"><?= $pending_count ?> Transaksi</div>
             <div class="sg-admin-kpi-footer" style="color: #00e5ff;">
                 <iconify-icon icon="ph:clock-fill"></iconify-icon>
-                <span>Average wait: 1.4 hrs</span>
+                <span>Needs escrow monitoring</span>
             </div>
         </div>
-        <div class="sg-admin-kpi-icon">
-            <iconify-icon icon="ph:hourglass-medium-fill"></iconify-icon>
-        </div>
+        <div class="sg-admin-kpi-icon"><iconify-icon icon="ph:hourglass-medium-fill"></iconify-icon></div>
     </div>
 
-    <!-- Failed/Expired -->
     <div class="sg-admin-kpi-card">
         <div class="sg-admin-kpi-info">
-            <h2 class="sg-admin-kpi-label">Failed/Expired</h2>
-            <div class="sg-admin-kpi-value" style="color: var(--admin-danger);">5 Transaksi</div>
+            <h2 class="sg-admin-kpi-label">Failed/Refunded</h2>
+            <div class="sg-admin-kpi-value" style="color: var(--admin-danger);"><?= $failed_count ?> Transaksi</div>
             <div class="sg-admin-kpi-footer" style="color: var(--admin-danger);">
                 <iconify-icon icon="ph:warning-fill"></iconify-icon>
                 <span>Requires Manual Sync</span>
             </div>
         </div>
-        <div class="sg-admin-kpi-icon">
-            <iconify-icon icon="ph:x-circle-fill"></iconify-icon>
-        </div>
+        <div class="sg-admin-kpi-icon"><iconify-icon icon="ph:x-circle-fill"></iconify-icon></div>
     </div>
 </div>
 
-<!-- Filter Bar Section -->
 <form method="GET" action="index.php" class="sg-admin-filter-bar" style="margin-top: 24px;">
-    <!-- Hidden input to keep route active -->
     <input type="hidden" name="page" value="admin_transactions">
+    <input type="hidden" name="p" value="1">
 
-    <!-- Search box -->
     <div class="sg-admin-filter-input-group">
         <iconify-icon icon="ph:magnifying-glass"></iconify-icon>
-        <input type="text" name="search" placeholder="Search TX-ID, Buyer Email..." value="<?= $search_val ?>">
+        <input type="text" name="search" placeholder="Search TX-ID, Buyer Email..." value="<?= sg_h($search_val) ?>">
     </div>
 
-    <!-- Payment Status select -->
-    <select name="payment_status" class="sg-admin-filter-select" onchange="this.style.color='var(--admin-text)'">
+    <select name="payment_status" class="sg-admin-filter-select">
         <option value="all" <?= $pay_status_val === 'all' ? 'selected' : '' ?>>Payment Status: All</option>
         <option value="paid" <?= $pay_status_val === 'paid' ? 'selected' : '' ?>>Paid</option>
         <option value="failed" <?= $pay_status_val === 'failed' ? 'selected' : '' ?>>Failed</option>
         <option value="pending" <?= $pay_status_val === 'pending' ? 'selected' : '' ?>>Pending</option>
+        <option value="refunded" <?= $pay_status_val === 'refunded' ? 'selected' : '' ?>>Refunded</option>
     </select>
 
-    <!-- Escrow Status select -->
-    <select name="escrow_status" class="sg-admin-filter-select" onchange="this.style.color='var(--admin-text)'">
+    <select name="escrow_status" class="sg-admin-filter-select">
         <option value="all" <?= $escrow_status_val === 'all' ? 'selected' : '' ?>>Escrow Status: All</option>
         <option value="released" <?= $escrow_status_val === 'released' ? 'selected' : '' ?>>Released</option>
-        <option value="held" <?= $escrow_status_val === 'held' ? 'selected' : '' ?>>Held</option>
-        <option value="na" <?= $escrow_status_val === 'na' ? 'selected' : '' ?>>N/A</option>
+        <option value="holding" <?= $escrow_status_val === 'holding' ? 'selected' : '' ?>>Holding</option>
+        <option value="refunded" <?= $escrow_status_val === 'refunded' ? 'selected' : '' ?>>Refunded</option>
+        <option value="disputed" <?= $escrow_status_val === 'disputed' ? 'selected' : '' ?>>Disputed</option>
     </select>
 
-    <!-- Date Picker picker input -->
-    <input type="date" name="date" class="sg-admin-filter-date" value="<?= $date_val ?>" onchange="this.style.color='var(--admin-text)'">
+    <input type="date" name="date" class="sg-admin-filter-date" value="<?= sg_h($date_val) ?>">
 
-    <!-- Export to CSV button -->
-    <button type="button" class="sg-admin-btn-export-csv" onclick="exportToCSV()">
+    <a class="sg-admin-btn-export-csv" href="index.php?sg_action=export_transactions&search=<?= urlencode($search_val) ?>&payment_status=<?= urlencode($pay_status_val) ?>&escrow_status=<?= urlencode($escrow_status_val) ?>&date=<?= urlencode($date_val) ?>" style="text-decoration:none;">
         <iconify-icon icon="ph:download-simple-bold"></iconify-icon>
         <span>Export to CSV</span>
-    </button>
+    </a>
 
-    <!-- Apply Filter button -->
     <button type="submit" class="sg-admin-btn-apply-filter">
         <span>Apply Filter</span>
     </button>
 </form>
 
-<!-- Ledger Table Card Panel -->
 <div class="sg-admin-table-panel" style="margin-top: 24px;">
     <div class="sg-admin-table-responsive">
         <table class="sg-admin-table">
@@ -133,169 +162,86 @@ ob_start();
                 </tr>
             </thead>
             <tbody>
-                <!-- Row 1: Eras Tour Ticket -->
-                <tr>
-                    <td class="sg-admin-timestamp" style="font-weight: 700; color: #FFF;">
-                        SG-TX-9921
-                        <span style="display: block; font-size: 11px; font-weight: 500; color: var(--admin-text-muted); margin-top: 4px;">24 Oct 2024, 14:22</span>
-                    </td>
-                    <td>
-                        <a href="mailto:alex@email.com" class="sg-admin-entity-link">alex@email.com</a>
-                        <span class="sg-admin-entity-arrow">→</span>
-                        <span class="sg-admin-entity-merchant">Vendor #412</span>
-                    </td>
-                    <td style="color: #E2E8F0; font-weight: 600;">1x Ticket - The Eras Tour</td>
-                    <td class="sg-admin-amount-fee">
-                        <strong style="color: #FFF; font-size: 15px;">Rp 2.500.000</strong>
-                        <span class="sg-fee-text">Fee: Rp 125.000</span>
-                    </td>
-                    <td>
-                        <span class="sg-badge-status-dot is-paid">Paid</span>
-                    </td>
-                    <td>
-                        <span class="sg-badge-status-dot is-released">Released</span>
-                    </td>
-                    <td>
-                        <button class="sg-admin-btn-more" aria-label="View Details" onclick="viewTransaction('SG-TX-9921')">
-                            <iconify-icon icon="ph:eye-fill"></iconify-icon>
-                        </button>
-                    </td>
-                </tr>
+                <?php if (!$transactions): ?>
+                    <tr>
+                        <td colspan="7" style="padding: 28px; color: var(--admin-text-muted);">Belum ada transaksi di database. Data akan muncul otomatis setelah tabel `transactions` terisi.</td>
+                    </tr>
+                <?php endif; ?>
 
-                <!-- Row 2: Luxury Watch -->
-                <tr>
-                    <td class="sg-admin-timestamp" style="font-weight: 700; color: #FFF;">
-                        SG-TX-9922
-                        <span style="display: block; font-size: 11px; font-weight: 500; color: var(--admin-text-muted); margin-top: 4px;">24 Oct 2024, 15:10</span>
-                    </td>
-                    <td>
-                        <a href="mailto:user_88@domain.io" class="sg-admin-entity-link">user_88@domain.io</a>
-                        <span class="sg-admin-entity-arrow">→</span>
-                        <span class="sg-admin-entity-merchant">Merchant Alpha</span>
-                    </td>
-                    <td style="color: #E2E8F0; font-weight: 600;">Luxury Watch (Pre-owned)</td>
-                    <td class="sg-admin-amount-fee">
-                        <strong style="color: #FFF; font-size: 15px;">Rp 1.500.000</strong>
-                        <span class="sg-fee-text">Fee: Rp 75.000</span>
-                    </td>
-                    <td>
-                        <span class="sg-badge-status-dot is-paid">Paid</span>
-                    </td>
-                    <td>
-                        <span class="sg-badge-status-dot is-held">Held</span>
-                    </td>
-                    <td>
-                        <button class="sg-admin-btn-more" aria-label="View Details" onclick="viewTransaction('SG-TX-9922')">
-                            <iconify-icon icon="ph:eye-fill"></iconify-icon>
-                        </button>
-                    </td>
-                </tr>
-
-                <!-- Row 3: Bulk Digital Assets (Failed) -->
-                <tr>
-                    <td class="sg-admin-timestamp" style="font-weight: 700; color: #FFF;">
-                        SG-TX-9923
-                        <span style="display: block; font-size: 11px; font-weight: 500; color: var(--admin-text-muted); margin-top: 4px;">24 Oct 2024, 16:05</span>
-                    </td>
-                    <td>
-                        <a href="mailto:crypto_whale@web3.com" class="sg-admin-entity-link">crypto_whale@web3.com</a>
-                        <span class="sg-admin-entity-arrow">→</span>
-                        <span class="sg-admin-entity-merchant">Unknown Node</span>
-                    </td>
-                    <td style="color: #E2E8F0; font-weight: 600;">Bulk Digital Assets</td>
-                    <td class="sg-admin-amount-fee">
-                        <strong style="color: #FFF; font-size: 15px;">Rp 5.000.000</strong>
-                        <span class="sg-fee-text">Fee: Rp 250.000</span>
-                    </td>
-                    <td>
-                        <span class="sg-badge-status-dot is-failed">Failed</span>
-                    </td>
-                    <td>
-                        <span class="sg-badge-status-dot is-na">N/A</span>
-                    </td>
-                    <td>
-                        <button class="sg-admin-btn-sync" onclick="forceSyncTransaction('SG-TX-9923')">
-                            <iconify-icon icon="ph:arrows-clockwise-bold"></iconify-icon>
-                            <span>Force Sync</span>
-                        </button>
-                    </td>
-                </tr>
-
-                <!-- Row 4: iPhone 16 Pro Max (Pending) -->
-                <tr>
-                    <td class="sg-admin-timestamp" style="font-weight: 700; color: #FFF;">
-                        SG-TX-9924
-                        <span style="display: block; font-size: 11px; font-weight: 500; color: var(--admin-text-muted); margin-top: 4px;">24 Oct 2024, 16:40</span>
-                    </td>
-                    <td>
-                        <a href="mailto:sarah_smith@mail.com" class="sg-admin-entity-link">sarah_smith@mail.com</a>
-                        <span class="sg-admin-entity-arrow">→</span>
-                        <span class="sg-admin-entity-merchant">Gadget Hub</span>
-                    </td>
-                    <td style="color: #E2E8F0; font-weight: 600;">iPhone 16 Pro Max</td>
-                    <td class="sg-admin-amount-fee">
-                        <strong style="color: #FFF; font-size: 15px;">Rp 22.000.000</strong>
-                        <span class="sg-fee-text">Fee: Rp 440.000</span>
-                    </td>
-                    <td>
-                        <span class="sg-badge-status-dot is-pending">Pending</span>
-                    </td>
-                    <td>
-                        <span class="sg-badge-status-dot is-held">Held</span>
-                    </td>
-                    <td>
-                        <button class="sg-admin-btn-more" aria-label="View Details" onclick="viewTransaction('SG-TX-9924')">
-                            <iconify-icon icon="ph:eye-fill"></iconify-icon>
-                        </button>
-                    </td>
-                </tr>
+                <?php foreach ($transactions as $transaction): ?>
+                    <tr>
+                        <td class="sg-admin-timestamp" style="font-weight: 700; color: #FFF;">
+                            <?= sg_h($transaction['transaction_code']) ?>
+                            <span style="display: block; font-size: 11px; font-weight: 500; color: var(--admin-text-muted); margin-top: 4px;"><?= date('d M Y, H:i', strtotime($transaction['created_at'])) ?></span>
+                        </td>
+                        <td>
+                            <a href="mailto:<?= sg_h($transaction['buyer_email']) ?>" class="sg-admin-entity-link"><?= sg_h($transaction['buyer_email']) ?></a>
+                            <span class="sg-admin-entity-arrow">-&gt;</span>
+                            <span class="sg-admin-entity-merchant"><?= sg_h($transaction['seller_name']) ?></span>
+                        </td>
+                        <td style="color: #E2E8F0; font-weight: 600;"><?= sg_h($transaction['event_title']) ?></td>
+                        <td class="sg-admin-amount-fee">
+                            <strong style="color: #FFF; font-size: 15px;"><?= sg_rupiah($transaction['total_amount']) ?></strong>
+                            <span class="sg-fee-text">Fee: <?= sg_rupiah($transaction['platform_revenue']) ?></span>
+                        </td>
+                        <td><span class="sg-badge-status-dot is-<?= sg_h($transaction['payment_status']) ?>"><?= sg_h(ucwords($transaction['payment_status'])) ?></span></td>
+                        <td><span class="sg-badge-status-dot is-<?= $transaction['escrow_status'] === 'holding' ? 'held' : sg_h($transaction['escrow_status']) ?>"><?= sg_h(ucwords($transaction['escrow_status'])) ?></span></td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                <a class="sg-admin-btn-more" aria-label="View Details" href="index.php?page=transaction_detail&code=<?= urlencode($transaction['transaction_code']) ?>" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">
+                                    <iconify-icon icon="ph:eye-fill"></iconify-icon>
+                                </a>
+                                <?php if ($transaction['payment_status'] === 'paid' && in_array($transaction['escrow_status'], ['holding', 'disputed'], true)): ?>
+                                    <form action="index.php?page=admin_transactions" method="post" style="margin:0;">
+                                        <input type="hidden" name="sg_action" value="admin_settle_transaction">
+                                        <input type="hidden" name="transaction_id" value="<?= (int) $transaction['id'] ?>">
+                                        <input type="hidden" name="decision" value="release">
+                                        <button type="submit" class="sg-admin-btn-action is-green" style="padding:8px 10px; font-size:11px;" onclick="return confirm('Lepas escrow transaksi <?= sg_h($transaction['transaction_code']) ?> ke seller?')">Release</button>
+                                    </form>
+                                    <form action="index.php?page=admin_transactions" method="post" style="margin:0;">
+                                        <input type="hidden" name="sg_action" value="admin_settle_transaction">
+                                        <input type="hidden" name="transaction_id" value="<?= (int) $transaction['id'] ?>">
+                                        <input type="hidden" name="decision" value="refund">
+                                        <button type="submit" class="sg-admin-btn-action is-peach" style="padding:8px 10px; font-size:11px;" onclick="return confirm('Refund transaksi <?= sg_h($transaction['transaction_code']) ?> ke buyer?')">Refund</button>
+                                    </form>
+                                <?php else: ?>
+                                    <span style="font-size:11px; font-weight:800; color:var(--admin-text-muted); text-transform:uppercase;">Final</span>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
             </tbody>
         </table>
     </div>
 
-    <!-- Pagination Footer -->
     <div class="sg-admin-table-footer-row">
         <div class="sg-admin-record-count">
-            Displaying 4 of 2,491 records
+            <?php if ($total_transactions > 0): ?>
+                Displaying <?= (($current_page - 1) * $per_page) + 1 ?>-<?= min($current_page * $per_page, $total_transactions) ?> of <?= $total_transactions ?> records
+            <?php else: ?>
+                Displaying 0 records
+            <?php endif; ?>
         </div>
         <div class="sg-admin-pagination">
-            <button type="button" class="sg-admin-page-btn is-disabled" aria-label="Previous page">
-                <iconify-icon icon="ph:caret-left-bold"></iconify-icon>
-            </button>
-            <a href="#" class="sg-admin-page-btn is-active">1</a>
-            <a href="#" class="sg-admin-page-btn">2</a>
-            <a href="#" class="sg-admin-page-btn">3</a>
-            <button type="button" class="sg-admin-page-btn" aria-label="Next page">
-                <iconify-icon icon="ph:caret-right-bold"></iconify-icon>
-            </button>
+            <?php if ($current_page > 1): ?>
+                <a href="<?= sg_h($admin_tx_page_url($current_page - 1)) ?>" class="sg-admin-page-btn" aria-label="Previous page"><iconify-icon icon="ph:caret-left-bold"></iconify-icon></a>
+            <?php else: ?>
+                <button type="button" class="sg-admin-page-btn is-disabled" aria-label="Previous page"><iconify-icon icon="ph:caret-left-bold"></iconify-icon></button>
+            <?php endif; ?>
+
+            <?php for ($page_number = 1; $page_number <= $total_pages; $page_number++): ?>
+                <a href="<?= sg_h($admin_tx_page_url($page_number)) ?>" class="sg-admin-page-btn <?= $page_number === $current_page ? 'is-active' : '' ?>"><?= $page_number ?></a>
+            <?php endfor; ?>
+
+            <?php if ($current_page < $total_pages): ?>
+                <a href="<?= sg_h($admin_tx_page_url($current_page + 1)) ?>" class="sg-admin-page-btn" aria-label="Next page"><iconify-icon icon="ph:caret-right-bold"></iconify-icon></a>
+            <?php else: ?>
+                <button type="button" class="sg-admin-page-btn is-disabled" aria-label="Next page"><iconify-icon icon="ph:caret-right-bold"></iconify-icon></button>
+            <?php endif; ?>
         </div>
     </div>
 </div>
-
-<script>
-// Pemicu warna font untuk input select setelah diubah nilainya
-document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".sg-admin-filter-select, .sg-admin-filter-date").forEach(el => {
-        if(el.value && el.value !== "all") {
-            el.style.color = "var(--admin-text)";
-        }
-    });
-});
-
-function exportToCSV() {
-    alert("System Ledger Export:\nDownloading Global Transaction Ledger as CSV...\nTransaction files will save locally in your Downloads folder.");
-}
-
-function viewTransaction(txId) {
-    alert("Viewing transaction details for: " + txId + "\nTransaction state is active on the mainnet node.");
-}
-
-function forceSyncTransaction(txId) {
-    if (confirm("Initiate FORCE RESYNC for " + txId + " on smart contract ledger?")) {
-        alert("Sync command dispatched. Re-validating block signatures...");
-    }
-}
-</script>
 
 <?php
 $content = ob_get_clean();

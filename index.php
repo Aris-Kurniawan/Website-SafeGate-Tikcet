@@ -1,5 +1,7 @@
 <?php
 // Router / Entry Point Utama
+require_once __DIR__ . '/core/request_handlers.php';
+
 $page = isset($_GET['page']) ? $_GET['page'] : 'home';
 
 $routes = [
@@ -8,8 +10,11 @@ $routes = [
     'penjualan' => __DIR__ . '/views/public/penjualan.php',
     'detail_tiket' => __DIR__ . '/views/public/detail_tiket.php',
     'pembayaran' => __DIR__ . '/views/public/pembayaran.php',
+    'transaction_detail' => __DIR__ . '/views/public/transaction_detail.php',
     'login' => __DIR__ . '/views/public/login.php',
     'signup' => __DIR__ . '/views/public/signup.php',
+    'my_tickets' => __DIR__ . '/views/buyer/my_tickets.php',
+    'buyer_profile' => __DIR__ . '/views/buyer/profile_settings.php',
     'seller_overview' => __DIR__ . '/views/seller/overview.php',
     'sell_ticket' => __DIR__ . '/views/seller/sell_ticket.php',
     'active_listings' => __DIR__ . '/views/seller/active_listings.php',
@@ -26,5 +31,7 @@ if (!array_key_exists($page, $routes)) {
     http_response_code(404);
     $page = 'home';
 }
+
+sg_require_route_access($page);
 
 require $routes[$page];

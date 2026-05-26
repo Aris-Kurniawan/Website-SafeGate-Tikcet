@@ -1,6 +1,12 @@
 <?php
+require_once __DIR__ . '/../../core/safegate_repository.php';
+
 $page_title = 'Seller Overview - SafeGate';
 $dashboard_page = 'overview';
+$seller_id = sg_current_user_id('seller');
+$metrics = sg_get_seller_overview($seller_id);
+$notifications = sg_get_notifications($seller_id, 5);
+$unread_notifications = sg_unread_notification_count($seller_id);
 
 ob_start();
 ?>
@@ -10,7 +16,7 @@ ob_start();
         <p><iconify-icon icon="ph:map-pin"></iconify-icon> Main Net Node #0412</p>
         <div>
             <button type="button" aria-label="Search"><iconify-icon icon="ph:magnifying-glass"></iconify-icon></button>
-            <button type="button" aria-label="Notifications"><iconify-icon icon="ph:bell"></iconify-icon></button>
+            <button type="button" aria-label="Notifications" title="<?= (int) $unread_notifications ?> unread notifications"><iconify-icon icon="ph:bell"></iconify-icon></button>
             <button type="button" aria-label="Settings"><iconify-icon icon="ph:gear-six"></iconify-icon></button>
         </div>
     </header>
@@ -26,18 +32,18 @@ ob_start();
     <div class="sg-metric-grid">
         <article class="sg-metric-card">
             <span>Escrow Balance</span>
-            <strong>Rp 8.290.000</strong>
+            <strong><?= sg_rupiah($metrics['escrow_balance']) ?></strong>
             <small><iconify-icon icon="ph:hourglass"></iconify-icon> Ditahan sistem</small>
             <iconify-icon class="sg-card-watermark" icon="ph:lock"></iconify-icon>
         </article>
         <article class="sg-metric-card is-highlight">
             <span>Available to Withdraw</span>
-            <strong>Rp 4.150.000</strong>
+            <strong><?= sg_rupiah($metrics['available_balance']) ?></strong>
             <a href="index.php?page=wallet"><iconify-icon icon="ph:money"></iconify-icon> Withdraw Funds</a>
         </article>
         <article class="sg-metric-card">
             <span>Total Sales Volume</span>
-            <strong>Rp 12.440.000</strong>
+            <strong><?= sg_rupiah($metrics['sales_volume']) ?></strong>
             <p>Setelah dipotong fee 5%</p>
             <small class="text-safegate-success"><iconify-icon icon="ph:trend-up"></iconify-icon> +12.4% vs last month</small>
         </article>
@@ -71,19 +77,36 @@ ob_start();
         <aside class="sg-side-stack">
             <section class="sg-panel sg-ops-panel">
                 <h2><iconify-icon icon="ph:chart-bar"></iconify-icon> Operational Metrics</h2>
-                <div class="sg-progress-item"><span>Active Listings</span><strong>4 Tiket</strong><i style="--value: 34%"></i></div>
-                <div class="sg-progress-item"><span>Sold This Month</span><strong>12 Tiket</strong><i style="--value: 76%"></i></div>
+                <div class="sg-progress-item"><span>Active Listings</span><strong><?= (int) $metrics['active_listings'] ?> Tiket</strong><i style="--value: 34%"></i></div>
+                <div class="sg-progress-item"><span>Sold This Month</span><strong><?= (int) $metrics['sold_month'] ?> Tiket</strong><i style="--value: 76%"></i></div>
             </section>
             <section class="sg-panel sg-alert-panel">
-                <h2>! System Alerts</h2>
-                <p><b></b>Lelang tiket VIP Coldplay berakhir dalam 2 jam.<span>High Priority</span></p>
-                <p class="is-muted"><b></b>Verifikasi KYC tahunan telah disetujui.<span>Yesterday</span></p>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                    <h2>! System Alerts</h2>
+                    <?php if ($unread_notifications > 0): ?>
+                        <a href="index.php?sg_action=mark_notifications_read" style="color:#d9ff00; font-size:11px; font-weight:800; text-decoration:none; text-transform:uppercase;">Mark read</a>
+                    <?php endif; ?>
+                </div>
+                <?php if ($notifications): ?>
+                    <?php foreach (array_slice($notifications, 0, 3) as $notification): ?>
+                        <p class="<?= (int) $notification['is_read'] ? 'is-muted' : '' ?>">
+                            <b></b>
+                            <span class="sg-alert-content">
+                                <strong><?= sg_h($notification['title']) ?></strong>
+                                <em><?= sg_h($notification['body']) ?></em>
+                                <small><?= sg_h(sg_time_ago($notification['created_at'])) ?></small>
+                            </span>
+                        </p>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <p><b></b><span class="sg-alert-content"><strong>Belum ada notifikasi baru.</strong><em>Semua sistem seller normal.</em><small>Just now</small></span></p>
+                <?php endif; ?>
             </section>
         </aside>
     </div>
 
     <footer class="sg-vendor-footer">
-        <span>© 2024 Safegate Protocol</span>
+        <span>Ã‚Â© 2024 Safegate Protocol</span>
         <a href="#">API Docs</a>
         <a href="#">Security White Paper</a>
         <strong><i></i> All Systems Nominal</strong>

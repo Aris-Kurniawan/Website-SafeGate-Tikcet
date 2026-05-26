@@ -6,30 +6,35 @@ $dashboard_page = isset($dashboard_page) ? $dashboard_page : '';
 /* Logo Brand Styling */
 .sg-side-brand {
     gap: 12px !important;
+    color: #fff !important;
+    text-decoration: none !important;
 }
 .sg-logo-icon {
     position: relative;
-    width: 35px;
-    height: 35px;
+    width: 36px;
+    height: 36px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    filter: drop-shadow(0 0 10px rgba(190, 240, 0, 0.4));
+    border-radius: 9px;
+    background: var(--safegate-neon, #d9ff00);
+    box-shadow: 0 0 16px rgba(217, 255, 0, 0.38);
+    filter: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .sg-side-brand:hover .sg-logo-icon {
-    transform: scale(1.06);
-    filter: drop-shadow(0 0 16px rgba(190, 240, 0, 0.6));
+    transform: scale(1.05) rotate(2deg);
+    box-shadow: 0 0 20px rgba(217, 255, 0, 0.55);
 }
 .sg-logo-icon svg {
-    width: 100%;
-    height: 100%;
+    width: 20px;
+    height: 20px;
     display: block;
 }
 .sg-side-brand span {
-    color: #e2e6ef !important;
-    font-size: 28px !important;
+    color: #ffffff !important;
+    font-size: 24px !important;
     font-weight: 800 !important;
     letter-spacing: -0.04em !important;
     line-height: 1 !important;
@@ -62,11 +67,11 @@ $dashboard_page = isset($dashboard_page) ? $dashboard_page : '';
 
 /* Compact layout adjustments */
 .sg-dashboard-frame .sg-side-brand {
-    gap: 10px !important;
+    gap: 12px !important;
 }
 .sg-dashboard-frame .sg-logo-icon {
-    width: 30px;
-    height: 30px;
+    width: 36px;
+    height: 36px;
 }
 .sg-dashboard-frame .sg-side-brand span {
     font-size: 24px !important;
@@ -185,11 +190,11 @@ $dashboard_page = isset($dashboard_page) ? $dashboard_page : '';
     }
 
     .sg-sidebar-collapsed .sg-sidebar-header {
-        padding: 24px 0 16px 0 !important; /* Top padding to prevent crowding the top page edge */
+        padding: 16px 0 12px 0 !important; /* Top padding to prevent crowding the top page edge */
         justify-content: center !important;
         flex-direction: column-reverse !important; /* Place hamburger on top of the logo */
-        min-height: 110px !important;
-        gap: 12px !important;
+        min-height: 126px !important;
+        gap: 9px !important;
     }
 
     .sg-sidebar-collapsed .sg-side-brand span {
@@ -199,54 +204,90 @@ $dashboard_page = isset($dashboard_page) ? $dashboard_page : '';
     .sg-sidebar-collapsed .sg-sidebar-toggle {
         margin-left: 0 !important;
         margin-top: 0 !important;
+        width: 34px !important;
+        height: 34px !important;
+        padding: 0 !important;
+        border-radius: 12px !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+    }
+
+    .sg-sidebar-collapsed .sg-logo-icon {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 10px !important;
+    }
+
+    .sg-sidebar-collapsed .sg-logo-icon svg {
+        width: 17px !important;
+        height: 17px !important;
     }
 
     /* Collapsed Seller Card overrides */
     .sg-sidebar-collapsed .sg-seller-card {
-        padding: 20px 0 !important;
+        padding: 18px 0 !important;
         justify-content: center !important;
-        min-height: 0 !important;
+        align-items: center !important;
+        min-height: 74px !important;
         margin: 0 !important;
+        box-sizing: border-box !important;
     }
     .sg-sidebar-collapsed .sg-seller-card div:not(.sg-seller-avatar) {
         display: none !important;
     }
     .sg-sidebar-collapsed .sg-seller-avatar {
+        width: 34px !important;
+        height: 34px !important;
         margin: 0 auto !important;
     }
 
     /* Collapsed Sidebar Navigation overrides */
     .sg-sidebar-collapsed .sg-sidebar-nav {
-        padding: 16px 8px !important;
-        gap: 8px !important;
+        padding: 16px 10px !important;
+        gap: 10px !important;
+        align-items: center !important;
     }
     .sg-sidebar-collapsed .sg-sidebar-nav a {
         padding: 0 !important;
         justify-content: center !important;
-        min-height: 44px !important;
+        width: 50px !important;
+        min-height: 50px !important;
         border-radius: 12px !important;
+    }
+    .sg-sidebar-collapsed .sg-sidebar-nav a iconify-icon {
+        font-size: 23px !important;
+        flex-basis: auto !important;
     }
     .sg-sidebar-collapsed .sg-sidebar-nav a span {
         display: none !important;
     }
     .sg-sidebar-collapsed .sg-sidebar-nav a::after {
-        left: 2px !important;
+        left: -6px !important;
         right: auto !important;
+        top: 10px !important;
+        height: 30px !important;
+        width: 4px !important;
     }
 
     /* Collapsed Nav Divider overrides */
     .sg-sidebar-collapsed .sg-sidebar-nav hr {
-        margin: 6px 4px !important;
+        width: 50px !important;
+        margin: 6px 0 !important;
     }
 
     /* Collapsed Sidebar Footer overrides */
     .sg-sidebar-collapsed .sg-sidebar-footer {
-        padding: 20px 0 !important;
+        padding: 18px 10px !important;
         justify-content: center !important;
     }
     .sg-sidebar-collapsed .sg-sidebar-footer a {
         padding: 0 !important;
         justify-content: center !important;
+        width: 50px !important;
+        min-height: 50px !important;
+        border-radius: 12px !important;
+    }
+    .sg-sidebar-collapsed .sg-sidebar-footer a iconify-icon {
+        font-size: 23px !important;
     }
     .sg-sidebar-collapsed .sg-sidebar-footer a span {
         display: none !important;
@@ -348,15 +389,262 @@ $dashboard_page = isset($dashboard_page) ? $dashboard_page : '';
         zoom: 1 !important; /* Reset zoom on mobile/tablets for pristine readability */
     }
 }
+
+/* Force Transaction History to use the exact same sidebar as every seller page. */
+.sg-page-transaction .sg-sidebar {
+    background: #080a0e !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.sg-page-transaction .sg-sidebar-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    min-height: 64px !important;
+    padding: 0 12px 0 18px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.sg-page-transaction .sg-side-brand {
+    gap: 12px !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    border-bottom: none !important;
+}
+
+.sg-page-transaction .sg-logo-icon {
+    width: 36px !important;
+    height: 36px !important;
+}
+
+.sg-page-transaction .sg-side-brand span {
+    color: #ffffff !important;
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.04em !important;
+}
+
+.sg-page-transaction .sg-seller-card {
+    min-height: 98px !important;
+    gap: 12px !important;
+    margin: 0 !important;
+    padding: 26px 20px !important;
+    align-items: center !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.sg-page-transaction .sg-seller-avatar {
+    width: 40px !important;
+    height: 40px !important;
+}
+
+.sg-page-transaction .sg-seller-card strong {
+    color: #fff !important;
+    font-size: 15px !important;
+    line-height: 1 !important;
+    letter-spacing: -0.02em !important;
+}
+
+.sg-page-transaction .sg-seller-card span {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 96px !important;
+    height: 20px !important;
+    margin-top: 6px !important;
+    padding: 0 8px !important;
+    border: 1px solid #00d99b !important;
+    border-radius: 3px !important;
+    color: #00ffa3 !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+}
+
+.sg-page-transaction .sg-sidebar-nav {
+    gap: 6px !important;
+    padding: 16px 12px !important;
+}
+
+.sg-page-transaction .sg-sidebar-nav a {
+    min-height: 44px !important;
+    gap: 12px !important;
+    padding: 0 14px !important;
+    border-radius: 0 !important;
+    color: #8e95a3 !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+}
+
+.sg-page-transaction .sg-sidebar-nav a iconify-icon {
+    flex-basis: 21px !important;
+    color: #9ba2af !important;
+    font-size: 21px !important;
+}
+
+.sg-page-transaction .sg-sidebar-nav a.is-active {
+    color: var(--safegate-neon, #d9ff00) !important;
+    background: linear-gradient(90deg, rgba(217, 255, 0, 0.05), transparent) !important;
+}
+
+.sg-page-transaction .sg-sidebar-nav a.is-active iconify-icon {
+    color: var(--safegate-neon, #d9ff00) !important;
+}
+
+.sg-page-transaction .sg-sidebar-nav a.is-active::after {
+    top: 8px !important;
+    right: 0 !important;
+    left: auto !important;
+    width: 4px !important;
+    height: 28px !important;
+    border-radius: 4px 0 0 4px !important;
+}
+
+.sg-page-transaction .sg-sidebar-footer {
+    padding: 24px 20px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.sg-page-transaction .sg-sidebar-footer a {
+    gap: 12px !important;
+    color: #777d89 !important;
+    font-size: 15px !important;
+}
+
+.sg-page-transaction .sg-sidebar-footer a iconify-icon {
+    font-size: 21px !important;
+}
+
+@media (min-width: 861px) {
+    .sg-page-transaction .sg-dashboard-frame {
+        grid-template-columns: 320px 1fr !important;
+    }
+
+    .sg-page-transaction .sg-sidebar {
+        width: 320px !important;
+        top: 0 !important;
+        height: 100vh !important;
+    }
+
+    .sg-page-transaction .sg-dashboard-frame.sg-sidebar-collapsed {
+        grid-template-columns: 80px 1fr !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-sidebar {
+        width: 80px !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-sidebar-header {
+        padding: 16px 0 12px 0 !important;
+        justify-content: center !important;
+        flex-direction: column-reverse !important;
+        min-height: 126px !important;
+        gap: 9px !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-side-brand span {
+        display: none !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-sidebar-toggle {
+        margin-left: 0 !important;
+        margin-top: 0 !important;
+        width: 34px !important;
+        height: 34px !important;
+        padding: 0 !important;
+        border-radius: 12px !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-logo-icon {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 10px !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-logo-icon svg {
+        width: 17px !important;
+        height: 17px !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-seller-card {
+        padding: 18px 0 !important;
+        justify-content: center !important;
+        align-items: center !important;
+        min-height: 74px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-seller-card div:not(.sg-seller-avatar) {
+        display: none !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-seller-avatar {
+        width: 34px !important;
+        height: 34px !important;
+        margin: 0 auto !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-sidebar-nav {
+        padding: 16px 10px !important;
+        gap: 10px !important;
+        align-items: center !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-sidebar-nav a {
+        padding: 0 !important;
+        justify-content: center !important;
+        width: 50px !important;
+        min-height: 50px !important;
+        border-radius: 12px !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-sidebar-nav a iconify-icon {
+        font-size: 23px !important;
+        flex-basis: auto !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-sidebar-nav a span,
+    .sg-page-transaction .sg-sidebar-collapsed .sg-sidebar-footer a span {
+        display: none !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-sidebar-nav a::after {
+        left: -6px !important;
+        right: auto !important;
+        top: 10px !important;
+        height: 30px !important;
+        width: 4px !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-sidebar-footer {
+        padding: 18px 10px !important;
+        justify-content: center !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-sidebar-footer a {
+        padding: 0 !important;
+        justify-content: center !important;
+        width: 50px !important;
+        min-height: 50px !important;
+        border-radius: 12px !important;
+    }
+
+    .sg-page-transaction .sg-sidebar-collapsed .sg-sidebar-footer a iconify-icon {
+        font-size: 23px !important;
+    }
+}
 </style>
 <aside class="sg-sidebar" aria-label="Seller dashboard sidebar">
     <div class="sg-sidebar-header">
         <a class="sg-side-brand" href="<?= $asset_prefix ?>index.php?page=seller_overview" aria-label="SafeGate dashboard">
             <div class="sg-logo-icon">
-                <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="44" height="44" rx="12" fill="#bef000"/>
-                    <path d="M11 29L19 21L25 26L33 15" stroke="#121A02" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M25 15H33V23" stroke="#121A02" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" stroke="#090B10" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                    <polyline points="17 6 23 6 23 12" stroke="#090B10" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
                 </svg>
             </div>
             <span>SafeGate</span>
@@ -407,7 +695,7 @@ $dashboard_page = isset($dashboard_page) ? $dashboard_page : '';
     </nav>
 
     <div class="sg-sidebar-footer">
-        <a href="<?= $asset_prefix ?>index.php?page=home">
+        <a href="<?= $asset_prefix ?>index.php?sg_action=logout">
             <iconify-icon icon="ph:sign-out"></iconify-icon>
             <span>Log Out</span>
         </a>

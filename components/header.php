@@ -1,4 +1,8 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 $current_page = isset($_GET['page']) ? $_GET['page'] : 'home';
 // Highlight Events ('home') when viewing ticket details
 if ($current_page === 'detail_tiket') {
@@ -6,6 +10,17 @@ if ($current_page === 'detail_tiket') {
 }
 // Calculate base path based on server script location
 $base_path = (strpos($_SERVER['SCRIPT_NAME'], 'views/') !== false) ? '../../' : '';
+$is_logged_in = !empty($_SESSION['user_id']);
+$user_role = $_SESSION['role'] ?? '';
+$dashboard_page = 'my_tickets';
+$dashboard_label = 'My Tickets';
+if ($user_role === 'seller') {
+    $dashboard_page = 'seller_overview';
+    $dashboard_label = 'Dashboard';
+} elseif ($user_role === 'admin') {
+    $dashboard_page = 'admin_overview';
+    $dashboard_label = 'Admin Panel';
+}
 ?>
 <header class="w-100 py-3 px-4 border-bottom bg-safegate-bg sticky-top"
     style="border-color: rgba(255,255,255,0.05) !important; z-index: 1030; opacity: 0.95;">
@@ -57,12 +72,21 @@ $base_path = (strpos($_SERVER['SCRIPT_NAME'], 'views/') !== false) ? '../../' : 
                 style="font-size: 0.7rem; padding: 0.35rem 1.25rem; letter-spacing: 0.05em; border-color: rgba(217, 255, 0, 0.3);">
                 <iconify-icon icon="ph:shield-check-fill" style="font-size: 14px;"></iconify-icon> SECURED
             </button>
-            <a href="<?= $base_path ?>index.php?page=login" class="text-white text-decoration-none fw-semibold hover-neon"
-                style="font-size: 0.85rem;">Login</a>
-            <a href="<?= $base_path ?>index.php?page=signup" class="btn btn-safegate-neon rounded-pill fw-bold"
-                style="padding: 0.5rem 1.5rem; font-size: 0.85rem;">
-                Sign Up
-            </a>
+            <?php if ($is_logged_in): ?>
+                <a href="<?= $base_path ?>index.php?page=<?= htmlspecialchars($dashboard_page, ENT_QUOTES, 'UTF-8') ?>" class="btn btn-safegate-neon rounded-pill fw-bold"
+                    style="padding: 0.5rem 1.5rem; font-size: 0.85rem;">
+                    <?= htmlspecialchars($dashboard_label, ENT_QUOTES, 'UTF-8') ?>
+                </a>
+                <a href="<?= $base_path ?>index.php?sg_action=logout" class="text-white text-decoration-none fw-semibold hover-neon"
+                    style="font-size: 0.85rem;">Log Out</a>
+            <?php else: ?>
+                <a href="<?= $base_path ?>index.php?page=login" class="text-white text-decoration-none fw-semibold hover-neon"
+                    style="font-size: 0.85rem;">Login</a>
+                <a href="<?= $base_path ?>index.php?page=signup" class="btn btn-safegate-neon rounded-pill fw-bold"
+                    style="padding: 0.5rem 1.5rem; font-size: 0.85rem;">
+                    Sign Up
+                </a>
+            <?php endif; ?>
         </div>
     </div>
 </header>

@@ -1,21 +1,63 @@
 <?php
+require_once __DIR__ . '/../../core/safegate_repository.php';
+
 // 1. Definisikan judul halaman
 $page_title = "Pilih Metode Pembayaran - SafeGate";
 
 // 2. Mulai menangkap output konten (Output Buffering)
 ob_start();
 
-// Retrieve values from GET with fallback matching Figma mockup
-$title = isset($_GET['title']) ? htmlspecialchars($_GET['title']) : 'Midnight Symphony Tour';
-$image = isset($_GET['image']) ? htmlspecialchars($_GET['image']) : 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&q=80&w=800';
-$date = isset($_GET['date']) ? htmlspecialchars($_GET['date']) : '15 Agustus 2024, 20:00 WIB';
-$location = isset($_GET['location']) ? htmlspecialchars($_GET['location']) : 'Gelora Bung Karno, Jakarta';
-$seksi = isset($_GET['seksi']) ? htmlspecialchars($_GET['seksi']) : '102';
-$baris = isset($_GET['baris']) ? htmlspecialchars($_GET['baris']) : 'KK';
-$kursi = isset($_GET['kursi']) ? htmlspecialchars($_GET['kursi']) : '14';
+$listing_id = isset($_GET['listing_id']) ? (int) $_GET['listing_id'] : 0;
+$listing = $listing_id > 0 ? sg_get_listing_detail($listing_id) : null;
+
+if (!$listing) {
+?>
+<section class="container mx-auto py-5" style="max-width: 900px; padding-left: 1.5rem; padding-right: 1.5rem; margin-top: 4rem; margin-bottom: 5rem;">
+    <div class="sg-glass rounded-4 p-5 text-center">
+        <iconify-icon icon="ph:credit-card-bold" class="text-safegate-neon mb-3" style="font-size: 3rem;"></iconify-icon>
+        <h1 class="h3 fw-bold text-white mb-2">Pembayaran Tidak Bisa Diproses</h1>
+        <p class="text-safegate-text-sec mb-4">Pembayaran harus berasal dari listing tiket yang valid di database.</p>
+        <a href="index.php?page=penjualan" class="btn btn-safegate-neon rounded-pill fw-bold px-4">Pilih Tiket</a>
+    </div>
+</section>
+<?php
+    $content = ob_get_clean();
+    require_once __DIR__ . '/../../layouts/public_layout.php';
+    return;
+}
+
+// Retrieve values from DB first, then GET fallback matching Figma mockup.
+$title = $listing ? sg_h($listing['title']) : (isset($_GET['title']) ? htmlspecialchars($_GET['title']) : 'Midnight Symphony Tour');
+$image = $listing ? sg_h(sg_event_image($listing['title'], $listing['image_path'] ?? '', $listing['description'] ?? '')) : (isset($_GET['image']) ? htmlspecialchars($_GET['image']) : sg_event_image('Midnight Symphony Tour'));
+$date = $listing ? date('d F Y, H:i', strtotime($listing['event_date'])) : (isset($_GET['date']) ? htmlspecialchars($_GET['date']) : '15 Agustus 2024, 20:00 WIB');
+$location = $listing ? sg_h($listing['venue'] . ', ' . $listing['city']) : (isset($_GET['location']) ? htmlspecialchars($_GET['location']) : 'Gelora Bung Karno, Jakarta');
+$seksi = $listing ? sg_h($listing['section']) : (isset($_GET['seksi']) ? htmlspecialchars($_GET['seksi']) : '102');
+$baris = $listing ? sg_h($listing['row']) : (isset($_GET['baris']) ? htmlspecialchars($_GET['baris']) : 'KK');
+$kursi = $listing ? sg_h($listing['seat']) : (isset($_GET['kursi']) ? htmlspecialchars($_GET['kursi']) : '14');
 
 // Price parameters
-$raw_price = isset($_GET['price']) ? $_GET['price'] : '180.000';
+$raw_price = $listing ? (string) ($listing['current_highest_bid'] ?: $listing['starting_bid']) : (isset($_GET['price']) ? $_GET['price'] : '180.000');
+$reserve_price = $listing ? (int) ($listing['reserve_price'] ?? 0) : 0;
+$current_bid_value = $listing ? (int) ($listing['current_highest_bid'] ?: $listing['starting_bid']) : 0;
+$reserve_met = !$listing || $reserve_price <= 0 || $current_bid_value >= $reserve_price;
+
+if ($listing && !$reserve_met) {
+?>
+<section class="container mx-auto py-5" style="max-width: 900px; padding-left: 1.5rem; padding-right: 1.5rem; margin-top: 4rem; margin-bottom: 5rem;">
+    <div class="sg-glass rounded-4 p-5 text-center">
+        <iconify-icon icon="ph:gavel-bold" class="text-safegate-neon mb-3" style="font-size: 3rem;"></iconify-icon>
+        <h1 class="h3 fw-bold text-white mb-2">Reserve Price Belum Tercapai</h1>
+        <p class="text-safegate-text-sec mb-4">
+            Bid tertinggi saat ini <?= sg_rupiah($current_bid_value) ?>. Checkout baru bisa dilakukan setelah bid mencapai minimal <?= sg_rupiah($reserve_price) ?>.
+        </p>
+        <a href="index.php?page=detail_tiket&listing_id=<?= (int) $listing_id ?>" class="btn btn-safegate-neon rounded-pill fw-bold px-4">Kembali ke Lelang</a>
+    </div>
+</section>
+<?php
+    $content = ob_get_clean();
+    require_once __DIR__ . '/../../layouts/public_layout.php';
+    return;
+}
 
 // Same parsing logic as detail_tiket.php to ensure matching values and currency formats
 $is_usdc = false;
@@ -39,7 +81,7 @@ if (strpos($clean_price, '.') !== false) {
 }
 
 // Calculate dynamic breakdown
-$service_fee = round($price_val * 0.25);
+$service_fee = round($price_val * 0.05);
 $escrow_insurance = round($price_val * 0.11);
 $total_price = $price_val + $service_fee + $escrow_insurance;
 
@@ -47,6 +89,9 @@ $disp_price = $currency_prefix . number_format($price_val, 0, ',', '.');
 $disp_service = $currency_prefix . number_format($service_fee, 0, ',', '.');
 $disp_escrow = $currency_prefix . number_format($escrow_insurance, 0, ',', '.');
 $disp_total = $currency_prefix . number_format($total_price, 0, ',', '.') . " IDR";
+$back_url = $listing
+    ? 'index.php?page=detail_tiket&listing_id=' . urlencode((string) $listing_id)
+    : 'index.php?page=detail_tiket&title=' . urlencode($title) . '&price=' . urlencode($raw_price) . '&image=' . urlencode($image) . '&date=' . urlencode($date) . '&location=' . urlencode($location) . '&seksi=' . urlencode($seksi) . '&baris=' . urlencode($baris) . '&kursi=' . urlencode($kursi);
 ?>
 
 <style>
@@ -75,7 +120,7 @@ $disp_total = $currency_prefix . number_format($total_price, 0, ',', '.') . " ID
             
             <!-- Back to Event Arrow link -->
             <div>
-                <a href="index.php?page=detail_tiket&title=<?= urlencode($title) ?>&price=<?= urlencode($raw_price) ?>&image=<?= urlencode($image) ?>&date=<?= urlencode($date) ?>&location=<?= urlencode($location) ?>&seksi=<?= urlencode($seksi) ?>&baris=<?= urlencode($baris) ?>&kursi=<?= urlencode($kursi) ?>" 
+                <a href="<?= sg_h($back_url) ?>" 
                    class="text-safegate-text-sec hover-neon d-inline-flex align-items-center gap-2 mb-4 text-decoration-none fw-bold text-uppercase" 
                    style="letter-spacing: 0.08em; font-size: 0.75rem;">
                     <iconify-icon icon="ph:arrow-left-bold" class="fs-6"></iconify-icon> KEMBALI KE ACARA
@@ -191,6 +236,12 @@ $disp_total = $currency_prefix . number_format($total_price, 0, ',', '.') . " ID
                         ?>
                     </div>
 
+                    <form id="paymentForm" action="index.php?page=pembayaran" method="post">
+                        <input type="hidden" name="sg_action" value="checkout_payment">
+                        <input type="hidden" name="listing_id" value="<?= (int) $listing_id ?>">
+                        <input id="paymentMethodInput" type="hidden" name="payment_method" value="usdc">
+                    </form>
+
                     <!-- Action Button -->
                     <button type="button" onclick="executePayment()" class="btn btn-safegate-neon w-100 rounded-pill fw-bold py-3 text-uppercase letter-spacing-wide sg-btn-glow" style="font-size: 0.9rem;">
                         KONFIRMASI & BAYAR SEKARANG
@@ -227,6 +278,10 @@ $disp_total = $currency_prefix . number_format($total_price, 0, ',', '.') . " ID
     // Interactive function to switch payment method selections
     function selectPaymentMethod(id) {
         activePaymentMethod = id;
+        const methodInput = document.getElementById('paymentMethodInput');
+        if (methodInput) {
+            methodInput.value = id === 'bank' ? 'bank_transfer' : (id === 'wallet' ? 'dana' : 'usdc');
+        }
         const cards = document.querySelectorAll('.sg-payment-option-card');
         
         cards.forEach(card => {
@@ -271,6 +326,12 @@ $disp_total = $currency_prefix . number_format($total_price, 0, ',', '.') . " ID
 
     // Trigger success payment callback
     function executePayment() {
+        const listingId = "<?= (int) $listing_id ?>";
+        if (listingId && listingId !== "0") {
+            document.getElementById('paymentForm')?.submit();
+            return;
+        }
+
         const myModal = new bootstrap.Modal(document.getElementById('paymentSuccessModal'));
         myModal.show();
     }

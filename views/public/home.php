@@ -1,7 +1,22 @@
 <?php
+require_once __DIR__ . '/../../core/safegate_repository.php';
+
 $page_title = "SafeGate - Home";
+$tickets = array_slice(sg_get_marketplace_listings(), 0, 3);
 ob_start();
 ?>
+
+<style>
+.sg-home-search input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    display: none;
+}
+
+.sg-home-search input[type="date"] {
+    appearance: none;
+    -webkit-appearance: none;
+}
+</style>
 
 <!-- Hero Section -->
 <section class="container-fluid mx-auto py-5 position-relative overflow-hidden"
@@ -35,32 +50,34 @@ ob_start();
             </p>
 
             <!-- Search Bar -->
-            <div class="w-100 rounded-pill p-2 d-flex flex-column flex-md-row align-items-center gap-2 shadow-lg"
-                style="background: rgba(18, 22, 31, 0.6); border: 1px solid rgba(255, 255, 255, 0.05);">
-                <div class="flex-grow-1 d-flex align-items-center gap-3 px-3 w-100 py-2 py-md-1">
-                    <iconify-icon icon="ph:magnifying-glass" class="text-safegate-neon fs-5"></iconify-icon>
-                    <input type="text" placeholder="Event or Artist"
+            <form action="index.php" method="get" class="w-100 rounded-pill d-flex align-items-center shadow-lg sg-home-search"
+                style="background: rgba(18, 22, 31, 0.72); border: 1px solid rgba(255, 255, 255, 0.08); max-width: 560px; min-height: 56px; padding: 0.35rem; gap: 0;">
+                <input type="hidden" name="page" value="penjualan">
+                <div class="d-flex align-items-center gap-2 px-3 py-1" style="flex: 1 1 30%; min-width: 0;">
+                    <iconify-icon icon="ph:magnifying-glass" class="text-safegate-neon" style="font-size: 1rem;"></iconify-icon>
+                    <input type="text" name="q" placeholder="Event or"
                         class="bg-transparent border-0 text-white w-100 form-control shadow-none p-0"
-                        style="font-size: 0.85rem;">
+                        style="font-size: 0.74rem; min-width: 0;">
                 </div>
-                <div class="flex-grow-1 d-flex align-items-center gap-3 px-3 w-100 search-divider py-2 py-md-1"
-                    style="border-left: 1px solid rgba(255,255,255,0.05);">
-                    <iconify-icon icon="ph:calendar-blank" class="text-safegate-text-sec fs-5"></iconify-icon>
-                    <input type="text" placeholder="Tanggal"
+                <div class="d-flex align-items-center gap-2 px-3 py-1"
+                    style="flex: 1 1 32%; min-width: 0; border-left: 1px solid rgba(255,255,255,0.08);">
+                    <iconify-icon icon="ph:calendar-blank" class="text-safegate-text-sec" style="font-size: 1rem;"></iconify-icon>
+                    <input type="text" name="date" placeholder="Tanggal"
                         class="bg-transparent border-0 text-white w-100 form-control shadow-none p-0"
-                        style="font-size: 0.85rem;">
+                        style="font-size: 0.74rem; min-width: 0;">
                 </div>
-                <div class="flex-grow-1 d-flex align-items-center gap-3 px-3 w-100 py-2 py-md-1">
-                    <iconify-icon icon="ph:map-pin" class="text-safegate-text-sec fs-5"></iconify-icon>
-                    <input type="text" placeholder="Tempat"
+                <div class="d-flex align-items-center gap-2 px-3 py-1"
+                    style="flex: 1 1 24%; min-width: 0; border-left: 1px solid rgba(255,255,255,0.08);">
+                    <iconify-icon icon="ph:map-pin" class="text-safegate-text-sec" style="font-size: 1rem;"></iconify-icon>
+                    <input type="text" name="location" placeholder="Tempat"
                         class="bg-transparent border-0 text-white w-100 form-control shadow-none p-0"
-                        style="font-size: 0.85rem;">
+                        style="font-size: 0.74rem; min-width: 0;">
                 </div>
-                <button class="btn btn-safegate-neon rounded-pill fw-bold w-100 w-md-auto mt-2 mt-md-0"
-                    style="font-size: 0.85rem; padding: 0.8rem 2rem;">
+                <button type="submit" class="btn btn-safegate-neon rounded-pill fw-bold"
+                    style="font-size: 0.74rem; padding: 0.75rem 1.8rem; min-width: 130px; flex: 0 0 auto;">
                     SEARCH
                 </button>
-            </div>
+            </form>
         </div>
 
         <!-- Right Content / Image -->
@@ -134,6 +151,11 @@ ob_start();
                 ]
             ];
 
+            $databaseTickets = array_slice(sg_get_marketplace_listings(), 0, 3);
+            if (!empty($databaseTickets)) {
+                $tickets = $databaseTickets;
+            }
+
             foreach ($tickets as $ticket) {
                 echo '<div class="col-12 col-md-6 col-lg-4">';
                 $image = $ticket['image'];
@@ -141,6 +163,7 @@ ob_start();
                 $date = $ticket['date'];
                 $price = $ticket['price'];
                 $originalPrice = $ticket['originalPrice'];
+                $listingId = $ticket['id'] ?? '';
                 include __DIR__ . '/../../components/ticket_card.php';
                 echo '</div>';
             }

@@ -5,8 +5,12 @@ $title = isset($title) ? $title : 'Event Title';
 $date = isset($date) ? $date : 'Date • Location';
 $price = isset($price) ? $price : '100.000';
 $originalPrice = isset($originalPrice) ? $originalPrice : '150.000';
+$listingId = isset($listingId) ? $listingId : '';
+$detailHref = $listingId
+    ? 'index.php?page=detail_tiket&listing_id=' . urlencode($listingId)
+    : 'index.php?page=detail_tiket&title=' . urlencode($title) . '&price=' . urlencode($price) . '&originalPrice=' . urlencode($originalPrice) . '&image=' . urlencode($image) . '&date=' . urlencode($date);
 ?>
-<a href="index.php?page=detail_tiket&title=<?= urlencode($title) ?>&price=<?= urlencode($price) ?>&originalPrice=<?= urlencode($originalPrice) ?>&image=<?= urlencode($image) ?>&date=<?= urlencode($date) ?>" class="text-decoration-none h-100 d-block">
+<a href="<?= $detailHref ?>" class="text-decoration-none h-100 d-block">
     <div class="card bg-safegate-surface rounded-4 overflow-hidden h-100 card-hover text-white border-0"
         style="box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);">
         <!-- Image Wrapper -->
