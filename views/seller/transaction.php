@@ -4,11 +4,7 @@ require_once __DIR__ . '/../../core/safegate_repository.php';
 $page_title = 'Transaction History - SafeGate';
 $dashboard_page = 'transaction';
 
-$seller_id = sg_current_user_id('seller');
-if (!$seller_id && ($_SESSION['role'] ?? '') === 'seller') {
-    $seller_id = sg_ensure_demo_user('seller');
-    $_SESSION['user_id'] = $seller_id;
-}
+$seller_id = sg_current_user_id();
 $search = trim((string) ($_GET['q'] ?? ''));
 $dateRange = $_GET['date_range'] ?? 'Last 30 Days';
 $statusFilter = $_GET['status'] ?? 'All Status';

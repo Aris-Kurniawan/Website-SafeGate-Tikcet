@@ -3,7 +3,7 @@ require_once __DIR__ . '/../../core/safegate_repository.php';
 
 $page_title = 'Active Listings - SafeGate';
 $dashboard_page = 'active_listings';
-$seller_id = sg_current_user_id('seller');
+$seller_id = sg_current_user_id();
 $listings = sg_get_seller_listings($seller_id);
 $flash = sg_flash();
 

@@ -171,6 +171,20 @@ body.sg-admin-shell::-webkit-scrollbar-thumb:hover {
     font-size: 20px;
 }
 
+.sg-admin-logout-link {
+    color: #FFFFFF;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    transition: color 0.2s ease;
+    white-space: nowrap;
+}
+
+.sg-admin-logout-link:hover {
+    color: var(--admin-accent);
+}
+
 .sg-admin-badge-dot {
     position: absolute;
     top: 2px;

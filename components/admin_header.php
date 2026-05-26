@@ -33,6 +33,8 @@
             <iconify-icon icon="ph:gear-six"></iconify-icon>
         </button>
 
+        <a href="index.php?sg_action=logout" class="sg-admin-logout-link">Log Out</a>
+
         <div class="sg-admin-profile">
             <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=120"
                 alt="Admin Avatar" class="sg-admin-avatar">

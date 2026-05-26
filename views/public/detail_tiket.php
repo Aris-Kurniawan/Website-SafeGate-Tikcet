@@ -41,7 +41,10 @@ $reserve_price = $listing ? (int) ($listing['reserve_price'] ?? 0) : 0;
 $current_bid_value = $listing ? (int) ($listing['current_highest_bid'] ?: $listing['starting_bid']) : 0;
 $listing_available = $listing && in_array($listing['listing_status'], ['active', 'promoted'], true);
 $reserve_met = !$listing || $reserve_price <= 0 || $current_bid_value >= $reserve_price;
-$can_checkout = $listing_available && $reserve_met;
+$current_user_id = sg_current_user_id();
+$is_own_listing = $listing && $current_user_id && (int) $listing['seller_id'] === (int) $current_user_id;
+$can_bid = $listing_available && !$is_own_listing;
+$can_checkout = $listing_available && $reserve_met && !$is_own_listing;
 
 // Parse price format: check if it's IDR or USDC
 $is_usdc = false;
@@ -165,6 +168,13 @@ $kursi = $listing ? sg_h($listing['seat']) : (isset($_GET['kursi']) ? htmlspecia
         </div>
     <?php endif; ?>
 
+    <?php if ($is_own_listing): ?>
+        <div class="rounded-4 p-3 mb-4 fw-semibold d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3" style="background: rgba(217, 255, 0, .08); border: 1px solid rgba(217, 255, 0, .2); color: var(--safegate-neon);">
+            <span>Tiket ini adalah listing milik Anda, jadi tidak bisa dibeli atau ditawar dari akun sendiri.</span>
+            <a href="index.php?page=active_listings" class="btn btn-safegate-neon rounded-pill fw-bold px-4 py-2" style="font-size:.75rem;">Kelola Listing</a>
+        </div>
+    <?php endif; ?>
+
     <div class="row g-5">
         <!-- Left Side: Seats & Bidding -->
         <div class="col-12 col-lg-8">
@@ -250,11 +260,11 @@ $kursi = $listing ? sg_h($listing['seat']) : (isset($_GET['kursi']) ? htmlspecia
                                 <input type="hidden" name="sg_action" value="submit_bid">
                                 <input type="hidden" name="listing_id" value="<?= (int) $listing_id ?>">
                                 <div class="sg-bid-input-wrapper">
-                                    <input type="text" id="bid-amount" name="bid_amount" placeholder="<?= $listing ? sg_rupiah($minimum_bid) : $bid_placeholder ?>" class="sg-bid-input" <?= $listing_available ? 'required' : 'disabled' ?>>
+                                    <input type="text" id="bid-amount" name="bid_amount" placeholder="<?= $is_own_listing ? 'Listing milik Anda' : ($listing ? sg_rupiah($minimum_bid) : $bid_placeholder) ?>" class="sg-bid-input" <?= $can_bid ? 'required' : 'disabled' ?>>
                                     <span class="sg-bid-currency"><?= $bid_currency ?></span>
                                 </div>
-                                <button type="submit" class="btn btn-light w-100 rounded-pill fw-bold py-3 transition-all" style="font-size: 0.85rem; border: none; letter-spacing: 0.05em;" <?= $listing_available ? '' : 'disabled' ?>>
-                                    <?= $listing_available ? 'Kirim Tawaran' : 'Lelang Tidak Tersedia' ?>
+                                <button type="submit" class="btn btn-light w-100 rounded-pill fw-bold py-3 transition-all" style="font-size: 0.85rem; border: none; letter-spacing: 0.05em;" <?= $can_bid ? '' : 'disabled' ?>>
+                                    <?= $is_own_listing ? 'Listing Milik Anda' : ($listing_available ? 'Kirim Tawaran' : 'Lelang Tidak Tersedia') ?>
                                 </button>
                             </form>
                         </div>
@@ -333,10 +343,14 @@ $kursi = $listing ? sg_h($listing['seat']) : (isset($_GET['kursi']) ? htmlspecia
 
                     <!-- Buy CTA Button -->
                     <button type="button" onclick="checkoutTicket()" class="btn btn-safegate-neon w-100 rounded-pill fw-bold py-3 text-uppercase letter-spacing-wide sg-btn-glow" style="font-size: 0.9rem;" <?= $can_checkout ? '' : 'disabled' ?>>
-                        <?= !$listing_available ? 'Tiket Sudah Tidak Tersedia' : ($reserve_met ? 'Beli Tiket' : 'Reserve Belum Tercapai') ?>
+                        <?= $is_own_listing ? 'Listing Milik Anda' : (!$listing_available ? 'Tiket Sudah Tidak Tersedia' : ($reserve_met ? 'Beli Tiket' : 'Reserve Belum Tercapai')) ?>
                     </button>
 
-                    <?php if ($listing_available && !$reserve_met): ?>
+                    <?php if ($is_own_listing): ?>
+                        <p class="text-center mt-3 mb-0" style="color: var(--safegate-neon); font-size:.7rem; line-height:1.5;">
+                            Gunakan dashboard seller untuk mengelola, pause, atau membatalkan listing ini.
+                        </p>
+                    <?php elseif ($listing_available && !$reserve_met): ?>
                         <p class="text-center mt-3 mb-0" style="color:#ffd98a; font-size:.7rem; line-height:1.5;">
                             Naikkan bid sampai minimal <?= sg_rupiah($reserve_price) ?> untuk membuka checkout.
                         </p>
@@ -426,6 +440,12 @@ $kursi = $listing ? sg_h($listing['seat']) : (isset($_GET['kursi']) ? htmlspecia
         const listingAvailable = <?= $listing_available ? 'true' : 'false' ?>;
         if (!listingAvailable) {
             alert('Listing ini sudah tidak tersedia untuk dibeli.');
+            return;
+        }
+
+        const isOwnListing = <?= $is_own_listing ? 'true' : 'false' ?>;
+        if (isOwnListing) {
+            alert('Tiket ini adalah listing milik Anda sendiri. Gunakan dashboard seller untuk mengelolanya.');
             return;
         }
 
