@@ -126,34 +126,8 @@ ob_start();
 
         <div class="row g-4">
             <?php
-            // Sample Data Array
-            $tickets = [
-                [
-                    "image" => "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&q=80&w=800",
-                    "title" => "Tour Konser Senior",
-                    "date" => "July 24, 2024 • Madison Square Garden",
-                    "price" => "150.000",
-                    "originalPrice" => "200.000"
-                ],
-                [
-                    "image" => "https://images.unsplash.com/photo-1504450758481-7338eba7524a?auto=format&fit=crop&q=80&w=800",
-                    "title" => "Finals NBA",
-                    "date" => "August 12, 2024 • Crypto.com Arena",
-                    "price" => "100.000",
-                    "originalPrice" => "150.000"
-                ],
-                [
-                    "image" => "https://images.unsplash.com/photo-1533174000222-1d11bb74ca34?auto=format&fit=crop&q=80&w=800",
-                    "title" => "Konser Coldplay",
-                    "date" => "Sept 05, 2024 • Hyde Park",
-                    "price" => "300.000",
-                    "originalPrice" => "350.000"
-                ]
-            ];
-
-            $databaseTickets = array_slice(sg_get_marketplace_listings(), 0, 3);
-            if (!empty($databaseTickets)) {
-                $tickets = $databaseTickets;
+            if (empty($tickets)) {
+                echo '<div class="col-12 text-center py-5"><p class="text-safegate-text-sec">Belum ada listing tiket yang tersedia di database saat ini.</p></div>';
             }
 
             foreach ($tickets as $ticket) {
