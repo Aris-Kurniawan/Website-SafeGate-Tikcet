@@ -2035,6 +2035,22 @@ a:focus-visible,
     outline-offset: 3px;
 }
 
+input.sg-bid-input,
+input.sg-bid-input:focus,
+input.sg-bid-input:focus-visible,
+input.sg-bid-input:-webkit-autofill,
+input.sg-bid-input:-webkit-autofill:hover,
+input.sg-bid-input:-webkit-autofill:focus {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    border: 0 !important;
+    outline: 0 !important;
+    outline-offset: 0 !important;
+    box-shadow: none !important;
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    background: transparent !important;
+}
+
 .input-group-custom:focus-within {
     border-color: var(--safegate-neon) !important;
 }

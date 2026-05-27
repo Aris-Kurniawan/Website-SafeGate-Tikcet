@@ -74,13 +74,13 @@ if ($user_role === 'admin') {
                         <iconify-icon icon="ph:command-fill" style="font-size: 15px;"></iconify-icon> Admin Panel
                     </a>
                 <?php else: ?>
-                    <a href="<?= $base_path ?>index.php?page=my_tickets" class="btn btn-outline-safegate-neon rounded-pill fw-bold d-inline-flex align-items-center gap-2"
+                    <a href="<?= $base_path ?>index.php?page=buyer_dashboard" class="btn btn-outline-safegate-neon rounded-pill fw-bold d-inline-flex align-items-center gap-2"
                         style="padding: 0.5rem 1.1rem; font-size: 0.8rem; border-color: rgba(217, 255, 0, 0.35); color: #fff; background: rgba(255,255,255,0.03);">
                         <iconify-icon icon="ph:ticket-fill" style="font-size: 15px; color: var(--safegate-neon);"></iconify-icon> My Tickets
                     </a>
                     <a href="<?= $base_path ?>index.php?page=<?= htmlspecialchars($dashboard_page, ENT_QUOTES, 'UTF-8') ?>" class="btn btn-safegate-neon rounded-pill fw-bold d-inline-flex align-items-center gap-2"
                         style="padding: 0.5rem 1.2rem; font-size: 0.8rem;">
-                        <iconify-icon icon="ph:storefront-fill" style="font-size: 15px;"></iconify-icon> Dashboard Seller
+                        <iconify-icon icon="ph:storefront-fill" style="font-size: 15px;"></iconify-icon> Sell Ticket
                     </a>
                 <?php endif; ?>
                 <a href="<?= $base_path ?>index.php?sg_action=logout" class="text-white text-decoration-none fw-semibold hover-neon"

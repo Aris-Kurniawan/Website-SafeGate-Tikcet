@@ -43,6 +43,8 @@ $listing_available = $listing && in_array($listing['listing_status'], ['active',
 $reserve_met = !$listing || $reserve_price <= 0 || $current_bid_value >= $reserve_price;
 $current_user_id = sg_current_user_id();
 $is_own_listing = $listing && $current_user_id && (int) $listing['seller_id'] === (int) $current_user_id;
+$wallet_summary = $current_user_id ? sg_get_buyer_wallet_summary((int) $current_user_id) : ['available' => 0];
+$bid_deposit = sg_bid_deposit_amount();
 $can_bid = $listing_available && !$is_own_listing;
 $can_checkout = $listing_available && $reserve_met && !$is_own_listing;
 
@@ -256,6 +258,11 @@ $kursi = $listing ? sg_h($listing['seat']) : (isset($_GET['kursi']) ? htmlspecia
                         <!-- Bid Entry -->
                         <div class="col-12 col-md-7">
                             <p class="text-safegate-text-sec fw-bold text-uppercase mb-3" style="font-size: 0.65rem; letter-spacing: 0.1em;">Masukkan Penawaran</p>
+                            <?php if ($current_user_id && !$is_own_listing && $wallet_summary['available'] < $bid_deposit): ?>
+                                <div class="mb-3 p-3 rounded-3" style="background:rgba(255,210,64,.08);border:1px solid rgba(255,210,64,.2);color:#ffd98a;font-size:.78rem;">
+                                    Saldo jaminan kurang. Top up <?= sg_rupiah($bid_deposit) ?> di <a href="index.php?page=buyer_wallet" style="color:var(--safegate-neon);font-weight:800;">Wallet & Escrow</a> untuk ikut lelang.
+                                </div>
+                            <?php endif; ?>
                             <form class="d-flex flex-column gap-3" action="index.php?page=detail_tiket&listing_id=<?= (int) $listing_id ?>" method="post">
                                 <input type="hidden" name="sg_action" value="submit_bid">
                                 <input type="hidden" name="listing_id" value="<?= (int) $listing_id ?>">
@@ -273,13 +280,14 @@ $kursi = $listing ? sg_h($listing['seat']) : (isset($_GET['kursi']) ? htmlspecia
                     <?php if ($listing): ?>
                         <div class="mt-4 p-3 rounded-3" style="background: rgba(9, 11, 16, 0.35); border: 1px solid rgba(255, 255, 255, 0.05);">
                             <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
-                                <span class="text-safegate-text-sec fw-bold text-uppercase" style="font-size: .65rem; letter-spacing: .1em;">Bid Tertinggi</span>
+                                <span class="text-safegate-text-sec fw-bold text-uppercase" style="font-size: .65rem; letter-spacing: .1em;">Leaderboard Lelang</span>
                                 <strong class="text-safegate-neon"><?= sg_rupiah((int) ($listing['current_highest_bid'] ?: $listing['starting_bid'])) ?></strong>
                             </div>
                             <?php if ($bids): ?>
-                                <div class="d-flex flex-column gap-2">
-                                    <?php foreach ($bids as $bid): ?>
-                                        <div class="d-flex justify-content-between align-items-center gap-3 text-safegate-text-sec" style="font-size:.78rem;">
+                                <div class="sg-bid-leaderboard">
+                                    <?php foreach ($bids as $rank => $bid): ?>
+                                        <div class="sg-bid-rank">
+                                            <b><?= (int) $rank + 1 ?></b>
                                             <span><?= sg_h($bid['full_name']) ?><?= (int) $bid['is_winning_bid'] ? ' · Winning' : '' ?></span>
                                             <strong class="text-white"><?= sg_rupiah($bid['bid_amount']) ?></strong>
                                         </div>

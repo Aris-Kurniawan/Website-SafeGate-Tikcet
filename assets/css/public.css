@@ -117,14 +117,33 @@
 }
 
 .sg-bid-input {
+    appearance: none !important;
+    -webkit-appearance: none !important;
     font-family: 'Space Grotesk', 'Inter', monospace;
     font-size: 1.5rem;
     font-weight: 700;
     color: white;
     background: transparent;
-    border: none;
+    border: 0 !important;
     width: 100%;
-    outline: none;
+    outline: 0 !important;
+    outline-offset: 0 !important;
+    box-shadow: none !important;
+}
+
+.sg-bid-input:focus,
+.sg-bid-input:focus-visible,
+.sg-bid-input:-webkit-autofill,
+.sg-bid-input:-webkit-autofill:hover,
+.sg-bid-input:-webkit-autofill:focus {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    border: 0 !important;
+    outline: 0 !important;
+    outline-offset: 0 !important;
+    box-shadow: none !important;
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    background: transparent !important;
 }
 
 .sg-bid-currency {

@@ -226,6 +226,318 @@ function sg_unread_notification_count(?int $userId): int
     return (int) ($row['total'] ?? 0);
 }
 
+function sg_column_exists(string $table, string $column): bool
+{
+    $row = sg_fetch_one('SHOW COLUMNS FROM `' . $table . '` LIKE :column', ['column' => $column]);
+    return (bool) $row;
+}
+
+function sg_ensure_user_profile_schema(): void
+{
+    static $done = false;
+    if ($done || !sg_db()) {
+        return;
+    }
+    $done = true;
+
+    if (!sg_column_exists('users', 'profile_photo_path')) {
+        sg_execute('ALTER TABLE users ADD COLUMN profile_photo_path VARCHAR(500) NULL AFTER nik');
+    }
+}
+
+function sg_user_initials(?string $name, string $fallback = 'U'): string
+{
+    $clean = preg_replace('/[^a-zA-Z\s]/', '', trim((string) $name));
+    if ($clean === '') {
+        return strtoupper(substr($fallback, 0, 2));
+    }
+
+    $parts = preg_split('/\s+/', $clean);
+    $initials = '';
+    foreach ($parts as $part) {
+        if ($part !== '') {
+            $initials .= strtoupper(substr($part, 0, 1));
+        }
+        if (strlen($initials) >= 2) {
+            break;
+        }
+    }
+
+    return $initials ?: strtoupper(substr($fallback, 0, 2));
+}
+
+function sg_ensure_buyer_finance_schema(): void
+{
+    static $done = false;
+    if ($done || !sg_db()) {
+        return;
+    }
+    $done = true;
+
+    sg_execute(
+        'CREATE TABLE IF NOT EXISTS buyer_wallet_transactions (
+            id BIGINT AUTO_INCREMENT PRIMARY KEY,
+            user_id BIGINT NOT NULL,
+            transaction_id BIGINT NULL,
+            bid_id BIGINT NULL,
+            type VARCHAR(40) NOT NULL,
+            amount BIGINT NOT NULL,
+            direction ENUM("credit", "debit", "hold", "release") NOT NULL,
+            status ENUM("pending", "completed", "failed", "locked") DEFAULT "completed",
+            description VARCHAR(255) NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_buyer_wallet_user (user_id),
+            INDEX idx_buyer_wallet_bid (bid_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )'
+    );
+
+    $bidColumns = [
+        'deposit_amount' => 'ALTER TABLE bids ADD COLUMN deposit_amount BIGINT NOT NULL DEFAULT 50000 AFTER bid_amount',
+        'deposit_status' => 'ALTER TABLE bids ADD COLUMN deposit_status ENUM("locked", "refunded", "forfeited") DEFAULT "locked" AFTER deposit_amount',
+        'payment_deadline_at' => 'ALTER TABLE bids ADD COLUMN payment_deadline_at DATETIME NULL AFTER deposit_status',
+        'bid_status' => 'ALTER TABLE bids ADD COLUMN bid_status ENUM("active", "outbid", "winner_pending_payment", "paid", "forfeited") DEFAULT "active" AFTER payment_deadline_at',
+    ];
+    foreach ($bidColumns as $column => $sql) {
+        if (!sg_column_exists('bids', $column)) {
+            sg_execute($sql);
+        }
+    }
+
+    $transactionColumns = [
+        'buyer_ticket_status' => 'ALTER TABLE transactions ADD COLUMN buyer_ticket_status ENUM("pending_use", "confirmed_used", "reported_issue") DEFAULT "pending_use" AFTER escrow_status',
+        'buyer_confirmed_at' => 'ALTER TABLE transactions ADD COLUMN buyer_confirmed_at TIMESTAMP NULL AFTER buyer_ticket_status',
+        'buyer_reported_at' => 'ALTER TABLE transactions ADD COLUMN buyer_reported_at TIMESTAMP NULL AFTER buyer_confirmed_at',
+    ];
+    foreach ($transactionColumns as $column => $sql) {
+        if (!sg_column_exists('transactions', $column)) {
+            sg_execute($sql);
+        }
+    }
+}
+
+function sg_bid_deposit_amount(): int
+{
+    return 50000;
+}
+
+function sg_wallet_activity(int $userId, string $type, int $amount, string $direction, string $status, string $description, ?int $transactionId = null, ?int $bidId = null): bool
+{
+    sg_ensure_buyer_finance_schema();
+    return sg_execute(
+        'INSERT INTO buyer_wallet_transactions (user_id, transaction_id, bid_id, type, amount, direction, status, description)
+         VALUES (:user_id, :transaction_id, :bid_id, :type, :amount, :direction, :status, :description)',
+        [
+            'user_id' => $userId,
+            'transaction_id' => $transactionId,
+            'bid_id' => $bidId,
+            'type' => $type,
+            'amount' => $amount,
+            'direction' => $direction,
+            'status' => $status,
+            'description' => $description,
+        ]
+    );
+}
+
+function sg_normalize_wallet_deposit_refunds(int $userId): void
+{
+    if ($userId <= 0) {
+        return;
+    }
+
+    sg_execute(
+        'UPDATE buyer_wallet_transactions bwt_lock
+         JOIN buyer_wallet_transactions bwt_refund
+           ON bwt_refund.bid_id = bwt_lock.bid_id
+          AND bwt_refund.user_id = bwt_lock.user_id
+          AND bwt_refund.type = "bid_deposit_refund"
+         SET bwt_lock.direction = "debit",
+             bwt_lock.status = "completed",
+             bwt_lock.description = "Jaminan lelang selesai dipakai dan siap dikembalikan."
+         WHERE bwt_lock.user_id = :user_id
+           AND bwt_lock.type = "bid_deposit_lock"
+           AND bwt_lock.direction = "release"',
+        ['user_id' => $userId]
+    );
+}
+
+function sg_get_buyer_wallet_summary(?int $buyerId): array
+{
+    sg_ensure_buyer_finance_schema();
+    if (!$buyerId) {
+        return ['available' => 0, 'held' => 0, 'top_up' => 0, 'withdrawn' => 0, 'activities' => []];
+    }
+    sg_normalize_wallet_deposit_refunds((int) $buyerId);
+
+    $row = sg_fetch_one(
+        'SELECT
+            COALESCE(SUM(CASE WHEN direction IN ("credit", "release") AND status = "completed" THEN amount ELSE 0 END), 0) AS credits,
+            COALESCE(SUM(CASE WHEN direction = "debit" AND status = "completed" THEN amount ELSE 0 END), 0) AS debits,
+            COALESCE(SUM(CASE WHEN direction = "hold" AND status = "locked" THEN amount ELSE 0 END), 0) AS held,
+            COALESCE(SUM(CASE WHEN type = "top_up" AND status = "completed" THEN amount ELSE 0 END), 0) AS top_up,
+            COALESCE(SUM(CASE WHEN type = "withdrawal" AND status IN ("pending", "completed") THEN amount ELSE 0 END), 0) AS withdrawn
+         FROM buyer_wallet_transactions
+         WHERE user_id = :user_id',
+        ['user_id' => $buyerId]
+    );
+
+    $credits = (int) ($row['credits'] ?? 0);
+    $debits = (int) ($row['debits'] ?? 0);
+    $held = (int) ($row['held'] ?? 0);
+    $withdrawn = (int) ($row['withdrawn'] ?? 0);
+    $available = max(0, $credits - $debits - $held - $withdrawn);
+
+    $activities = sg_fetch_all(
+        'SELECT bwt.*, e.title AS event_title
+         FROM buyer_wallet_transactions bwt
+         LEFT JOIN bids b ON b.id = bwt.bid_id
+         LEFT JOIN ticket_listings tl ON tl.id = b.listing_id
+         LEFT JOIN events e ON e.id = tl.event_id
+         WHERE bwt.user_id = :user_id
+         ORDER BY bwt.created_at DESC, bwt.id DESC
+         LIMIT 12',
+        ['user_id' => $buyerId]
+    );
+
+    return [
+        'available' => $available,
+        'held' => $held,
+        'top_up' => (int) ($row['top_up'] ?? 0),
+        'withdrawn' => $withdrawn,
+        'activities' => $activities,
+    ];
+}
+
+function sg_get_buyer_dashboard(?int $buyerId): array
+{
+    $wallet = sg_get_buyer_wallet_summary($buyerId);
+    if (!$buyerId) {
+        return $wallet + ['tickets' => 0, 'active_bids' => 0, 'orders' => []];
+    }
+
+    $ticketRow = sg_fetch_one('SELECT COUNT(*) AS total FROM transactions WHERE buyer_id = :buyer_id', ['buyer_id' => $buyerId]);
+    $bidRow = sg_fetch_one(
+        'SELECT COUNT(*) AS total FROM bids WHERE bidder_id = :buyer_id AND bid_status IN ("active", "winner_pending_payment")',
+        ['buyer_id' => $buyerId]
+    );
+    $orders = sg_get_buyer_tickets($buyerId);
+
+    return $wallet + [
+        'tickets' => (int) ($ticketRow['total'] ?? 0),
+        'active_bids' => (int) ($bidRow['total'] ?? 0),
+        'orders' => array_slice($orders, 0, 4),
+    ];
+}
+
+function sg_get_buyer_transaction_rows(?int $buyerId): array
+{
+    sg_ensure_buyer_finance_schema();
+
+    if (!$buyerId) {
+        return [];
+    }
+
+    return sg_fetch_all(
+        'SELECT t.transaction_code, t.base_price, t.total_amount, t.payment_status, t.escrow_status, t.buyer_ticket_status, t.created_at,
+                e.title, e.venue, e.city
+         FROM transactions t
+         JOIN ticket_listings tl ON tl.id = t.listing_id
+         JOIN events e ON e.id = tl.event_id
+         WHERE t.buyer_id = :buyer_id
+         ORDER BY t.created_at DESC
+         LIMIT 30',
+        ['buyer_id' => $buyerId]
+    );
+}
+
+function sg_process_expired_bid_deadlines(int $listingId): void
+{
+    sg_ensure_buyer_finance_schema();
+    if ($listingId <= 0) {
+        return;
+    }
+
+    $expired = sg_fetch_one(
+        'SELECT b.*, e.title
+         FROM bids b
+         JOIN ticket_listings tl ON tl.id = b.listing_id
+         JOIN events e ON e.id = tl.event_id
+         WHERE b.listing_id = :listing_id
+           AND b.is_winning_bid = 1
+           AND b.bid_status = "winner_pending_payment"
+           AND b.payment_deadline_at IS NOT NULL
+           AND b.payment_deadline_at < NOW()
+         LIMIT 1',
+        ['listing_id' => $listingId]
+    );
+
+    if (!$expired) {
+        return;
+    }
+
+    $paid = sg_fetch_one(
+        'SELECT id FROM transactions WHERE winning_bid_id = :bid_id AND payment_status = "paid" LIMIT 1',
+        ['bid_id' => $expired['id']]
+    );
+    if ($paid) {
+        sg_execute('UPDATE bids SET bid_status = "paid", deposit_status = "refunded" WHERE id = :id', ['id' => $expired['id']]);
+        return;
+    }
+
+    sg_execute(
+        'UPDATE bids
+         SET is_winning_bid = 0, bid_status = "forfeited", deposit_status = "forfeited"
+         WHERE id = :id',
+        ['id' => $expired['id']]
+    );
+    sg_execute(
+        'UPDATE buyer_wallet_transactions
+         SET status = "completed", direction = "debit", description = :description
+         WHERE bid_id = :bid_id AND type = "bid_deposit_lock"',
+        ['bid_id' => $expired['id'], 'description' => 'Jaminan hangus karena pembayaran melewati batas 2 jam.']
+    );
+    sg_notify(
+        (int) $expired['bidder_id'],
+        'auction_lost',
+        'Batas Pembayaran Habis',
+        'Jaminan lelang untuk ' . $expired['title'] . ' hangus karena pembayaran tidak selesai dalam 2 jam.',
+        $listingId
+    );
+
+    $runnerUp = sg_fetch_one(
+        'SELECT b.*, u.full_name
+         FROM bids b
+         JOIN users u ON u.id = b.bidder_id
+         WHERE b.listing_id = :listing_id
+           AND b.deposit_status = "locked"
+           AND b.bid_status IN ("active", "outbid")
+         ORDER BY b.bid_amount DESC, b.created_at ASC
+         LIMIT 1',
+        ['listing_id' => $listingId]
+    );
+
+    if ($runnerUp) {
+        sg_execute(
+            'UPDATE bids
+             SET is_winning_bid = 1, bid_status = "winner_pending_payment", payment_deadline_at = DATE_ADD(NOW(), INTERVAL 2 HOUR)
+             WHERE id = :id',
+            ['id' => $runnerUp['id']]
+        );
+        sg_execute('UPDATE ticket_listings SET current_highest_bid = :amount WHERE id = :id', [
+            'amount' => $runnerUp['bid_amount'],
+            'id' => $listingId,
+        ]);
+        sg_notify(
+            (int) $runnerUp['bidder_id'],
+            'auction_won',
+            'Kamu Menang Lelang',
+            'Kamu menjadi pemenang cadangan untuk ' . $expired['title'] . '. Selesaikan pembayaran dalam 2 jam.',
+            $listingId
+        );
+    }
+}
+
 function sg_ensure_demo_user(string $role): ?int
 {
     if (!empty($_SESSION['user_id']) && ($_SESSION['role'] ?? null) === $role) {
@@ -445,12 +757,15 @@ function sg_get_seller_listings(?int $sellerId): array
 
 function sg_get_buyer_tickets(?int $buyerId): array
 {
+    sg_ensure_buyer_finance_schema();
+
     if (!$buyerId) {
         return [];
     }
 
     return sg_fetch_all(
-        'SELECT t.id AS transaction_id, t.transaction_code, t.total_amount, t.payment_status, t.escrow_status, t.created_at,
+        'SELECT t.id AS transaction_id, t.transaction_code, t.total_amount, t.payment_status, t.escrow_status,
+                COALESCE(t.buyer_ticket_status, "pending_use") AS buyer_ticket_status, t.created_at,
                 tl.section, tl.row, tl.seat, e.title, e.venue, e.city, e.event_date, e.image_path
                 ,(SELECT d.status FROM disputes d WHERE d.transaction_id = t.id ORDER BY d.opened_at DESC LIMIT 1) AS dispute_status
          FROM transactions t
@@ -607,8 +922,10 @@ function sg_get_seller_transactions(?int $sellerId, array $filters = []): array
 
 function sg_get_seller_profile(?int $sellerId): array
 {
+    sg_ensure_user_profile_schema();
+
     $profile = $sellerId ? sg_fetch_one(
-        'SELECT u.full_name, u.email, u.phone_number, u.nik, sp.trust_score, kv.status AS kyc_status
+        'SELECT u.full_name, u.email, u.phone_number, u.nik, u.profile_photo_path, sp.trust_score, kv.status AS kyc_status
          FROM users u
          LEFT JOIN seller_profiles sp ON sp.user_id = u.id
          LEFT JOIN kyc_verifications kv ON kv.id = sp.kyc_id
@@ -622,6 +939,7 @@ function sg_get_seller_profile(?int $sellerId): array
         'email' => 'john.doe@safegate.corp',
         'phone_number' => '+62 812 3456 7890',
         'nik' => '',
+        'profile_photo_path' => '',
         'trust_score' => 100,
         'kyc_status' => 'pending',
     ];
@@ -941,6 +1259,8 @@ function sg_get_marketplace_listings(array $filters = []): array
 
 function sg_get_listing_detail(int $listingId): ?array
 {
+    sg_process_expired_bid_deadlines($listingId);
+
     return sg_fetch_one(
         'SELECT tl.*, e.title, e.venue, e.city, e.event_date, e.image_path, e.description, seller.full_name AS seller_name
          FROM ticket_listings tl
@@ -954,17 +1274,19 @@ function sg_get_listing_detail(int $listingId): ?array
 
 function sg_get_listing_bids(int $listingId): array
 {
+    sg_process_expired_bid_deadlines($listingId);
+
     if ($listingId <= 0) {
         return [];
     }
 
     return sg_fetch_all(
-        'SELECT b.id, b.bid_amount, b.is_winning_bid, b.created_at, u.full_name
+        'SELECT b.id, b.bid_amount, b.is_winning_bid, b.created_at, b.deposit_status, b.bid_status, b.payment_deadline_at, u.full_name
          FROM bids b
          JOIN users u ON u.id = b.bidder_id
          WHERE b.listing_id = :listing_id
          ORDER BY b.bid_amount DESC, b.created_at DESC
-         LIMIT 5',
+         LIMIT 10',
         ['listing_id' => $listingId]
     );
 }
@@ -983,6 +1305,26 @@ function sg_get_transaction_detail(string $code): ?array
          WHERE t.transaction_code = :code
          LIMIT 1',
         ['code' => $code]
+    );
+}
+
+function sg_get_buyer_ticket_for_verification(int $transactionId, int $buyerId): ?array
+{
+    sg_ensure_buyer_finance_schema();
+
+    if ($transactionId <= 0 || $buyerId <= 0) {
+        return null;
+    }
+
+    return sg_fetch_one(
+        'SELECT t.*, COALESCE(t.buyer_ticket_status, "pending_use") AS buyer_ticket_status,
+                e.title, e.venue, e.city, e.event_date, e.image_path, tl.section, tl.row, tl.seat
+         FROM transactions t
+         JOIN ticket_listings tl ON tl.id = t.listing_id
+         JOIN events e ON e.id = tl.event_id
+         WHERE t.id = :transaction_id AND t.buyer_id = :buyer_id
+         LIMIT 1',
+        ['transaction_id' => $transactionId, 'buyer_id' => $buyerId]
     );
 }
 

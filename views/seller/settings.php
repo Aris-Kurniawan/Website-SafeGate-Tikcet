@@ -5,6 +5,8 @@ $page_title = 'Account Settings - SafeGate';
 $dashboard_page = 'settings';
 $seller_id = sg_current_user_id();
 $profile = sg_get_seller_profile($seller_id);
+$profileInitials = sg_user_initials($profile['full_name'] ?? '', 'JD');
+$profilePhoto = trim((string) ($profile['profile_photo_path'] ?? ''));
 $flash = sg_flash();
 
 ob_start();
@@ -74,14 +76,25 @@ ob_start();
             </section>
         </div>
 
-        <form class="sg-panel sg-profile-panel" action="index.php?page=settings" method="post">
+        <form class="sg-panel sg-profile-panel" action="index.php?page=settings" method="post" enctype="multipart/form-data">
             <input type="hidden" name="sg_action" value="seller_profile_update">
             <div class="sg-panel-title-row">
                 <h2>Profile Information</h2>
                 <button type="submit" aria-label="Save profile"><iconify-icon icon="ph:floppy-disk"></iconify-icon></button>
             </div>
-            <div class="sg-profile-avatar">JD<span><iconify-icon icon="ph:camera"></iconify-icon></span></div>
-            <strong class="sg-change-photo">Change Photo</strong>
+            <label class="sg-profile-photo-control" for="sellerProfilePhoto">
+                <span class="sg-profile-avatar <?= $profilePhoto !== '' ? 'has-photo' : '' ?>">
+                    <?php if ($profilePhoto !== ''): ?>
+                        <img id="sellerProfilePreview" src="<?= sg_h($profilePhoto) ?>" alt="Profile photo">
+                    <?php else: ?>
+                        <b id="sellerProfileInitials"><?= sg_h($profileInitials) ?></b>
+                        <img id="sellerProfilePreview" src="" alt="Profile photo" hidden>
+                    <?php endif; ?>
+                    <i><iconify-icon icon="ph:camera"></iconify-icon></i>
+                </span>
+                <strong class="sg-change-photo">Change Photo</strong>
+                <input id="sellerProfilePhoto" name="profile_photo" type="file" accept=".jpg,.jpeg,.png,.webp" hidden>
+            </label>
             <label><span>Full Name</span><input type="text" name="full_name" value="<?= sg_h($profile['full_name']) ?>" required></label>
             <label><span>Email Address</span><input type="email" value="<?= sg_h($profile['email']) ?>" readonly></label>
             <label><span>Phone Number</span><input type="tel" name="phone_number" value="<?= sg_h($profile['phone_number']) ?>"></label>
@@ -93,6 +106,21 @@ ob_start();
         </form>
     </div>
 </section>
+
+<script>
+document.getElementById('sellerProfilePhoto')?.addEventListener('change', (event) => {
+    const file = event.target.files?.[0];
+    const preview = document.getElementById('sellerProfilePreview');
+    const initials = document.getElementById('sellerProfileInitials');
+    const avatar = event.target.closest('.sg-profile-photo-control')?.querySelector('.sg-profile-avatar');
+    if (!file || !preview || !avatar) return;
+
+    preview.src = URL.createObjectURL(file);
+    preview.hidden = false;
+    avatar.classList.add('has-photo');
+    if (initials) initials.hidden = true;
+});
+</script>
 
 <?php
 $content = ob_get_clean();
