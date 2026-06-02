@@ -2,6 +2,9 @@
 // Router / Entry Point Utama
 require_once __DIR__ . '/core/request_handlers.php';
 
+// Pseudo-cronjob: tutup lelang yang expired otomatis pada tiap page load
+sg_run_cronjobs();
+
 $page = isset($_GET['page']) ? $_GET['page'] : 'home';
 
 $routes = [

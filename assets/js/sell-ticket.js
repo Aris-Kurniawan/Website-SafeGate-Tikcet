@@ -229,3 +229,39 @@ if (listButton) {
         listingForm?.submit();
     });
 }
+
+// Pricing Mode Toggle Logic
+const btnFixedPrice = document.getElementById('btnFixedPrice');
+const btnAuction = document.getElementById('btnAuction');
+const labelReservePrice = document.getElementById('labelReservePrice');
+const labelDuration = document.getElementById('labelDuration');
+const textStartingBid = document.getElementById('textStartingBid');
+const pricingInputsGrid = document.getElementById('pricingInputsGrid');
+
+if (btnFixedPrice && btnAuction) {
+    btnFixedPrice.addEventListener('click', () => {
+        btnFixedPrice.classList.add('is-active');
+        btnAuction.classList.remove('is-active');
+        labelReservePrice.hidden = true;
+        labelDuration.hidden = true;
+        textStartingBid.textContent = 'Fixed Price (Rp)';
+        
+        // Buat input harga memakan seluruh lebar jika field lain disembunyikan
+        if (pricingInputsGrid) {
+            pricingInputsGrid.style.gridTemplateColumns = '1fr';
+        }
+    });
+
+    btnAuction.addEventListener('click', () => {
+        btnAuction.classList.add('is-active');
+        btnFixedPrice.classList.remove('is-active');
+        labelReservePrice.hidden = false;
+        labelDuration.hidden = false;
+        textStartingBid.textContent = 'Starting Bid (Rp)';
+        
+        // Kembalikan ke grid asli (3 kolom)
+        if (pricingInputsGrid) {
+            pricingInputsGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+        }
+    });
+}

@@ -21,6 +21,9 @@ function sg_role_home(?string $role = null): string
     if ($role === 'admin') {
         return 'admin_overview';
     }
+    if ($role === 'buyer') {
+        return 'home';
+    }
     return 'seller_overview';
 }
 
@@ -66,6 +69,12 @@ function sg_handle_create_listing(): void
     if (!$sellerId || !sg_db()) {
         sg_flash('Login dulu sebelum membuat listing.', 'error');
         sg_redirect('login');
+    }
+
+    $kycStatus = sg_fetch_one('SELECT status FROM kyc_verifications WHERE user_id = :user_id ORDER BY id DESC LIMIT 1', ['user_id' => $sellerId]);
+    if (!$kycStatus || $kycStatus['status'] !== 'approved') {
+        sg_flash('Identitas kamu belum diverifikasi oleh admin. Lengkapi KYC dan tunggu persetujuan terlebih dahulu sebelum menjual tiket.', 'error');
+        sg_redirect('settings');
     }
 
     $eventId = (int) ($_POST['event_id'] ?? 0);
@@ -230,6 +239,12 @@ function sg_handle_kyc_submit(): void
     if (!$sellerId || !sg_db()) {
         sg_flash('Login dulu sebelum submit KYC.', 'error');
         sg_redirect('login');
+    }
+
+    $kycStatus = sg_fetch_one('SELECT status FROM kyc_verifications WHERE user_id = :user_id ORDER BY id DESC LIMIT 1', ['user_id' => $sellerId]);
+    if ($kycStatus && strtolower($kycStatus['status']) === 'approved') {
+        sg_flash('KYC kamu sudah diverifikasi, tidak perlu mengirim ulang.', 'error');
+        sg_redirect('settings');
     }
 
     if (strlen($nik) !== 16) {
@@ -503,8 +518,8 @@ function sg_handle_admin_kyc_decision(): void
                 $approved ? 'kyc_approved' : 'kyc_rejected',
                 $approved ? 'KYC Disetujui' : 'KYC Ditolak',
                 $approved
-                    ? 'Verifikasi identitas kamu sudah disetujui. Fitur seller SafeGate sudah aktif.'
-                    : 'Verifikasi identitas kamu ditolak. Silakan cek data dan kirim ulang dokumen.',
+                ? 'Verifikasi identitas kamu sudah disetujui. Fitur seller SafeGate sudah aktif.'
+                : 'Verifikasi identitas kamu ditolak. Silakan cek data dan kirim ulang dokumen.',
                 $kycId
             );
         }
@@ -591,8 +606,8 @@ function sg_handle_dispute_decision(): void
                 $isRelease ? 'escrow_released' : 'dispute_opened',
                 $isRelease ? 'Escrow Dilepas ke Seller' : 'Dana Dikembalikan',
                 $isRelease
-                    ? 'Admin menyelesaikan dispute ' . $dispute['transaction_code'] . ' dan melepas dana ke seller.'
-                    : 'Admin menyelesaikan dispute ' . $dispute['transaction_code'] . ' dan refund diproses ke buyer.',
+                ? 'Admin menyelesaikan dispute ' . $dispute['transaction_code'] . ' dan melepas dana ke seller.'
+                : 'Admin menyelesaikan dispute ' . $dispute['transaction_code'] . ' dan refund diproses ke buyer.',
                 (int) $dispute['transaction_id']
             );
             sg_notify(
@@ -600,8 +615,8 @@ function sg_handle_dispute_decision(): void
                 $isRelease ? 'escrow_released' : 'dispute_opened',
                 $isRelease ? 'Escrow Berhasil Dilepas' : 'Dispute Berakhir Refund',
                 $isRelease
-                    ? 'Dana transaksi ' . $dispute['transaction_code'] . ' sudah dilepas ke saldo seller.'
-                    : 'Transaksi ' . $dispute['transaction_code'] . ' diselesaikan dengan refund ke buyer.',
+                ? 'Dana transaksi ' . $dispute['transaction_code'] . ' sudah dilepas ke saldo seller.'
+                : 'Transaksi ' . $dispute['transaction_code'] . ' diselesaikan dengan refund ke buyer.',
                 (int) $dispute['transaction_id']
             );
         }
@@ -720,8 +735,8 @@ function sg_handle_admin_settle_transaction(): void
         $isRelease ? 'escrow_released' : 'dispute_opened',
         $isRelease ? 'Escrow Selesai' : 'Refund Diproses',
         $isRelease
-            ? 'Admin melepas escrow transaksi ' . $transaction['transaction_code'] . ' untuk ' . $transaction['title'] . '.'
-            : 'Admin memproses refund transaksi ' . $transaction['transaction_code'] . ' untuk ' . $transaction['title'] . '.',
+        ? 'Admin melepas escrow transaksi ' . $transaction['transaction_code'] . ' untuk ' . $transaction['title'] . '.'
+        : 'Admin memproses refund transaksi ' . $transaction['transaction_code'] . ' untuk ' . $transaction['title'] . '.',
         $transactionId
     );
     sg_notify(
@@ -729,8 +744,8 @@ function sg_handle_admin_settle_transaction(): void
         $isRelease ? 'escrow_released' : 'dispute_opened',
         $isRelease ? 'Dana Escrow Dilepas' : 'Transaksi Direfund',
         $isRelease
-            ? 'Dana seller untuk transaksi ' . $transaction['transaction_code'] . ' sudah dilepas.'
-            : 'Transaksi ' . $transaction['transaction_code'] . ' direfund oleh admin.',
+        ? 'Dana seller untuk transaksi ' . $transaction['transaction_code'] . ' sudah dilepas.'
+        : 'Transaksi ' . $transaction['transaction_code'] . ' direfund oleh admin.',
         $transactionId
     );
 
@@ -805,10 +820,7 @@ function sg_handle_login(): void
     $_SESSION['user_id'] = (int) $user['id'];
     $_SESSION['role'] = $user['role'];
 
-    if ($user['role'] === 'admin') {
-        sg_redirect('admin_overview');
-    }
-    sg_redirect('seller_overview');
+    sg_redirect(sg_role_home($user['role']));
 }
 
 function sg_handle_checkout_payment(): void
@@ -984,17 +996,31 @@ function sg_handle_submit_bid(): void
         sg_redirect_url('index.php?page=detail_tiket&listing_id=' . $listingId);
     }
 
-    $deposit = sg_bid_deposit_amount();
-    $wallet = sg_get_buyer_wallet_summary($buyerId);
-    if ($wallet['available'] < $deposit) {
-        sg_flash('Saldo jaminan belum cukup. Top up minimal ' . sg_rupiah($deposit) . ' di Wallet & Escrow pembeli untuk mengikuti lelang.', 'error');
-        sg_redirect('buyer_wallet');
-    }
-
     $previousWinner = sg_fetch_one(
         'SELECT bidder_id FROM bids WHERE listing_id = :listing_id AND is_winning_bid = 1 ORDER BY bid_amount DESC LIMIT 1',
         ['listing_id' => $listingId]
     );
+
+    if ($previousWinner && (int) $previousWinner['bidder_id'] === $buyerId) {
+        sg_flash('Tawaranmu masih yang tertinggi. Tunggu sampai ada pembeli lain yang menawar di atasmu.', 'error');
+        sg_redirect_url('index.php?page=detail_tiket&listing_id=' . $listingId);
+    }
+
+    $deposit = sg_bid_deposit_amount();
+    $hasLockedDeposit = sg_fetch_one(
+        'SELECT id FROM bids WHERE listing_id = :listing_id AND bidder_id = :bidder_id AND deposit_status = "locked" LIMIT 1',
+        ['listing_id' => $listingId, 'bidder_id' => $buyerId]
+    );
+
+    $requiredDepositAmount = $hasLockedDeposit ? 0 : $deposit;
+
+    if ($requiredDepositAmount > 0) {
+        $wallet = sg_get_buyer_wallet_summary($buyerId);
+        if ($wallet['available'] < $requiredDepositAmount) {
+            sg_flash('Saldo jaminan belum cukup. Top up minimal ' . sg_rupiah($requiredDepositAmount) . ' di Wallet & Escrow pembeli untuk mengikuti lelang.', 'error');
+            sg_redirect('buyer_wallet');
+        }
+    }
 
     sg_execute('UPDATE bids SET is_winning_bid = 0, bid_status = "outbid" WHERE listing_id = :listing_id AND is_winning_bid = 1', [
         'listing_id' => $listingId,
@@ -1007,18 +1033,20 @@ function sg_handle_submit_bid(): void
             'listing_id' => $listingId,
             'bidder_id' => $buyerId,
             'bid_amount' => $bidAmount,
-            'deposit_amount' => $deposit,
+            'deposit_amount' => $requiredDepositAmount,
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
         ]
     );
 
     if ($created) {
-        $bidRow = sg_fetch_one(
-            'SELECT id FROM bids WHERE listing_id = :listing_id AND bidder_id = :bidder_id ORDER BY id DESC LIMIT 1',
-            ['listing_id' => $listingId, 'bidder_id' => $buyerId]
-        );
-        if ($bidRow) {
-            sg_wallet_activity($buyerId, 'bid_deposit_lock', $deposit, 'hold', 'locked', 'Jaminan lelang dikunci untuk ' . $listing['title'] . '.', null, (int) $bidRow['id']);
+        if ($requiredDepositAmount > 0) {
+            $bidRow = sg_fetch_one(
+                'SELECT id FROM bids WHERE listing_id = :listing_id AND bidder_id = :bidder_id ORDER BY id DESC LIMIT 1',
+                ['listing_id' => $listingId, 'bidder_id' => $buyerId]
+            );
+            if ($bidRow) {
+                sg_wallet_activity($buyerId, 'bid_deposit_lock', $requiredDepositAmount, 'hold', 'locked', 'Jaminan lelang dikunci untuk ' . $listing['title'] . '.', null, (int) $bidRow['id']);
+            }
         }
 
         sg_execute('UPDATE ticket_listings SET current_highest_bid = :amount WHERE id = :id', [

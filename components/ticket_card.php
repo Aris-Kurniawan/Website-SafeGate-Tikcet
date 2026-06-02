@@ -6,6 +6,8 @@ $date = isset($date) ? $date : 'Date • Location';
 $price = isset($price) ? $price : '100.000';
 $originalPrice = isset($originalPrice) ? $originalPrice : '150.000';
 $listingId = isset($listingId) ? $listingId : '';
+$auctionEndAt = isset($auctionEndAt) ? $auctionEndAt : null;
+$timerId = 'timer_' . md5($listingId . rand());
 $detailHref = $listingId
     ? 'index.php?page=detail_tiket&listing_id=' . urlencode($listingId)
     : 'index.php?page=detail_tiket&title=' . urlencode($title) . '&price=' . urlencode($price) . '&originalPrice=' . urlencode($originalPrice) . '&image=' . urlencode($image) . '&date=' . urlencode($date);
@@ -40,21 +42,50 @@ $detailHref = $listingId
             </div>
 
             <!-- Footer / Price -->
-            <div class="mt-auto d-flex align-items-end justify-content-between pt-4"
+            <div class="mt-auto d-flex flex-column pt-3"
                 style="border-top: 1px solid rgba(255,255,255,0.05);">
-                <div>
-                    <p class="text-safegate-neon fw-bold text-uppercase mb-1"
-                        style="font-size: 0.55rem; letter-spacing: 0.05em;">Face Value Cap</p>
-                    <div class="d-flex align-items-baseline gap-2">
-                        <span class="fs-4 fw-medium text-white">Rp.<?= $price ?></span>
-                        <span class="text-decoration-line-through text-safegate-text-sec"
-                            style="font-size: 0.75rem;">Rp.<?= $originalPrice ?></span>
-                    </div>
+                
+                <?php if ($auctionEndAt): ?>
+                <div class="d-flex align-items-center gap-1 text-safegate-neon mb-2" style="font-size: 0.75rem; font-weight: bold;">
+                    <iconify-icon icon="ph:hourglass-high"></iconify-icon>
+                    <span id="<?= $timerId ?>">--j : --m : --s</span>
                 </div>
-                <button class="btn btn-outline-safegate-neon rounded-pill fw-bold"
-                    style="font-size: 0.75rem; padding: 0.4rem 1.25rem;">
-                    BUY
-                </button>
+                <script>
+                    (function() {
+                        const countDownDate = new Date("<?= date('c', strtotime($auctionEndAt)) ?>").getTime();
+                        const x = setInterval(function() {
+                            const now = new Date().getTime();
+                            const distance = countDownDate - now;
+                            if (distance < 0) {
+                                clearInterval(x);
+                                document.getElementById("<?= $timerId ?>").innerHTML = "LELANG BERAKHIR";
+                                return;
+                            }
+                            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)) + Math.floor(distance / (1000 * 60 * 60 * 24)) * 24;
+                            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                            document.getElementById("<?= $timerId ?>").innerHTML = 
+                                (hours < 10 ? "0" + hours : hours) + "j : " + 
+                                (minutes < 10 ? "0" + minutes : minutes) + "m : " + 
+                                (seconds < 10 ? "0" + seconds : seconds) + "s";
+                        }, 1000);
+                    })();
+                </script>
+                <?php endif; ?>
+
+                <div class="d-flex align-items-end justify-content-between">
+                    <div>
+                        <p class="text-safegate-neon fw-bold text-uppercase mb-1"
+                            style="font-size: 0.55rem; letter-spacing: 0.05em;">Current Bid</p>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span class="fs-4 fw-medium text-white">Rp.<?= $price ?></span>
+                        </div>
+                    </div>
+                    <button class="btn btn-safegate-neon rounded-pill fw-bold text-black"
+                        style="font-size: 0.75rem; padding: 0.4rem 1.25rem;">
+                        PLACE BID
+                    </button>
+                </div>
             </div>
         </div>
     </div>

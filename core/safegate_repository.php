@@ -777,6 +777,29 @@ function sg_get_buyer_tickets(?int $buyerId): array
     );
 }
 
+function sg_get_buyer_bids(?int $buyerId): array
+{
+    if (!$buyerId) {
+        return [];
+    }
+
+    return sg_fetch_all(
+        'SELECT b.bid_amount, b.bid_status, b.is_winning_bid, b.deposit_status, b.created_at AS bid_date,
+                tl.id AS listing_id, tl.section, tl.row, tl.seat, tl.listing_status,
+                e.title, e.venue, e.city, e.event_date, e.image_path
+         FROM bids b
+         JOIN ticket_listings tl ON tl.id = b.listing_id
+         JOIN events e ON e.id = tl.event_id
+         WHERE b.bidder_id = :buyer_id_1
+           AND b.id IN (SELECT MAX(id) FROM bids WHERE bidder_id = :buyer_id_2 GROUP BY listing_id)
+         ORDER BY b.created_at DESC',
+        [
+            'buyer_id_1' => $buyerId,
+            'buyer_id_2' => $buyerId
+        ]
+    );
+}
+
 function sg_get_seller_withdrawals(?int $sellerId): array
 {
     $rows = $sellerId ? sg_fetch_all(
@@ -1227,7 +1250,7 @@ function sg_get_marketplace_listings(array $filters = []): array
     }
 
     $rows = sg_fetch_all(
-        'SELECT tl.id, tl.section, tl.row, tl.seat, tl.face_value, tl.starting_bid, tl.current_highest_bid, tl.listing_status,
+        'SELECT tl.id, tl.section, tl.row, tl.seat, tl.face_value, tl.starting_bid, tl.current_highest_bid, tl.listing_status, tl.auction_end_at,
                 e.title, e.venue, e.city, e.event_date, e.image_path, e.description
          FROM ticket_listings tl
          JOIN events e ON e.id = tl.event_id
@@ -1253,6 +1276,7 @@ function sg_get_marketplace_listings(array $filters = []): array
             'section' => $row['section'],
             'row' => $row['row'],
             'seat' => $row['seat'],
+            'auctionEndAt' => $row['auction_end_at'],
         ];
     }, $rows);
 }
@@ -1373,5 +1397,24 @@ function sg_get_dispute_messages(int $disputeId): array
          WHERE dm.dispute_id = :dispute_id
          ORDER BY dm.created_at ASC',
         ['dispute_id' => $disputeId]
+    );
+}
+
+/**
+ * Pseudo-Cronjob untuk menutup lelang yang sudah habis waktunya secara otomatis.
+ * Dijalankan pada setiap page load.
+ */
+function sg_run_cronjobs(): void
+{
+    $db = sg_db();
+    if (!$db) return;
+    
+    // Ubah status listing menjadi 'closed' jika waktu auction_end_at sudah terlewati
+    sg_execute(
+        'UPDATE ticket_listings 
+         SET listing_status = "closed" 
+         WHERE listing_status IN ("active", "promoted") 
+           AND auction_end_at IS NOT NULL 
+           AND auction_end_at <= NOW()'
     );
 }
