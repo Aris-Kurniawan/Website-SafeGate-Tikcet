@@ -99,6 +99,7 @@ $tickets = sg_get_marketplace_listings([
                 $price = $ticket['price'];
                 $originalPrice = $ticket['originalPrice'];
                 $listingId = $ticket['id'] ?? '';
+                $auctionEndAt = $ticket['auctionEndAt'] ?? null;
                 include __DIR__ . '/../../components/ticket_card.php';
                 ?>
             </div>

@@ -47,7 +47,7 @@
 
     <?php if (!empty($extra_scripts) && is_array($extra_scripts)): ?>
         <?php foreach ($extra_scripts as $script): ?>
-            <script src="<?= $asset_prefix ?? '' ?><?= htmlspecialchars($script) ?>"></script>
+            <script src="<?= $asset_prefix ?? '' ?><?= htmlspecialchars($script) ?>?v=<?= time() ?>"></script>
         <?php endforeach; ?>
     <?php endif; ?>
 </body>

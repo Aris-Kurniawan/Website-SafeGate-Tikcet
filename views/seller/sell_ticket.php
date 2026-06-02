@@ -1,6 +1,13 @@
 <?php
 require_once __DIR__ . '/../../core/safegate_repository.php';
 
+$sellerId = sg_current_user_id();
+$kycStatus = sg_fetch_one('SELECT status FROM kyc_verifications WHERE user_id = :user_id ORDER BY id DESC LIMIT 1', ['user_id' => $sellerId]);
+if (!$kycStatus || $kycStatus['status'] !== 'approved') {
+    sg_flash('Identitas kamu belum diverifikasi oleh admin. Lengkapi KYC dan tunggu persetujuan terlebih dahulu sebelum menjual tiket.', 'error');
+    sg_redirect('settings');
+}
+
 $page_title = 'Sell Your Ticket - SafeGate';
 $dashboard_page = 'sell_ticket';
 $extra_scripts = ['assets/js/sell-ticket.js'];
@@ -76,21 +83,21 @@ ob_start();
                     <span>Step 02/03</span>
                 </div>
                 <div class="sg-mode-toggle">
-                    <button type="button">Fixed Price</button>
-                    <button type="button" class="is-active">Auction</button>
+                    <button type="button" id="btnFixedPrice">Fixed Price</button>
+                    <button type="button" id="btnAuction" class="is-active">Auction</button>
                 </div>
-                <div class="sg-auction-input-grid">
-                    <label>
-                        <span>Starting Bid (Rp)</span>
+                <div class="sg-auction-input-grid" id="pricingInputsGrid">
+                    <label id="labelStartingBid">
+                        <span id="textStartingBid">Starting Bid (Rp)</span>
                         <input id="sellingPrice" name="starting_bid" type="text" inputmode="numeric" value="<?= (int) $selected_event['selling_price'] ?>" data-face-value="<?= (int) $selected_event['face_value'] ?>">
                     </label>
-                    <label>
+                    <label id="labelReservePrice">
                         <span>Reserve Price (Rp)</span>
-                        <input name="reserve_price" type="text" placeholder="Min. price to sell">
+                        <input id="reservePrice" name="reserve_price" type="text" placeholder="Min. price to sell">
                     </label>
-                    <label>
+                    <label id="labelDuration">
                         <span>Duration</span>
-                        <select name="duration">
+                        <select id="auctionDuration" name="duration">
                             <option value="24">24 Hours</option>
                             <option value="72">3 Days</option>
                             <option value="168">7 Days</option>

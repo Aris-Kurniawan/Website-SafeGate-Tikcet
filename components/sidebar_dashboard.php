@@ -1,6 +1,12 @@
 <?php
 $asset_prefix = isset($asset_prefix) ? $asset_prefix : ((strpos($_SERVER['SCRIPT_NAME'], 'views/') !== false) ? '../../' : '');
 $dashboard_page = isset($dashboard_page) ? $dashboard_page : '';
+sg_ensure_user_profile_schema();
+$sidebarUser = !empty($_SESSION['user_id'])
+    ? sg_fetch_one('SELECT full_name, profile_photo_path FROM users WHERE id = :id LIMIT 1', ['id' => (int) $_SESSION['user_id']])
+    : null;
+$sidebarName = $sidebarUser['full_name'] ?? 'Verified Vendor';
+$sidebarPhoto = trim((string) ($sidebarUser['profile_photo_path'] ?? ''));
 ?>
 <style>
 /* Logo Brand Styling */
@@ -655,9 +661,13 @@ $dashboard_page = isset($dashboard_page) ? $dashboard_page : '';
     </div>
 
     <div class="sg-seller-card">
-        <div class="sg-seller-avatar" aria-hidden="true"></div>
+        <div class="sg-seller-avatar <?= $sidebarPhoto !== '' ? 'has-photo' : '' ?>" aria-hidden="true">
+            <?php if ($sidebarPhoto !== ''): ?>
+                <img src="<?= sg_h($sidebarPhoto) ?>" alt="">
+            <?php endif; ?>
+        </div>
         <div>
-            <strong>Verified Vendor</strong>
+            <strong><?= sg_h($sidebarName) ?></strong>
             <span>KYC Active</span>
         </div>
     </div>

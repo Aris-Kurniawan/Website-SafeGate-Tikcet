@@ -37,8 +37,12 @@ function sg_require_route_access(string $page): void
         'admin_transactions' => ['admin'],
         'admin_disputes' => ['admin'],
         'admin_kyc' => ['admin'],
+        'buyer_dashboard' => ['buyer', 'seller', 'admin'],
         'my_tickets' => ['buyer', 'seller', 'admin'],
+        'buyer_wallet' => ['buyer', 'seller', 'admin'],
+        'buyer_transactions' => ['buyer', 'seller', 'admin'],
         'buyer_profile' => ['buyer', 'seller', 'admin'],
+        'ticket_verify' => ['buyer', 'seller', 'admin'],
     ];
 
     if (!isset($protectedRoutes[$page])) {
@@ -176,6 +180,48 @@ function sg_handle_withdrawal(): void
     sg_redirect('wallet');
 }
 
+function sg_handle_buyer_wallet_topup(): void
+{
+    $buyerId = sg_current_user_id();
+    $amount = (int) preg_replace('/[^\d]/', '', (string) ($_POST['amount'] ?? '0'));
+
+    if (!$buyerId || !sg_db()) {
+        sg_flash('Login dulu sebelum top up saldo.', 'error');
+        sg_redirect('login');
+    }
+
+    if ($amount < 50000) {
+        sg_flash('Minimal top up Rp 50.000 untuk saldo jaminan lelang.', 'error');
+        sg_redirect('buyer_wallet');
+    }
+
+    $created = sg_wallet_activity($buyerId, 'top_up', $amount, 'credit', 'completed', 'Top up saldo jaminan melalui simulasi bank transfer.');
+    sg_flash($created ? 'Top up saldo berhasil masuk ke wallet pembeli.' : 'Top up gagal: ' . sg_db_error(), $created ? 'success' : 'error');
+    sg_redirect('buyer_wallet');
+}
+
+function sg_handle_buyer_wallet_withdraw(): void
+{
+    $buyerId = sg_current_user_id();
+    $amount = (int) preg_replace('/[^\d]/', '', (string) ($_POST['amount'] ?? '0'));
+    $destination = trim((string) ($_POST['destination'] ?? ''));
+
+    if (!$buyerId || !sg_db()) {
+        sg_flash('Login dulu sebelum tarik saldo.', 'error');
+        sg_redirect('login');
+    }
+
+    $wallet = sg_get_buyer_wallet_summary($buyerId);
+    if ($amount < 50000 || $destination === '' || $amount > $wallet['available']) {
+        sg_flash('Nominal tarik saldo tidak valid atau saldo tidak cukup.', 'error');
+        sg_redirect('buyer_wallet');
+    }
+
+    $created = sg_wallet_activity($buyerId, 'withdrawal', $amount, 'debit', 'pending', 'Permintaan tarik saldo ke ' . $destination . '.');
+    sg_flash($created ? 'Permintaan tarik saldo tercatat di database.' : 'Tarik saldo gagal: ' . sg_db_error(), $created ? 'success' : 'error');
+    sg_redirect('buyer_wallet');
+}
+
 function sg_handle_kyc_submit(): void
 {
     $sellerId = sg_current_user_id();
@@ -245,6 +291,7 @@ function sg_handle_buyer_profile_update(): void
         sg_flash('Login dulu sebelum mengubah profil.', 'error');
         sg_redirect('login');
     }
+    sg_ensure_user_profile_schema();
 
     $fullName = trim((string) ($_POST['full_name'] ?? ''));
     $phone = trim((string) ($_POST['phone_number'] ?? ''));
@@ -255,14 +302,27 @@ function sg_handle_buyer_profile_update(): void
         sg_redirect('buyer_profile');
     }
 
+    $photoPath = sg_upload_file('profile_photo', 'profiles', '', ['jpg', 'jpeg', 'png', 'webp'], 3 * 1024 * 1024);
+    if (sg_upload_error()) {
+        sg_flash('Upload foto profil gagal: ' . sg_upload_error(), 'error');
+        sg_redirect('buyer_profile');
+    }
+
+    $params = [
+        'full_name' => $fullName,
+        'phone' => $phone ?: null,
+        'nik' => $nik ?: null,
+        'id' => $userId,
+    ];
+    $photoSql = '';
+    if ($photoPath !== '') {
+        $photoSql = ', profile_photo_path = :profile_photo_path';
+        $params['profile_photo_path'] = $photoPath;
+    }
+
     $updated = sg_execute(
-        'UPDATE users SET full_name = :full_name, phone_number = :phone, nik = :nik WHERE id = :id',
-        [
-            'full_name' => $fullName,
-            'phone' => $phone ?: null,
-            'nik' => $nik ?: null,
-            'id' => $userId,
-        ]
+        'UPDATE users SET full_name = :full_name, phone_number = :phone, nik = :nik' . $photoSql . ' WHERE id = :id',
+        $params
     );
 
     sg_flash($updated ? 'Profil berhasil diperbarui.' : 'Profil gagal diperbarui: ' . sg_db_error(), $updated ? 'success' : 'error');
@@ -323,10 +383,11 @@ function sg_handle_change_password(): void
 function sg_handle_seller_profile_update(): void
 {
     $sellerId = sg_current_user_id();
-    if (!$sellerId) {
+    if (!$sellerId || !sg_db()) {
         sg_flash('Login dulu sebelum mengubah profil.', 'error');
         sg_redirect('login');
     }
+    sg_ensure_user_profile_schema();
 
     $fullName = trim((string) ($_POST['full_name'] ?? ''));
     $phone = trim((string) ($_POST['phone_number'] ?? ''));
@@ -336,13 +397,26 @@ function sg_handle_seller_profile_update(): void
         sg_redirect('settings');
     }
 
+    $photoPath = sg_upload_file('profile_photo', 'profiles', '', ['jpg', 'jpeg', 'png', 'webp'], 3 * 1024 * 1024);
+    if (sg_upload_error()) {
+        sg_flash('Upload foto profil gagal: ' . sg_upload_error(), 'error');
+        sg_redirect('settings');
+    }
+
+    $params = [
+        'full_name' => $fullName,
+        'phone' => $phone ?: null,
+        'id' => $sellerId,
+    ];
+    $photoSql = '';
+    if ($photoPath !== '') {
+        $photoSql = ', profile_photo_path = :profile_photo_path';
+        $params['profile_photo_path'] = $photoPath;
+    }
+
     $updated = sg_execute(
-        'UPDATE users SET full_name = :full_name, phone_number = :phone WHERE id = :id',
-        [
-            'full_name' => $fullName,
-            'phone' => $phone ?: null,
-            'id' => $sellerId,
-        ]
+        'UPDATE users SET full_name = :full_name, phone_number = :phone' . $photoSql . ' WHERE id = :id',
+        $params
     );
 
     sg_flash($updated ? 'Profil seller berhasil diperbarui.' : 'Profil seller gagal diperbarui: ' . sg_db_error(), $updated ? 'success' : 'error');
@@ -769,6 +843,17 @@ function sg_handle_checkout_payment(): void
         sg_redirect_url('index.php?page=detail_tiket&listing_id=' . $listingId);
     }
 
+    sg_process_expired_bid_deadlines($listingId);
+    $winningBid = sg_fetch_one(
+        'SELECT id, bidder_id FROM bids WHERE listing_id = :listing_id AND is_winning_bid = 1 ORDER BY bid_amount DESC LIMIT 1',
+        ['listing_id' => $listingId]
+    );
+
+    if ($winningBid && (int) $winningBid['bidder_id'] !== $buyerId) {
+        sg_flash('Saat ini hanya pemenang lelang yang bisa menyelesaikan pembayaran tiket ini.', 'error');
+        sg_redirect_url('index.php?page=detail_tiket&listing_id=' . $listingId);
+    }
+
     $basePrice = (int) ($listing['current_highest_bid'] ?: $listing['starting_bid']);
     $reservePrice = (int) ($listing['reserve_price'] ?? 0);
     if ($reservePrice > 0 && $basePrice < $reservePrice) {
@@ -781,11 +866,6 @@ function sg_handle_checkout_payment(): void
     $totalAmount = $basePrice + $serviceFee + $escrowInsurance;
     $sellerEarning = $basePrice - $serviceFee;
     $transactionCode = 'SG-TX-' . strtoupper(substr(uniqid(), -6));
-    $winningBid = sg_fetch_one(
-        'SELECT id FROM bids WHERE listing_id = :listing_id AND is_winning_bid = 1 ORDER BY bid_amount DESC LIMIT 1',
-        ['listing_id' => $listingId]
-    );
-
     $created = sg_execute(
         'INSERT INTO transactions
             (transaction_code, listing_id, buyer_id, seller_id, winning_bid_id, base_price, service_fee, escrow_insurance, total_amount, platform_revenue, seller_earning, payment_method, payment_status, escrow_status, paid_at)
@@ -821,6 +901,24 @@ function sg_handle_checkout_payment(): void
                     'notes' => 'Escrow locked from checkout ' . $transactionCode,
                 ]
             );
+            if ($winningBid) {
+                sg_execute('UPDATE bids SET bid_status = "paid", deposit_status = "refunded" WHERE id = :id', ['id' => $winningBid['id']]);
+                sg_execute(
+                    'UPDATE buyer_wallet_transactions
+                     SET direction = "debit", status = "completed", description = :description
+                     WHERE bid_id = :bid_id AND type = "bid_deposit_lock"',
+                    ['bid_id' => $winningBid['id'], 'description' => 'Jaminan lelang selesai dipakai dan siap dikembalikan.']
+                );
+                $refundExists = sg_fetch_one(
+                    'SELECT id FROM buyer_wallet_transactions
+                     WHERE bid_id = :bid_id AND user_id = :user_id AND type = "bid_deposit_refund"
+                     LIMIT 1',
+                    ['bid_id' => $winningBid['id'], 'user_id' => $buyerId]
+                );
+                if (!$refundExists) {
+                    sg_wallet_activity($buyerId, 'bid_deposit_refund', sg_bid_deposit_amount(), 'release', 'completed', 'Jaminan lelang dikembalikan setelah pembayaran selesai.', (int) $transaction['id'], (int) $winningBid['id']);
+                }
+            }
         }
 
         sg_execute('UPDATE ticket_listings SET listing_status = "sold" WHERE id = :id', ['id' => $listingId]);
@@ -848,6 +946,8 @@ function sg_handle_checkout_payment(): void
 
 function sg_handle_submit_bid(): void
 {
+    sg_ensure_buyer_finance_schema();
+
     if (!sg_db()) {
         sg_flash('Database belum aktif. Nyalakan MySQL dulu.', 'error');
         sg_redirect('penjualan');
@@ -884,27 +984,43 @@ function sg_handle_submit_bid(): void
         sg_redirect_url('index.php?page=detail_tiket&listing_id=' . $listingId);
     }
 
+    $deposit = sg_bid_deposit_amount();
+    $wallet = sg_get_buyer_wallet_summary($buyerId);
+    if ($wallet['available'] < $deposit) {
+        sg_flash('Saldo jaminan belum cukup. Top up minimal ' . sg_rupiah($deposit) . ' di Wallet & Escrow pembeli untuk mengikuti lelang.', 'error');
+        sg_redirect('buyer_wallet');
+    }
+
     $previousWinner = sg_fetch_one(
         'SELECT bidder_id FROM bids WHERE listing_id = :listing_id AND is_winning_bid = 1 ORDER BY bid_amount DESC LIMIT 1',
         ['listing_id' => $listingId]
     );
 
-    sg_execute('UPDATE bids SET is_winning_bid = 0 WHERE listing_id = :listing_id', [
+    sg_execute('UPDATE bids SET is_winning_bid = 0, bid_status = "outbid" WHERE listing_id = :listing_id AND is_winning_bid = 1', [
         'listing_id' => $listingId,
     ]);
 
     $created = sg_execute(
-        'INSERT INTO bids (listing_id, bidder_id, bid_amount, is_winning_bid, ip_address)
-         VALUES (:listing_id, :bidder_id, :bid_amount, 1, :ip_address)',
+        'INSERT INTO bids (listing_id, bidder_id, bid_amount, deposit_amount, deposit_status, payment_deadline_at, bid_status, is_winning_bid, ip_address)
+         VALUES (:listing_id, :bidder_id, :bid_amount, :deposit_amount, "locked", DATE_ADD(NOW(), INTERVAL 2 HOUR), "winner_pending_payment", 1, :ip_address)',
         [
             'listing_id' => $listingId,
             'bidder_id' => $buyerId,
             'bid_amount' => $bidAmount,
+            'deposit_amount' => $deposit,
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
         ]
     );
 
     if ($created) {
+        $bidRow = sg_fetch_one(
+            'SELECT id FROM bids WHERE listing_id = :listing_id AND bidder_id = :bidder_id ORDER BY id DESC LIMIT 1',
+            ['listing_id' => $listingId, 'bidder_id' => $buyerId]
+        );
+        if ($bidRow) {
+            sg_wallet_activity($buyerId, 'bid_deposit_lock', $deposit, 'hold', 'locked', 'Jaminan lelang dikunci untuk ' . $listing['title'] . '.', null, (int) $bidRow['id']);
+        }
+
         sg_execute('UPDATE ticket_listings SET current_highest_bid = :amount WHERE id = :id', [
             'amount' => $bidAmount,
             'id' => $listingId,
@@ -915,6 +1031,13 @@ function sg_handle_submit_bid(): void
             'bid_placed',
             'Tawaran Terkirim',
             'Tawaran kamu untuk ' . $listing['title'] . ' sekarang menjadi bid tertinggi sementara.',
+            $listingId
+        );
+        sg_notify(
+            $buyerId,
+            'auction_won',
+            'Kamu Memimpin Lelang',
+            'Kamu sedang menjadi pemenang sementara untuk ' . $listing['title'] . '. Jika tetap menang, selesaikan pembayaran dalam 2 jam.',
             $listingId
         );
         sg_notify(
@@ -1045,6 +1168,88 @@ function sg_handle_open_dispute(): void
 
     sg_flash($created ? 'Dispute berhasil dibuka. Admin akan meninjau escrow transaksi ini.' : 'Dispute gagal dibuat: ' . sg_db_error(), $created ? 'success' : 'error');
     sg_redirect('my_tickets');
+}
+
+function sg_handle_buyer_confirm_ticket(): void
+{
+    $buyerId = sg_current_user_id();
+    $transactionId = (int) ($_POST['transaction_id'] ?? 0);
+
+    if (!$buyerId || $transactionId <= 0) {
+        sg_flash('Login dan pilih tiket valid dulu.', 'error');
+        sg_redirect('my_tickets');
+    }
+
+    $transaction = sg_get_buyer_ticket_for_verification($transactionId, $buyerId);
+    if (!$transaction) {
+        sg_flash('Tiket tidak ditemukan di akun kamu.', 'error');
+        sg_redirect('my_tickets');
+    }
+
+    if (($transaction['buyer_ticket_status'] ?? '') === 'confirmed_used') {
+        sg_flash('Tiket ini sudah pernah dikonfirmasi valid.', 'success');
+        sg_redirect_url('index.php?page=ticket_verify&transaction_id=' . $transactionId);
+    }
+
+    if (($transaction['buyer_ticket_status'] ?? '') === 'reported_issue') {
+        sg_flash('Tiket ini sudah dilaporkan bermasalah dan sedang ditinjau.', 'error');
+        sg_redirect_url('index.php?page=ticket_verify&transaction_id=' . $transactionId);
+    }
+
+    if (($transaction['payment_status'] ?? '') !== 'paid' || !in_array($transaction['escrow_status'], ['holding', 'disputed', 'released'], true)) {
+        sg_flash('Tiket ini tidak bisa dikonfirmasi.', 'error');
+        sg_redirect('my_tickets');
+    }
+
+    $updated = sg_execute(
+        'UPDATE transactions
+         SET buyer_ticket_status = "confirmed_used",
+             escrow_status = "released",
+             buyer_confirmed_at = NOW(),
+             escrow_released_at = COALESCE(escrow_released_at, NOW())
+         WHERE id = :id AND buyer_id = :buyer_id',
+        ['id' => $transactionId, 'buyer_id' => $buyerId]
+    );
+
+    if ($updated && $transaction['escrow_status'] !== 'released') {
+        sg_execute(
+            'INSERT INTO escrow_ledger (transaction_id, user_id, type, amount, balance_after, notes)
+             VALUES (:transaction_id, :user_id, "release", :amount, :balance_after, :notes)',
+            [
+                'transaction_id' => $transactionId,
+                'user_id' => $transaction['seller_id'],
+                'amount' => $transaction['seller_earning'],
+                'balance_after' => $transaction['seller_earning'],
+                'notes' => 'Buyer confirmed ticket usable for ' . $transaction['transaction_code'],
+            ]
+        );
+        sg_notify((int) $transaction['seller_id'], 'escrow_released', 'Tiket Dikonfirmasi Buyer', 'Buyer mengonfirmasi tiket ' . $transaction['title'] . ' valid. Escrow dilepas ke saldo seller.', $transactionId);
+    }
+
+    sg_flash($updated ? 'Tiket dikonfirmasi valid.' . ($transaction['escrow_status'] === 'released' ? '' : ' Escrow dilepas ke seller.') : 'Konfirmasi gagal: ' . sg_db_error(), $updated ? 'success' : 'error');
+    sg_redirect_url('index.php?page=ticket_verify&transaction_id=' . $transactionId);
+}
+
+function sg_handle_buyer_report_ticket(): void
+{
+    $buyerId = sg_current_user_id();
+    $transactionId = (int) ($_POST['transaction_id'] ?? 0);
+    $claim = trim((string) ($_POST['buyer_claim'] ?? ''));
+
+    if (!$buyerId || $transactionId <= 0 || strlen($claim) < 12) {
+        sg_flash('Tulis alasan pelaporan minimal 12 karakter.', 'error');
+        sg_redirect('my_tickets');
+    }
+
+    sg_execute(
+        'UPDATE transactions
+         SET buyer_ticket_status = "reported_issue", escrow_status = "disputed", buyer_reported_at = NOW()
+         WHERE id = :id AND buyer_id = :buyer_id AND escrow_status IN ("holding", "disputed")',
+        ['id' => $transactionId, 'buyer_id' => $buyerId]
+    );
+
+    $_POST['sg_action'] = 'open_dispute';
+    sg_handle_open_dispute();
 }
 
 function sg_handle_dispute_message(): void
@@ -1286,6 +1491,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         sg_handle_create_listing();
     } elseif ($action === 'withdrawal') {
         sg_handle_withdrawal();
+    } elseif ($action === 'buyer_wallet_topup') {
+        sg_handle_buyer_wallet_topup();
+    } elseif ($action === 'buyer_wallet_withdraw') {
+        sg_handle_buyer_wallet_withdraw();
     } elseif ($action === 'kyc_submit') {
         sg_handle_kyc_submit();
     } elseif ($action === 'buyer_profile_update') {
@@ -1314,6 +1523,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         sg_handle_submit_bid();
     } elseif ($action === 'open_dispute') {
         sg_handle_open_dispute();
+    } elseif ($action === 'buyer_confirm_ticket') {
+        sg_handle_buyer_confirm_ticket();
+    } elseif ($action === 'buyer_report_ticket') {
+        sg_handle_buyer_report_ticket();
     } elseif ($action === 'dispute_message') {
         sg_handle_dispute_message();
     } elseif ($action === 'listing_status') {

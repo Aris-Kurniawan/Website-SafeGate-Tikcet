@@ -49,29 +49,6 @@ ob_start();
                 Nikmati pasar sekunder dengan keamanan standar institusi.
             </p>
 
-            <?php if (!empty($_SESSION['user_id'])): ?>
-                <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-3 mb-4 w-100" style="max-width: 560px;">
-                    <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
-                        <a href="index.php?page=admin_overview" class="btn btn-safegate-neon rounded-pill fw-bold d-inline-flex align-items-center justify-content-center gap-2"
-                            style="font-size: 0.78rem; padding: 0.8rem 1.35rem; min-height: 46px;">
-                            <iconify-icon icon="ph:command-fill" style="font-size: 1rem;"></iconify-icon>
-                            Admin Panel
-                        </a>
-                    <?php else: ?>
-                        <a href="index.php?page=my_tickets" class="btn rounded-pill fw-bold d-inline-flex align-items-center justify-content-center gap-2"
-                            style="font-size: 0.78rem; padding: 0.8rem 1.35rem; min-height: 46px; color: #fff; background: rgba(255,255,255,0.045); border: 1px solid rgba(217,255,0,0.28); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);">
-                            <iconify-icon icon="ph:ticket-fill" class="text-safegate-neon" style="font-size: 1rem;"></iconify-icon>
-                            Tiket Saya
-                        </a>
-                        <a href="index.php?page=seller_overview" class="btn btn-safegate-neon rounded-pill fw-bold d-inline-flex align-items-center justify-content-center gap-2"
-                            style="font-size: 0.78rem; padding: 0.8rem 1.35rem; min-height: 46px; box-shadow: 0 14px 34px rgba(217,255,0,0.18);">
-                            <iconify-icon icon="ph:storefront-fill" style="font-size: 1rem;"></iconify-icon>
-                            Jual Tiket
-                        </a>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
-
             <!-- Search Bar -->
             <form action="index.php" method="get" class="w-100 rounded-pill d-flex align-items-center shadow-lg sg-home-search"
                 style="background: rgba(18, 22, 31, 0.72); border: 1px solid rgba(255, 255, 255, 0.08); max-width: 560px; min-height: 56px; padding: 0.35rem; gap: 0;">
@@ -161,6 +138,7 @@ ob_start();
                 $price = $ticket['price'];
                 $originalPrice = $ticket['originalPrice'];
                 $listingId = $ticket['id'] ?? '';
+                $auctionEndAt = $ticket['auctionEndAt'] ?? null;
                 include __DIR__ . '/../../components/ticket_card.php';
                 echo '</div>';
             }

@@ -23,7 +23,7 @@
     <?= isset($content) ? $content : '' ?>
 
     <!-- Custom Animation Script for Auth Pages -->
-    <script src="assets/js/auth_animation.js"></script>
+    <script src="assets/js/auth_animation.js?v=<?= time() ?>"></script>
 </body>
 
 </html>

@@ -2,10 +2,14 @@
 require_once __DIR__ . '/../../core/safegate_repository.php';
 
 $page_title = 'Profil Buyer - SafeGate';
+$buyer_page = 'buyer_profile';
+sg_ensure_user_profile_schema();
 $user = sg_fetch_one(
-    'SELECT full_name, email, phone_number, nik, role, created_at FROM users WHERE id = :id LIMIT 1',
+    'SELECT full_name, email, phone_number, nik, profile_photo_path, role, created_at FROM users WHERE id = :id LIMIT 1',
     ['id' => sg_current_user_id()]
 ) ?: [];
+$profileInitials = sg_user_initials($user['full_name'] ?? '', 'BU');
+$profilePhoto = trim((string) ($user['profile_photo_path'] ?? ''));
 $flash = sg_flash();
 
 ob_start();
@@ -26,8 +30,22 @@ ob_start();
 
     <div class="row g-4">
         <div class="col-12 col-lg-8">
-            <form class="sg-glass rounded-4 p-4 p-md-5" action="index.php?page=buyer_profile" method="post">
+            <form class="sg-glass rounded-4 p-4 p-md-5" action="index.php?page=buyer_profile" method="post" enctype="multipart/form-data">
                 <input type="hidden" name="sg_action" value="buyer_profile_update">
+
+                <label class="sg-profile-photo-control sg-buyer-profile-photo-control" for="buyerProfilePhoto">
+                    <span class="sg-profile-avatar <?= $profilePhoto !== '' ? 'has-photo' : '' ?>">
+                        <?php if ($profilePhoto !== ''): ?>
+                            <img id="buyerProfilePreview" src="<?= sg_h($profilePhoto) ?>" alt="Profile photo">
+                        <?php else: ?>
+                            <b id="buyerProfileInitials"><?= sg_h($profileInitials) ?></b>
+                            <img id="buyerProfilePreview" src="" alt="Profile photo" hidden>
+                        <?php endif; ?>
+                        <i><iconify-icon icon="ph:camera"></iconify-icon></i>
+                    </span>
+                    <strong class="sg-change-photo">Change Photo</strong>
+                    <input id="buyerProfilePhoto" name="profile_photo" type="file" accept=".jpg,.jpeg,.png,.webp" hidden>
+                </label>
 
                 <div class="mb-4">
                     <label class="form-label text-safegate-text-sec fw-bold text-uppercase" style="font-size:.72rem; letter-spacing:.12em;">Nama Lengkap</label>
@@ -85,8 +103,12 @@ ob_start();
 
         <div class="col-12 col-lg-4">
             <aside class="sg-glass rounded-4 p-4 h-100">
-                <div class="rounded-circle d-flex align-items-center justify-content-center mb-4" style="width:72px; height:72px; background:rgba(217,255,0,.12); border:1px solid rgba(217,255,0,.25); color:var(--safegate-neon); font-weight:900; font-size:1.6rem;">
-                    <?= sg_h(strtoupper(substr($user['full_name'] ?? 'B', 0, 1))) ?>
+                <div class="rounded-circle d-flex align-items-center justify-content-center mb-4 overflow-hidden" style="width:72px; height:72px; background:rgba(217,255,0,.12); border:1px solid rgba(217,255,0,.25); color:var(--safegate-neon); font-weight:900; font-size:1.6rem;">
+                    <?php if ($profilePhoto !== ''): ?>
+                        <img src="<?= sg_h($profilePhoto) ?>" alt="Profile photo" style="width:100%; height:100%; object-fit:cover;">
+                    <?php else: ?>
+                        <?= sg_h($profileInitials) ?>
+                    <?php endif; ?>
                 </div>
                 <p class="text-safegate-text-sec text-uppercase fw-bold mb-1" style="font-size:.7rem; letter-spacing:.12em;">Role</p>
                 <h2 class="h5 text-white fw-bold mb-4"><?= sg_h(ucfirst($user['role'] ?? 'buyer')) ?></h2>
@@ -97,7 +119,22 @@ ob_start();
     </div>
 </section>
 
+<script>
+document.getElementById('buyerProfilePhoto')?.addEventListener('change', (event) => {
+    const file = event.target.files?.[0];
+    const preview = document.getElementById('buyerProfilePreview');
+    const initials = document.getElementById('buyerProfileInitials');
+    const avatar = event.target.closest('.sg-profile-photo-control')?.querySelector('.sg-profile-avatar');
+    if (!file || !preview || !avatar) return;
+
+    preview.src = URL.createObjectURL(file);
+    preview.hidden = false;
+    avatar.classList.add('has-photo');
+    if (initials) initials.hidden = true;
+});
+</script>
+
 <?php
 $content = ob_get_clean();
-require_once __DIR__ . '/../../layouts/public_layout.php';
+require_once __DIR__ . '/../../layouts/buyer_layout.php';
 ?>

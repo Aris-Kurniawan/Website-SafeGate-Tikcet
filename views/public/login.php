@@ -72,13 +72,13 @@ ob_start();
                     <div class="px-3 d-flex align-items-center" style="color: #6c757d;">
                         <iconify-icon icon="ph:key" class="fs-5"></iconify-icon>
                     </div>
-                    <input type="password" name="password"
+                    <input type="password" name="password" id="loginPassword"
                         class="form-control text-white py-3 pe-5 ps-0 border-0 bg-transparent shadow-none"
                         placeholder="Enter your password" required style="font-size: 0.85rem;"
                         onfocus="this.parentElement.style.borderColor='var(--safegate-neon)'"
                         onblur="this.parentElement.style.borderColor='rgba(255,255,255,0.05)'">
-                    <iconify-icon icon="ph:eye-slash" class="position-absolute end-0 me-3 fs-6"
-                        style="color: #6c757d; cursor: pointer;"></iconify-icon>
+                    <iconify-icon icon="ph:eye-slash" id="toggleLoginPassword" class="position-absolute end-0 me-3 fs-6"
+                        style="color: #6c757d; cursor: pointer;" onclick="togglePasswordVisibility('loginPassword', 'toggleLoginPassword')"></iconify-icon>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mb-4">

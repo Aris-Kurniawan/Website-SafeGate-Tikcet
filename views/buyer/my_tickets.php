@@ -1,121 +1,166 @@
 <?php
 require_once __DIR__ . '/../../core/safegate_repository.php';
 
-$page_title = 'Tiket Saya - SafeGate';
+$page_title = 'My Tickets - SafeGate';
+$buyer_page = 'my_tickets';
 $buyer_id = sg_current_user_id();
 $tickets = sg_get_buyer_tickets($buyer_id);
-$notifications = sg_get_notifications($buyer_id, 4);
-$unread_notifications = sg_unread_notification_count($buyer_id);
+$bids = sg_get_buyer_bids($buyer_id);
 $flash = sg_flash();
 
 ob_start();
 ?>
 
-<section class="container mx-auto py-5" style="max-width: 1200px; padding-left: 1.5rem; padding-right: 1.5rem; margin-top: 3rem; margin-bottom: 5rem;">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-4 mb-5">
+<section class="sg-buyer-content">
+    <?php if ($flash): ?>
+        <div class="sg-buyer-notice"><?= sg_h($flash['message']) ?></div><?php endif; ?>
+
+    <div class="sg-buyer-titlebar">
         <div>
-            <p class="text-safegate-neon fw-bold text-uppercase mb-2" style="font-size: .75rem; letter-spacing: .12em;">Buyer Vault</p>
-            <h1 class="display-5 fw-bold text-white mb-3 letter-spacing-tight">Tiket Saya</h1>
-            <p class="text-safegate-text-sec mb-0" style="max-width: 38rem;">Daftar tiket yang sudah kamu beli lewat escrow SafeGate.</p>
+            <h1>My Tickets</h1>
+            <p>Daftar tiket yang sudah dibeli dan status verifikasi penggunaan tiket.</p>
         </div>
-        <a href="index.php?page=penjualan" class="btn btn-safegate-neon rounded-pill fw-bold px-4 py-2">Cari Tiket</a>
+        <div class="sg-buyer-actions">
+            <a class="sg-buyer-btn is-neon" href="index.php?page=penjualan"><iconify-icon icon="ph:plus"></iconify-icon>
+                Cari Tiket</a>
+        </div>
     </div>
 
-    <?php if ($flash): ?>
-        <div class="rounded-4 p-3 mb-4" style="background: rgba(217,255,0,.08); border: 1px solid rgba(217,255,0,.18); color: var(--safegate-neon); font-weight: 700;">
-            <?= sg_h($flash['message']) ?>
-        </div>
-    <?php endif; ?>
-
-    <?php if ($notifications): ?>
-        <div class="sg-glass rounded-4 p-4 mb-4" style="border: 1px solid rgba(255,255,255,.07);">
-            <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
-                <h2 class="h5 fw-bold text-white mb-0">Notifikasi</h2>
-                <?php if ($unread_notifications > 0): ?>
-                    <a href="index.php?sg_action=mark_notifications_read" class="text-safegate-neon fw-bold text-decoration-none" style="font-size:.75rem;">Tandai dibaca</a>
-                <?php endif; ?>
-            </div>
-            <div class="row g-3">
-                <?php foreach ($notifications as $notification): ?>
-                    <div class="col-12 col-md-6">
-                        <div class="rounded-3 p-3 h-100" style="background: rgba(9,11,16,.35); border:1px solid <?= (int) $notification['is_read'] ? 'rgba(255,255,255,.06)' : 'rgba(217,255,0,.22)' ?>;">
-                            <div class="d-flex align-items-start gap-3">
-                                <iconify-icon icon="ph:bell-ringing" class="text-safegate-neon fs-5"></iconify-icon>
-                                <div>
-                                    <strong class="text-white d-block"><?= sg_h($notification['title']) ?></strong>
-                                    <span class="text-safegate-text-sec" style="font-size:.82rem;"><?= sg_h($notification['body']) ?></span>
-                                    <small class="d-block text-safegate-text-sec mt-1"><?= sg_h(sg_time_ago($notification['created_at'])) ?></small>
+    <?php if (!$tickets && !$bids): ?>
+        <article class="sg-buyer-panel text-center py-5">
+            <iconify-icon icon="ph:ticket" class="text-safegate-neon mb-3" style="font-size:54px;"></iconify-icon>
+            <h2>Belum Ada Tiket</h2>
+            <p class="text-safegate-text-sec mt-2 mb-4">Setelah pembayaran berhasil, tiket kamu akan muncul di dashboard
+                ini.</p>
+            <a href="index.php?page=penjualan" class="sg-buyer-btn is-neon">Buka Marketplace</a>
+        </article>
+    <?php elseif ($tickets): ?>
+        <div class="sg-buyer-card-list">
+            <?php foreach ($tickets as $ticket): ?>
+                <article class="sg-buyer-ticket-card">
+                    <img src="<?= sg_h(sg_event_image($ticket['title'], $ticket['image_path'] ?? '')) ?>"
+                        alt="<?= sg_h($ticket['title']) ?>">
+                    <div class="sg-buyer-ticket-body">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <span class="sg-buyer-chip">Escrow <?= sg_h($ticket['escrow_status']) ?></span>
+                            <span
+                                class="sg-buyer-chip is-muted"><?= sg_h(str_replace('_', ' ', $ticket['buyer_ticket_status'] ?? 'pending_use')) ?></span>
+                            <?php if (!empty($ticket['dispute_status'])): ?>
+                                <span class="sg-buyer-chip is-danger">Dispute <?= sg_h($ticket['dispute_status']) ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <h2><?= sg_h($ticket['title']) ?></h2>
+                        <p><?= sg_h($ticket['venue']) ?>, <?= sg_h($ticket['city']) ?> ·
+                            <?= date('d M Y', strtotime($ticket['event_date'])) ?></p>
+                        <div class="row g-2 mb-3">
+                            <div class="col-4">
+                                <div class="rounded-2 p-2" style="background:#090b10;"><small
+                                        class="text-safegate-text-sec d-block">Section</small><strong><?= sg_h($ticket['section']) ?></strong>
                                 </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="rounded-2 p-2" style="background:#090b10;"><small
+                                        class="text-safegate-text-sec d-block">Row</small><strong><?= sg_h($ticket['row']) ?></strong>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="rounded-2 p-2" style="background:#090b10;"><small
+                                        class="text-safegate-text-sec d-block">Seat</small><strong><?= sg_h($ticket['seat']) ?></strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                            <div>
+                                <span class="text-safegate-text-sec d-block" style="font-size:12px;">Total Payment</span>
+                                <strong class="fs-5"><?= sg_rupiah($ticket['total_amount']) ?></strong>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <a class="sg-buyer-btn"
+                                    href="index.php?page=transaction_detail&code=<?= urlencode($ticket['transaction_code']) ?>">Detail</a>
+                                <?php if (($ticket['buyer_ticket_status'] ?? 'pending_use') === 'pending_use'): ?>
+                                    <a class="sg-buyer-btn is-neon"
+                                        href="index.php?page=ticket_verify&transaction_id=<?= (int) $ticket['transaction_id'] ?>">Verifikasi
+                                        Tiket</a>
+                                <?php else: ?>
+                                    <a class="sg-buyer-btn"
+                                        href="index.php?page=ticket_verify&transaction_id=<?= (int) $ticket['transaction_id'] ?>">Lihat
+                                        Verifikasi</a>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
-                <?php endforeach; ?>
-            </div>
+                </article>
+            <?php endforeach; ?>
         </div>
     <?php endif; ?>
 
-    <?php if (!$tickets): ?>
-        <div class="sg-glass rounded-4 p-5 text-center">
-            <iconify-icon icon="ph:ticket" class="text-safegate-neon display-2 mb-3"></iconify-icon>
-            <h2 class="h4 fw-bold text-white mb-2">Belum Ada Tiket</h2>
-            <p class="text-safegate-text-sec mb-4">Setelah pembayaran berhasil, tiket kamu akan muncul di sini.</p>
-            <a href="index.php?page=penjualan" class="btn btn-outline-safegate-neon rounded-pill fw-bold px-4">Buka Marketplace</a>
+    <?php if ($bids): ?>
+        <div class="sg-buyer-titlebar" style="margin-top: <?= $tickets ? '4rem' : '1rem' ?>;">
+            <div>
+                <h2>Bidding Tickets</h2>
+                <p>Status penawaran lelang tiket Anda saat ini.</p>
+            </div>
         </div>
-    <?php else: ?>
-        <div class="row g-4">
-            <?php foreach ($tickets as $ticket): ?>
-                <div class="col-12 col-lg-6">
-                    <article class="sg-glass rounded-4 overflow-hidden h-100" style="border: 1px solid rgba(255,255,255,.07);">
-                        <div class="row g-0 h-100">
-                            <div class="col-12 col-md-4">
-                                <img src="<?= sg_h(sg_event_image($ticket['title'], $ticket['image_path'] ?? '')) ?>" alt="<?= sg_h($ticket['title']) ?>" class="w-100 h-100 object-fit-cover" style="min-height: 180px;">
-                            </div>
-                            <div class="col-12 col-md-8 p-4 d-flex flex-column">
-                                <div class="d-flex justify-content-between gap-3 mb-3">
-                                    <span class="badge rounded-pill text-black bg-safegate-neon fw-bold">ESCROW <?= sg_h(strtoupper($ticket['escrow_status'])) ?></span>
-                                    <span class="text-safegate-text-sec fw-bold" style="font-size:.72rem;"><?= sg_h($ticket['transaction_code']) ?></span>
-                                </div>
-                                <h2 class="h4 fw-bold text-white mb-2"><?= sg_h($ticket['title']) ?></h2>
-                                <p class="text-safegate-text-sec mb-3" style="font-size:.9rem;">
-                                    <iconify-icon icon="ph:map-pin"></iconify-icon>
-                                    <?= sg_h($ticket['venue']) ?>, <?= sg_h($ticket['city']) ?>
-                                </p>
-                                <div class="row g-2 mb-4">
-                                    <div class="col-4"><div class="rounded-3 p-2 bg-black bg-opacity-25"><small class="text-safegate-text-sec d-block">Section</small><strong><?= sg_h($ticket['section']) ?></strong></div></div>
-                                    <div class="col-4"><div class="rounded-3 p-2 bg-black bg-opacity-25"><small class="text-safegate-text-sec d-block">Row</small><strong><?= sg_h($ticket['row']) ?></strong></div></div>
-                                    <div class="col-4"><div class="rounded-3 p-2 bg-black bg-opacity-25"><small class="text-safegate-text-sec d-block">Seat</small><strong><?= sg_h($ticket['seat']) ?></strong></div></div>
-                                </div>
-                                <div class="mt-auto d-flex justify-content-between align-items-end gap-3">
-                                    <div>
-                                        <small class="text-safegate-text-sec d-block">Total Payment</small>
-                                        <strong class="text-white fs-5"><?= sg_rupiah($ticket['total_amount']) ?></strong>
-                                    </div>
-                                    <a class="btn btn-outline-safegate-neon rounded-pill fw-bold px-3" href="index.php?page=transaction_detail&code=<?= urlencode($ticket['transaction_code']) ?>">Detail</a>
-                                </div>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <?php foreach ($bids as $bid):
+                $isOutbid = $bid['bid_status'] === 'outbid';
+                $isWinner = $bid['is_winning_bid'] == 1;
+                $isListingActive = in_array($bid['listing_status'], ['active', 'promoted']);
 
-                                <div class="mt-4 pt-3" style="border-top:1px solid rgba(255,255,255,.08);">
-                                    <?php if (!empty($ticket['dispute_status'])): ?>
-                                        <div class="rounded-3 px-3 py-2 fw-bold" style="background:rgba(0,229,255,.08); border:1px solid rgba(0,229,255,.2); color:#00e5ff; font-size:.82rem;">
-                                            Dispute status: <?= sg_h(strtoupper(str_replace('_', ' ', $ticket['dispute_status']))) ?>
-                                        </div>
-                                    <?php elseif (in_array($ticket['escrow_status'], ['holding', 'disputed'], true)): ?>
-                                        <details class="mt-1">
-                                            <summary class="text-safegate-neon fw-bold" style="cursor:pointer; font-size:.85rem;">Ajukan Dispute</summary>
-                                            <form class="mt-3" action="index.php?page=my_tickets" method="post">
-                                                <input type="hidden" name="sg_action" value="open_dispute">
-                                                <input type="hidden" name="transaction_id" value="<?= (int) $ticket['transaction_id'] ?>">
-                                                <textarea name="buyer_claim" class="form-control bg-black bg-opacity-25 border-secondary text-white rounded-3 mb-3" rows="3" minlength="12" required placeholder="Contoh: tiket tidak bisa dipakai / detail tiket tidak sesuai..."></textarea>
-                                                <button type="submit" class="btn btn-outline-danger rounded-pill fw-bold px-3 py-2" onclick="return confirm('Buka dispute untuk transaksi ini? Escrow akan ditandai disputed sampai admin meninjau.')">Kirim Dispute</button>
-                                            </form>
-                                        </details>
-                                    <?php else: ?>
-                                        <small class="text-safegate-text-sec">Escrow sudah selesai, dispute tidak tersedia.</small>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
+                if ($isOutbid) {
+                    $statusLabel = 'Kalah (Outbid)';
+                    $statusColor = '#f03e3e';
+                } elseif ($isWinner && $isListingActive) {
+                    $statusLabel = 'Tertinggi Sementara';
+                    $statusColor = 'var(--safegate-neon)';
+                } elseif ($isWinner && !$isListingActive) {
+                    if ($bid['bid_status'] === 'paid') {
+                        $statusLabel = 'Menang (Lunas)';
+                        $statusColor = 'var(--safegate-neon)';
+                    } else {
+                        $statusLabel = 'Menang (Belum Bayar)';
+                        $statusColor = '#ffd98a';
+                    }
+                } else {
+                    $statusLabel = 'Selesai';
+                    $statusColor = 'var(--safegate-text-sec)';
+                }
+                ?>
+                <article
+                    style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem; background: #0c0e14; border: 1px solid #1a1d27; border-radius: 12px; opacity: <?= $isOutbid ? '0.7' : '1' ?>;">
+                    <div style="display: flex; align-items: center; gap: 1.25rem; flex: 1;">
+                        <div
+                            style="width: 48px; height: 48px; background: rgba(200, 255, 0, 0.05); border: 1px solid rgba(200, 255, 0, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--safegate-neon);">
+                            <iconify-icon icon="ph:ticket" style="font-size: 24px;"></iconify-icon>
                         </div>
-                    </article>
-                </div>
+                        <div>
+                            <h3 style="margin: 0 0 4px 0; font-size: 1.1rem; color: #fff; font-weight: 600;">
+                                <?= sg_h($bid['title']) ?></h3>
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--safegate-text-sec);">
+                                <?= sg_h($bid['venue']) ?> · Sec <?= sg_h($bid['section']) ?>, Row <?= sg_h($bid['row']) ?>,
+                                Seat <?= sg_h($bid['seat']) ?>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 2rem;">
+                        <div style="text-align: right;">
+                            <strong
+                                style="font-size: 1.15rem; color: #fff; display: block;"><?= sg_rupiah($bid['bid_amount']) ?></strong>
+                        </div>
+                        <div style="width: 160px;">
+                            <span
+                                style="font-size: 0.85rem; font-weight: 600; color: <?= $statusColor ?>; display: block;"><?= $statusLabel ?></span>
+                            <span
+                                style="font-size: 0.75rem; color: var(--safegate-text-sec);"><?= $isListingActive ? 'Lelang Berlangsung' : 'Lelang Berakhir' ?></span>
+                        </div>
+                        <div>
+                            <a href="index.php?page=detail_tiket&listing_id=<?= (int) $bid['listing_id'] ?>"
+                                style="padding: 8px 16px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; text-decoration: none; font-size: 0.85rem; transition: 0.2s; white-space: nowrap;">Lihat
+                                Lelang</a>
+                        </div>
+                    </div>
+                </article>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
@@ -123,5 +168,5 @@ ob_start();
 
 <?php
 $content = ob_get_clean();
-require_once __DIR__ . '/../../layouts/public_layout.php';
+require_once __DIR__ . '/../../layouts/buyer_layout.php';
 ?>

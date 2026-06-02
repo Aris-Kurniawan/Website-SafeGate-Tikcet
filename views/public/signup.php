@@ -105,13 +105,13 @@ ob_start();
                     <div class="px-3 d-flex align-items-center" style="color: #6c757d;">
                         <iconify-icon icon="ph:key" class="fs-5"></iconify-icon>
                     </div>
-                    <input type="password" name="password"
+                    <input type="password" name="password" id="signupPassword"
                         class="form-control text-white py-3 pe-5 ps-0 border-0 bg-transparent shadow-none"
                         placeholder="Password" required style="font-size: 0.85rem;"
                         onfocus="this.parentElement.style.borderColor='var(--safegate-neon)'"
                         onblur="this.parentElement.style.borderColor='rgba(255,255,255,0.05)'">
-                    <iconify-icon icon="ph:eye-slash" class="position-absolute end-0 me-3 fs-6"
-                        style="color: #6c757d; cursor: pointer;"></iconify-icon>
+                    <iconify-icon icon="ph:eye-slash" id="toggleSignupPassword" class="position-absolute end-0 me-3 fs-6"
+                        style="color: #6c757d; cursor: pointer;" onclick="togglePasswordVisibility('signupPassword', 'toggleSignupPassword')"></iconify-icon>
                 </div>
 
                 <div class="mb-2 d-flex align-items-center rounded-3 position-relative input-group-custom"
@@ -119,11 +119,13 @@ ob_start();
                     <div class="px-3 d-flex align-items-center" style="color: #6c757d;">
                         <iconify-icon icon="ph:key" class="fs-5"></iconify-icon>
                     </div>
-                    <input type="password" name="password_confirm"
+                    <input type="password" name="password_confirm" id="signupPasswordConfirm"
                         class="form-control text-white py-3 pe-5 ps-0 border-0 bg-transparent shadow-none"
                         placeholder="Repeat Password" required style="font-size: 0.85rem;"
                         onfocus="this.parentElement.style.borderColor='var(--safegate-neon)'"
                         onblur="this.parentElement.style.borderColor='rgba(255,255,255,0.05)'">
+                    <iconify-icon icon="ph:eye-slash" id="toggleSignupPasswordConfirm" class="position-absolute end-0 me-3 fs-6"
+                        style="color: #6c757d; cursor: pointer;" onclick="togglePasswordVisibility('signupPasswordConfirm', 'toggleSignupPasswordConfirm')"></iconify-icon>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
