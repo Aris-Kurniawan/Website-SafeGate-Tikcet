@@ -42,35 +42,48 @@ function setActiveStep(step) {
     });
 }
 
-function updatePricingState() {
-    if (!priceInput) {
-        return;
-    }
+const faceValuePrice = document.getElementById('faceValuePrice');
 
-    const faceValue = Number(priceInput.dataset.faceValue || 0);
+function updatePricingState() {
+    if (!priceInput) return;
+
     const sellingPrice = parseRupiah(priceInput.value);
-    const cap = faceValue * 1.1;
     const fee = sellingPrice * 0.05;
     const earning = sellingPrice - fee;
-    const percent = Math.min(Math.max((sellingPrice / cap) * 100, 0), 100);
-    const overLimit = sellingPrice > cap;
 
-    fairnessMeter.style.width = `${percent}%`;
-    summarySelling.textContent = formatRupiah(sellingPrice);
-    summaryFee.textContent = formatRupiah(fee);
-    summaryEarning.textContent = formatRupiah(earning);
+    if (summarySelling) summarySelling.textContent = formatRupiah(sellingPrice);
+    if (summaryFee) summaryFee.textContent = formatRupiah(fee);
+    if (summaryEarning) summaryEarning.textContent = formatRupiah(earning);
 
-    fairnessBox.classList.toggle('is-danger', overLimit);
-    listButton.disabled = overLimit;
-    if (listStatus) {
-        listStatus.textContent = '';
-        listStatus.classList.remove('is-error');
-    }
-    fairnessLabel.textContent = overLimit ? 'Over Limit' : 'Good Value';
-    fairnessMessage.textContent = overLimit
-        ? 'Harga melebihi batas 110%. Turunkan harga untuk membuka tombol listing.'
-        : 'Harga masih dalam batas 110%. Listing dengan harga fair lebih cepat terjual.';
+    if (listButton) listButton.disabled = false;
 }
+
+if (faceValuePrice) {
+    faceValuePrice.addEventListener('focus', () => {
+        faceValuePrice.value = parseRupiah(faceValuePrice.value) || '';
+    });
+    faceValuePrice.addEventListener('input', () => {
+        faceValuePrice.value = parseRupiah(faceValuePrice.value) || '';
+        setActiveStep('pricing');
+    });
+    faceValuePrice.addEventListener('blur', () => {
+        faceValuePrice.value = formatRupiah(parseRupiah(faceValuePrice.value));
+    });
+}
+
+// Logic untuk mengecek apakah form Event (Step 1) sudah terisi semua
+function checkEventDetails() {
+    const eventThumbnail = document.getElementById('eventThumbnail');
+    const eventTitle = document.getElementById('eventTitle');
+    const eventVenue = document.getElementById('eventVenue');
+    
+    if (eventThumbnail?.files.length > 0 || eventTitle?.value.length > 0) {
+        setActiveStep('pricing');
+    }
+}
+
+document.getElementById('eventTitle')?.addEventListener('input', checkEventDetails);
+document.getElementById('eventThumbnail')?.addEventListener('change', checkEventDetails);
 
 function setUploadStatus(message, isError = false) {
     uploadStatus.textContent = message;
@@ -78,10 +91,7 @@ function setUploadStatus(message, isError = false) {
 }
 
 function resetTicketPreview() {
-    if (!ticketPreview) {
-        return;
-    }
-
+    if (!ticketPreview) return;
     ticketPreview.hidden = true;
     ticketPreview.removeAttribute('src');
     uploadDrop?.classList.remove('has-preview');
@@ -92,7 +102,6 @@ function showTicketPreview(file) {
         resetTicketPreview();
         return false;
     }
-
     ticketPreview.src = URL.createObjectURL(file);
     ticketPreview.hidden = false;
     uploadDrop?.classList.add('has-preview');
@@ -112,48 +121,6 @@ if (priceInput) {
         priceInput.value = formatRupiah(parseRupiah(priceInput.value));
     });
     updatePricingState();
-}
-
-eventButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-        eventButtons.forEach((eventButton) => eventButton.classList.remove('is-selected'));
-        button.classList.add('is-selected');
-
-        const faceValue = Number(button.dataset.faceValue || 0);
-        const sellingPrice = Number(button.dataset.sellingPrice || faceValue);
-        if (selectedEventId) {
-            selectedEventId.value = button.dataset.eventId || '';
-        }
-        if (faceValueInput) {
-            faceValueInput.value = faceValue;
-        }
-        originalPriceInput.value = formatRupiah(faceValue);
-        priceInput.dataset.faceValue = faceValue;
-        priceInput.value = formatRupiah(sellingPrice);
-        if (eventSearch) {
-            eventSearch.value = '';
-        }
-        eventButtons.forEach((eventButton) => {
-            eventButton.hidden = !eventButton.classList.contains('is-selected');
-        });
-        eventList?.classList.remove('is-searching');
-        updatePricingState();
-        setActiveStep('pricing');
-    });
-});
-
-if (eventSearch) {
-    eventSearch.addEventListener('input', () => {
-        const keyword = eventSearch.value.trim().toLowerCase();
-        eventList?.classList.toggle('is-searching', keyword.length > 0);
-        eventButtons.forEach((button) => {
-            const haystack = `${button.dataset.title} ${button.dataset.date}`.toLowerCase();
-            button.hidden = keyword.length === 0
-                ? !button.classList.contains('is-selected')
-                : !haystack.includes(keyword);
-        });
-        setActiveStep('event');
-    });
 }
 
 if (ticketFile) {

@@ -77,14 +77,39 @@ function sg_handle_create_listing(): void
         sg_redirect('settings');
     }
 
-    $eventId = (int) ($_POST['event_id'] ?? 0);
+    // 1. Tangkap dan Validasi Event Details (Step 1)
+    $eventTitle = trim((string) ($_POST['event_title'] ?? ''));
+    $eventVenue = trim((string) ($_POST['event_venue'] ?? ''));
+    $eventCity = trim((string) ($_POST['event_city'] ?? ''));
+    $eventDate = trim((string) ($_POST['event_date'] ?? ''));
+    $eventTime = trim((string) ($_POST['event_time'] ?? ''));
+    $eventDesc = trim((string) ($_POST['event_description'] ?? ''));
+
+    if ($eventTitle === '' || $eventVenue === '' || $eventDate === '') {
+        sg_flash('Detail acara (Nama, Lokasi, Tanggal) wajib diisi.', 'error');
+        sg_redirect('sell_ticket');
+    }
+
+    $thumbnailPath = sg_upload_file('event_thumbnail', 'events', 'pending-thumbnail', ['jpg', 'jpeg', 'png'], 5 * 1024 * 1024);
+    if (sg_upload_error()) {
+        sg_flash('Upload thumbnail gagal: ' . sg_upload_error(), 'error');
+        sg_redirect('sell_ticket');
+    }
+
+    // 2. Tangkap Data Harga & Tiket (Step 2 & 3)
     $startingBid = (int) preg_replace('/[^\d]/', '', (string) ($_POST['starting_bid'] ?? '0'));
     $reservePrice = (int) preg_replace('/[^\d]/', '', (string) ($_POST['reserve_price'] ?? '0'));
+    $faceValue = (int) preg_replace('/[^\d]/', '', (string) ($_POST['face_value'] ?? '0'));
     $duration = (int) ($_POST['duration'] ?? 24);
-    $faceValue = (int) ($_POST['face_value'] ?? 0);
     $section = strtoupper(trim((string) ($_POST['section'] ?? '')));
     $row = strtoupper(trim((string) ($_POST['row'] ?? '')));
     $seat = strtoupper(trim((string) ($_POST['seat'] ?? '')));
+
+    if ($startingBid <= 0 || $faceValue <= 0) {
+        sg_flash('Data harga belum lengkap. Isi Face Value dan Harga Jual (Starting Bid) dulu.', 'error');
+        sg_redirect('sell_ticket');
+    }
+
     $proofPath = sg_upload_file('ticket_proof', 'tickets', 'pending-ticket-proof', ['pdf', 'jpg', 'jpeg', 'png', 'pkpass'], 10 * 1024 * 1024);
     if (sg_upload_error()) {
         sg_flash('Upload tiket gagal: ' . sg_upload_error(), 'error');
@@ -96,10 +121,21 @@ function sg_handle_create_listing(): void
     }
     $auctionEndAt = date('Y-m-d H:i:s', time() + ($duration * 3600));
 
-    if ($eventId <= 0 || $startingBid <= 0 || $faceValue <= 0) {
-        sg_flash('Data listing belum lengkap. Pilih event dan isi harga dulu.', 'error');
-        sg_redirect('sell_ticket');
-    }
+    // 3. Simpan Event ke Database Terlebih Dahulu
+    sg_execute(
+        'INSERT INTO events (title, venue, city, event_date, event_time, image_path, description)
+         VALUES (:title, :venue, :city, :event_date, :event_time, :image_path, :description)',
+        [
+            'title' => $eventTitle,
+            'venue' => $eventVenue,
+            'city' => $eventCity,
+            'event_date' => $eventDate,
+            'event_time' => $eventTime,
+            'image_path' => $thumbnailPath === 'pending-thumbnail' ? null : $thumbnailPath,
+            'description' => $eventDesc
+        ]
+    );
+    $eventId = (int) sg_db()->lastInsertId();
 
     if ($section === '' || $row === '' || $seat === '') {
         sg_flash('Section, row, dan seat wajib diisi agar tempat duduk tiap tiket jelas.', 'error');

@@ -31,8 +31,6 @@ ob_start();
 
     <form id="listingForm" class="sg-auction-grid" action="index.php?page=sell_ticket" method="post" enctype="multipart/form-data">
         <input type="hidden" name="sg_action" value="create_listing">
-        <input id="selectedEventId" type="hidden" name="event_id" value="<?= sg_h($selected_event['id'] ?? '') ?>">
-        <input id="faceValueInput" type="hidden" name="face_value" value="<?= (int) $selected_event['face_value'] ?>">
 
         <div class="sg-auction-stack">
             <section class="sg-panel sg-auction-panel">
@@ -41,39 +39,58 @@ ob_start();
                     <span>Step 01/03</span>
                 </div>
 
-                <label class="sg-auction-search">
-                    <iconify-icon icon="ph:magnifying-glass"></iconify-icon>
-                    <input id="eventSearch" type="search" placeholder="Find your event...">
-                </label>
-
-                <div class="sg-event-list" id="eventList">
-                    <?php foreach ($event_options as $index => $event_option): ?>
-                        <button
-                            type="button"
-                            class="sg-event-option sg-auction-event <?= $index === 0 ? 'is-selected' : '' ?>"
-                            data-event-id="<?= sg_h($event_option['id'] ?? '') ?>"
-                            data-title="<?= sg_h($event_option['title']) ?>"
-                            data-date="<?= sg_h($event_option['date']) ?>"
-                            data-time="<?= sg_h($event_option['time']) ?>"
-                            data-face-value="<?= (int) $event_option['face_value'] ?>"
-                            data-selling-price="<?= (int) $event_option['selling_price'] ?>"
-                            <?= $index === 0 ? '' : 'hidden' ?>
-                        >
-                            <span class="sg-event-preview">
-                                <span>Official Listing</span>
-                            </span>
-                            <span class="sg-auction-event-copy">
-                                <strong><?= sg_h($event_option['title']) ?></strong>
-                                <em><iconify-icon icon="ph:map-pin"></iconify-icon> <?= sg_h($event_option['venue']) ?></em>
-                                <em><iconify-icon icon="ph:calendar"></iconify-icon> <?= sg_h($event_option['date']) ?> - <?= sg_h($event_option['time']) ?></em>
-                                <small>"<?= sg_h($event_option['description'] ?? 'Official SafeGate verified event listing.') ?>"</small>
-                            </span>
-                            <span class="sg-face-value">
-                                <small>Face Value</small>
-                                <b><?= sg_rupiah($event_option['face_value']) ?></b>
-                            </span>
-                        </button>
-                    <?php endforeach; ?>
+                <style>
+                    #eventThumbnail::-webkit-file-upload-button,
+                    #eventThumbnail::file-selector-button {
+                        background: #1a1e28;
+                        border: 1px solid rgba(255,255,255,0.1);
+                        color: #c8c3ba;
+                        padding: 8px 14px;
+                        border-radius: 4px;
+                        margin-right: 12px;
+                        cursor: pointer;
+                        text-transform: uppercase;
+                        font-size: 11px;
+                        font-weight: 800;
+                        transition: all 0.2s ease;
+                        vertical-align: middle;
+                    }
+                    #eventThumbnail::-webkit-file-upload-button:hover,
+                    #eventThumbnail::file-selector-button:hover {
+                        background: rgba(217, 255, 0, 0.1);
+                        color: var(--safegate-neon);
+                        border-color: rgba(217, 255, 0, 0.3);
+                    }
+                </style>
+                <div class="sg-auction-input-grid">
+                    <label style="grid-column: span 3;">
+                        <span>Thumbnail / Poster Event (JPG/PNG, Max 5MB)</span>
+                        <input id="eventThumbnail" name="event_thumbnail" type="file" accept=".jpg,.jpeg,.png" required style="padding: 11px 16px; height: 58px; box-sizing: border-box; line-height: normal;">
+                    </label>
+                    <label style="grid-column: span 3;">
+                        <span>Nama Acara / Konser</span>
+                        <input id="eventTitle" name="event_title" type="text" placeholder="Contoh: Coldplay - Music of the Spheres" maxlength="200" required>
+                    </label>
+                    <label style="grid-column: span 2;">
+                        <span>Lokasi (Venue)</span>
+                        <input id="eventVenue" name="event_venue" type="text" placeholder="Contoh: Gelora Bung Karno" maxlength="200" required>
+                    </label>
+                    <label style="grid-column: span 1;">
+                        <span>Kota</span>
+                        <input id="eventCity" name="event_city" type="text" placeholder="Jakarta" maxlength="100" style="min-width: 0; width: 100%; box-sizing: border-box;" required>
+                    </label>
+                    <label style="grid-column: span 1;">
+                        <span>Tanggal Acara</span>
+                        <input id="eventDate" name="event_date" type="date" required>
+                    </label>
+                    <label style="grid-column: span 1;">
+                        <span>Waktu (Jam)</span>
+                        <input id="eventTime" name="event_time" type="time" required>
+                    </label>
+                    <label style="grid-column: span 3;">
+                        <span>Kategori Tiket, Benefit, dan Alasan Jual</span>
+                        <textarea id="eventDescription" name="event_description" placeholder="Sebutkan kategori tiket (misal VIP Platinum), apa saja benefitnya, dan kenapa tiket ini dijual..." rows="3" style="width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 8px;" required></textarea>
+                    </label>
                 </div>
             </section>
 
@@ -86,10 +103,14 @@ ob_start();
                     <button type="button" id="btnFixedPrice">Fixed Price</button>
                     <button type="button" id="btnAuction" class="is-active">Auction</button>
                 </div>
-                <div class="sg-auction-input-grid" id="pricingInputsGrid">
+                <div class="sg-auction-input-grid" id="pricingInputsGrid" style="grid-template-columns: 1fr 1fr;">
+                    <label id="labelFaceValue">
+                        <span>Face Value / Harga Asli (Rp)</span>
+                        <input id="faceValuePrice" name="face_value" type="text" inputmode="numeric" placeholder="Contoh: 1500000" required>
+                    </label>
                     <label id="labelStartingBid">
                         <span id="textStartingBid">Starting Bid (Rp)</span>
-                        <input id="sellingPrice" name="starting_bid" type="text" inputmode="numeric" value="<?= (int) $selected_event['selling_price'] ?>" data-face-value="<?= (int) $selected_event['face_value'] ?>">
+                        <input id="sellingPrice" name="starting_bid" type="text" inputmode="numeric" placeholder="Contoh: 2000000" required>
                     </label>
                     <label id="labelReservePrice">
                         <span>Reserve Price (Rp)</span>
@@ -118,12 +139,7 @@ ob_start();
                         <input id="ticketSeat" name="seat" type="text" value="1" maxlength="20" required>
                     </label>
                 </div>
-                <input id="originalPrice" type="hidden" value="<?= sg_rupiah($selected_event['face_value']) ?>">
-                <div class="sg-auction-fairness" id="fairnessBox">
-                    <div><span>Fairness Indicator</span><strong id="fairnessLabel">Fair Market Price</strong></div>
-                    <div class="sg-fairness-track"><i id="fairnessMeter"></i></div>
-                    <p id="fairnessMessage"><iconify-icon icon="ph:info"></iconify-icon> Anti-Scalping System: Reserve Price tidak boleh melebihi 110% dari Harga Asli.</p>
-                </div>
+
             </section>
 
             <section class="sg-panel sg-auction-panel">

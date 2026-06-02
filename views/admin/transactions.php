@@ -56,7 +56,8 @@ ob_start();
 <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
     <div class="sg-admin-title-section">
         <h1 style="margin: 0 0 4px;">Global Transaction Ledger</h1>
-        <div style="color: var(--admin-text-muted); font-size: 13px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">
+        <div
+            style="color: var(--admin-text-muted); font-size: 13px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">
             Pantauan Mutasi Dana Real-Time
         </div>
     </div>
@@ -67,7 +68,8 @@ ob_start();
 </div>
 
 <?php if ($flash): ?>
-    <div style="margin-top: 18px; padding: 14px 16px; border-radius: 14px; font-weight: 800; font-size: 13px; color: <?= ($flash['type'] ?? 'success') === 'error' ? '#ff6868' : '#d9ff00' ?>; background: <?= ($flash['type'] ?? 'success') === 'error' ? 'rgba(255, 85, 85, .08)' : 'rgba(217, 255, 0, .08)' ?>; border: 1px solid <?= ($flash['type'] ?? 'success') === 'error' ? 'rgba(255, 85, 85, .2)' : 'rgba(217, 255, 0, .18)' ?>;">
+    <div
+        style="margin-top: 18px; padding: 14px 16px; border-radius: 14px; font-weight: 800; font-size: 13px; color: <?= ($flash['type'] ?? 'success') === 'error' ? '#ff6868' : '#d9ff00' ?>; background: <?= ($flash['type'] ?? 'success') === 'error' ? 'rgba(255, 85, 85, .08)' : 'rgba(217, 255, 0, .08)' ?>; border: 1px solid <?= ($flash['type'] ?? 'success') === 'error' ? 'rgba(255, 85, 85, .2)' : 'rgba(217, 255, 0, .18)' ?>;">
         <?= sg_h($flash['message']) ?>
     </div>
 <?php endif; ?>
@@ -137,7 +139,9 @@ ob_start();
 
     <input type="date" name="date" class="sg-admin-filter-date" value="<?= sg_h($date_val) ?>">
 
-    <a class="sg-admin-btn-export-csv" href="index.php?sg_action=export_transactions&search=<?= urlencode($search_val) ?>&payment_status=<?= urlencode($pay_status_val) ?>&escrow_status=<?= urlencode($escrow_status_val) ?>&date=<?= urlencode($date_val) ?>" style="text-decoration:none;">
+    <a class="sg-admin-btn-export-csv"
+        href="index.php?sg_action=export_transactions&search=<?= urlencode($search_val) ?>&payment_status=<?= urlencode($pay_status_val) ?>&escrow_status=<?= urlencode($escrow_status_val) ?>&date=<?= urlencode($date_val) ?>"
+        style="text-decoration:none;">
         <iconify-icon icon="ph:download-simple-bold"></iconify-icon>
         <span>Export to CSV</span>
     </a>
@@ -164,7 +168,8 @@ ob_start();
             <tbody>
                 <?php if (!$transactions): ?>
                     <tr>
-                        <td colspan="7" style="padding: 28px; color: var(--admin-text-muted);">Belum ada transaksi di database. Data akan muncul otomatis setelah tabel `transactions` terisi.</td>
+                        <td colspan="7" style="padding: 28px; color: var(--admin-text-muted);">Belum ada transaksi di
+                            database. Data akan muncul otomatis setelah tabel `transactions` terisi.</td>
                     </tr>
                 <?php endif; ?>
 
@@ -172,40 +177,56 @@ ob_start();
                     <tr>
                         <td class="sg-admin-timestamp" style="font-weight: 700; color: #FFF;">
                             <?= sg_h($transaction['transaction_code']) ?>
-                            <span style="display: block; font-size: 11px; font-weight: 500; color: var(--admin-text-muted); margin-top: 4px;"><?= date('d M Y, H:i', strtotime($transaction['created_at'])) ?></span>
+                            <span
+                                style="display: block; font-size: 11px; font-weight: 500; color: var(--admin-text-muted); margin-top: 4px;"><?= date('d M Y, H:i', strtotime($transaction['created_at'])) ?></span>
                         </td>
                         <td>
-                            <a href="mailto:<?= sg_h($transaction['buyer_email']) ?>" class="sg-admin-entity-link"><?= sg_h($transaction['buyer_email']) ?></a>
+                            <a href="mailto:<?= sg_h($transaction['buyer_email']) ?>"
+                                class="sg-admin-entity-link"><?= sg_h($transaction['buyer_email']) ?></a>
                             <span class="sg-admin-entity-arrow">-&gt;</span>
                             <span class="sg-admin-entity-merchant"><?= sg_h($transaction['seller_name']) ?></span>
                         </td>
                         <td style="color: #E2E8F0; font-weight: 600;"><?= sg_h($transaction['event_title']) ?></td>
                         <td class="sg-admin-amount-fee">
-                            <strong style="color: #FFF; font-size: 15px;"><?= sg_rupiah($transaction['total_amount']) ?></strong>
+                            <strong
+                                style="color: #FFF; font-size: 15px;"><?= sg_rupiah($transaction['total_amount']) ?></strong>
                             <span class="sg-fee-text">Fee: <?= sg_rupiah($transaction['platform_revenue']) ?></span>
                         </td>
-                        <td><span class="sg-badge-status-dot is-<?= sg_h($transaction['payment_status']) ?>"><?= sg_h(ucwords($transaction['payment_status'])) ?></span></td>
-                        <td><span class="sg-badge-status-dot is-<?= $transaction['escrow_status'] === 'holding' ? 'held' : sg_h($transaction['escrow_status']) ?>"><?= sg_h(ucwords($transaction['escrow_status'])) ?></span></td>
+                        <td><span
+                                class="sg-badge-status-dot is-<?= sg_h($transaction['payment_status']) ?>"><?= sg_h(ucwords($transaction['payment_status'])) ?></span>
+                        </td>
+                        <td><span
+                                class="sg-badge-status-dot is-<?= $transaction['escrow_status'] === 'holding' ? 'held' : sg_h($transaction['escrow_status']) ?>"><?= sg_h(ucwords($transaction['escrow_status'])) ?></span>
+                        </td>
                         <td>
-                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                                <a class="sg-admin-btn-more" aria-label="View Details" href="index.php?page=transaction_detail&code=<?= urlencode($transaction['transaction_code']) ?>" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:nowrap; white-space:nowrap;">
+                                <a class="sg-admin-btn-more" aria-label="View Details"
+                                    href="index.php?page=transaction_detail&code=<?= urlencode($transaction['transaction_code']) ?>"
+                                    style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;">
                                     <iconify-icon icon="ph:eye-fill"></iconify-icon>
                                 </a>
                                 <?php if ($transaction['payment_status'] === 'paid' && in_array($transaction['escrow_status'], ['holding', 'disputed'], true)): ?>
-                                    <form action="index.php?page=admin_transactions" method="post" style="margin:0;">
+                                    <form action="index.php?page=admin_transactions" method="post"
+                                        style="margin:0; display:inline-block; flex-shrink:0;">
                                         <input type="hidden" name="sg_action" value="admin_settle_transaction">
                                         <input type="hidden" name="transaction_id" value="<?= (int) $transaction['id'] ?>">
                                         <input type="hidden" name="decision" value="release">
-                                        <button type="submit" class="sg-admin-btn-action is-green" style="padding:8px 10px; font-size:11px;" onclick="return confirm('Lepas escrow transaksi <?= sg_h($transaction['transaction_code']) ?> ke seller?')">Release</button>
+                                        <button type="submit" class="sg-admin-btn-action is-green"
+                                            style="padding:8px 10px; font-size:11px;"
+                                            onclick="return confirm('Lepas escrow transaksi <?= sg_h($transaction['transaction_code']) ?> ke seller?')">Release</button>
                                     </form>
-                                    <form action="index.php?page=admin_transactions" method="post" style="margin:0;">
+                                    <form action="index.php?page=admin_transactions" method="post"
+                                        style="margin:0; display:inline-block; flex-shrink:0;">
                                         <input type="hidden" name="sg_action" value="admin_settle_transaction">
                                         <input type="hidden" name="transaction_id" value="<?= (int) $transaction['id'] ?>">
                                         <input type="hidden" name="decision" value="refund">
-                                        <button type="submit" class="sg-admin-btn-action is-peach" style="padding:8px 10px; font-size:11px;" onclick="return confirm('Refund transaksi <?= sg_h($transaction['transaction_code']) ?> ke buyer?')">Refund</button>
+                                        <button type="submit" class="sg-admin-btn-action is-peach"
+                                            style="padding:8px 10px; font-size:11px;"
+                                            onclick="return confirm('Refund transaksi <?= sg_h($transaction['transaction_code']) ?> ke buyer?')">Refund</button>
                                     </form>
                                 <?php else: ?>
-                                    <span style="font-size:11px; font-weight:800; color:var(--admin-text-muted); text-transform:uppercase;">Final</span>
+                                    <span
+                                        style="font-size:11px; font-weight:800; color:var(--admin-text-muted); text-transform:uppercase;">Final</span>
                                 <?php endif; ?>
                             </div>
                         </td>
@@ -218,26 +239,33 @@ ob_start();
     <div class="sg-admin-table-footer-row">
         <div class="sg-admin-record-count">
             <?php if ($total_transactions > 0): ?>
-                Displaying <?= (($current_page - 1) * $per_page) + 1 ?>-<?= min($current_page * $per_page, $total_transactions) ?> of <?= $total_transactions ?> records
+                Displaying
+                <?= (($current_page - 1) * $per_page) + 1 ?>-<?= min($current_page * $per_page, $total_transactions) ?> of
+                <?= $total_transactions ?> records
             <?php else: ?>
                 Displaying 0 records
             <?php endif; ?>
         </div>
         <div class="sg-admin-pagination">
             <?php if ($current_page > 1): ?>
-                <a href="<?= sg_h($admin_tx_page_url($current_page - 1)) ?>" class="sg-admin-page-btn" aria-label="Previous page"><iconify-icon icon="ph:caret-left-bold"></iconify-icon></a>
+                <a href="<?= sg_h($admin_tx_page_url($current_page - 1)) ?>" class="sg-admin-page-btn"
+                    aria-label="Previous page"><iconify-icon icon="ph:caret-left-bold"></iconify-icon></a>
             <?php else: ?>
-                <button type="button" class="sg-admin-page-btn is-disabled" aria-label="Previous page"><iconify-icon icon="ph:caret-left-bold"></iconify-icon></button>
+                <button type="button" class="sg-admin-page-btn is-disabled" aria-label="Previous page"><iconify-icon
+                        icon="ph:caret-left-bold"></iconify-icon></button>
             <?php endif; ?>
 
             <?php for ($page_number = 1; $page_number <= $total_pages; $page_number++): ?>
-                <a href="<?= sg_h($admin_tx_page_url($page_number)) ?>" class="sg-admin-page-btn <?= $page_number === $current_page ? 'is-active' : '' ?>"><?= $page_number ?></a>
+                <a href="<?= sg_h($admin_tx_page_url($page_number)) ?>"
+                    class="sg-admin-page-btn <?= $page_number === $current_page ? 'is-active' : '' ?>"><?= $page_number ?></a>
             <?php endfor; ?>
 
             <?php if ($current_page < $total_pages): ?>
-                <a href="<?= sg_h($admin_tx_page_url($current_page + 1)) ?>" class="sg-admin-page-btn" aria-label="Next page"><iconify-icon icon="ph:caret-right-bold"></iconify-icon></a>
+                <a href="<?= sg_h($admin_tx_page_url($current_page + 1)) ?>" class="sg-admin-page-btn"
+                    aria-label="Next page"><iconify-icon icon="ph:caret-right-bold"></iconify-icon></a>
             <?php else: ?>
-                <button type="button" class="sg-admin-page-btn is-disabled" aria-label="Next page"><iconify-icon icon="ph:caret-right-bold"></iconify-icon></button>
+                <button type="button" class="sg-admin-page-btn is-disabled" aria-label="Next page"><iconify-icon
+                        icon="ph:caret-right-bold"></iconify-icon></button>
             <?php endif; ?>
         </div>
     </div>
