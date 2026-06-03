@@ -9,14 +9,14 @@ if (PHP_SAPI !== 'cli' && session_status() === PHP_SESSION_NONE) {
 // Load Composer autoloader
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
-define('SG_DB_HOST', getenv('SG_DB_HOST') ?: '127.0.0.1');
-define('SG_DB_NAME', getenv('SG_DB_NAME') ?: 'safegate_db');
-define('SG_DB_USER', getenv('SG_DB_USER') ?: 'root');
-define('SG_DB_PASS', getenv('SG_DB_PASS') ?: '');
+define('SG_DB_HOST', getenv('SG_DB_HOST'));
+define('SG_DB_NAME', getenv('SG_DB_NAME'));
+define('SG_DB_USER', getenv('SG_DB_USER'));
+define('SG_DB_PASS', getenv('SG_DB_PAS  S'));
 
 // Midtrans Configurations (Default Sandbox from User)
-define('SG_MIDTRANS_SERVER_KEY', getenv('SG_MIDTRANS_SERVER_KEY') ?: 'Mid-server-CmEhP5wFw5HlyxF9RQz-yEVx');
-define('SG_MIDTRANS_CLIENT_KEY', getenv('SG_MIDTRANS_CLIENT_KEY') ?: 'Mid-client-_GVVsW3gX8CfzcOg');
+define('SG_MIDTRANS_SERVER_KEY', getenv('SG_MIDTRANS_SERVER_KEY'));
+define('SG_MIDTRANS_CLIENT_KEY', getenv('SG_MIDTRANS_CLIENT_KEY'));
 define('SG_MIDTRANS_IS_PRODUCTION', getenv('SG_MIDTRANS_IS_PRODUCTION') === 'true');
 
 
