@@ -32,6 +32,7 @@ $routes = [
     'admin_transactions' => __DIR__ . '/views/admin/transactions.php',
     'admin_disputes' => __DIR__ . '/views/admin/disputes.php',
     'admin_kyc' => __DIR__ . '/views/admin/kyc_center.php',
+    'midtrans_notification' => __DIR__ . '/views/public/midtrans_notification.php',
 ];
 
 if (!array_key_exists($page, $routes)) {

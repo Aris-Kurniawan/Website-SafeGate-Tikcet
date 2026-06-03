@@ -133,6 +133,8 @@ CREATE TABLE transactions (
     escrow_status ENUM('holding', 'released', 'refunded', 'disputed') DEFAULT 'holding',
     buyer_ticket_status ENUM('pending_use', 'confirmed_used', 'reported_issue') DEFAULT 'pending_use',
     paid_at TIMESTAMP NULL,
+    midtrans_snap_token VARCHAR(255) NULL,
+    midtrans_transaction_status VARCHAR(50) NULL,
     escrow_released_at TIMESTAMP NULL,
     buyer_confirmed_at TIMESTAMP NULL,
     buyer_reported_at TIMESTAMP NULL,

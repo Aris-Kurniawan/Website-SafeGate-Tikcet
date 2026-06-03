@@ -866,6 +866,9 @@ function sg_handle_checkout_payment(): void
         sg_redirect('penjualan');
     }
 
+    // Ensure database columns are up-to-date
+    sg_ensure_buyer_finance_schema();
+
     $listingId = (int) ($_POST['listing_id'] ?? 0);
     $method = $_POST['payment_method'] ?? 'bank_transfer';
     $listing = $listingId > 0 ? sg_get_listing_detail($listingId) : null;
@@ -914,78 +917,171 @@ function sg_handle_checkout_payment(): void
     $totalAmount = $basePrice + $serviceFee + $escrowInsurance;
     $sellerEarning = $basePrice - $serviceFee;
     $transactionCode = 'SG-TX-' . strtoupper(substr(uniqid(), -6));
-    $created = sg_execute(
-        'INSERT INTO transactions
-            (transaction_code, listing_id, buyer_id, seller_id, winning_bid_id, base_price, service_fee, escrow_insurance, total_amount, platform_revenue, seller_earning, payment_method, payment_status, escrow_status, paid_at)
-         VALUES
-            (:code, :listing_id, :buyer_id, :seller_id, :winning_bid_id, :base_price, :service_fee, :escrow_insurance, :total_amount, :platform_revenue, :seller_earning, :payment_method, "paid", "holding", NOW())',
-        [
-            'code' => $transactionCode,
-            'listing_id' => $listingId,
-            'buyer_id' => $buyerId,
-            'seller_id' => $listing['seller_id'],
-            'winning_bid_id' => $winningBid['id'] ?? null,
-            'base_price' => $basePrice,
-            'service_fee' => $serviceFee,
-            'escrow_insurance' => $escrowInsurance,
-            'total_amount' => $totalAmount,
-            'platform_revenue' => $serviceFee,
-            'seller_earning' => $sellerEarning,
-            'payment_method' => $method,
-        ]
-    );
 
-    if ($created) {
-        $transaction = sg_fetch_one('SELECT id FROM transactions WHERE transaction_code = :code', ['code' => $transactionCode]);
-        if ($transaction) {
-            sg_execute(
-                'INSERT INTO escrow_ledger (transaction_id, user_id, type, amount, balance_after, notes)
-                 VALUES (:transaction_id, :user_id, "lock", :amount, :balance_after, :notes)',
-                [
-                    'transaction_id' => $transaction['id'],
-                    'user_id' => $listing['seller_id'],
-                    'amount' => $sellerEarning,
-                    'balance_after' => $sellerEarning,
-                    'notes' => 'Escrow locked from checkout ' . $transactionCode,
-                ]
-            );
-            if ($winningBid) {
-                sg_execute('UPDATE bids SET bid_status = "paid", deposit_status = "refunded" WHERE id = :id', ['id' => $winningBid['id']]);
+    if ($method === 'usdc') {
+        // USDC Wallet (Mock Crypto) - instant success logic as originally written
+        $created = sg_execute(
+            'INSERT INTO transactions
+                (transaction_code, listing_id, buyer_id, seller_id, winning_bid_id, base_price, service_fee, escrow_insurance, total_amount, platform_revenue, seller_earning, payment_method, payment_status, escrow_status, paid_at)
+             VALUES
+                (:code, :listing_id, :buyer_id, :seller_id, :winning_bid_id, :base_price, :service_fee, :escrow_insurance, :total_amount, :platform_revenue, :seller_earning, :payment_method, "paid", "holding", NOW())',
+            [
+                'code' => $transactionCode,
+                'listing_id' => $listingId,
+                'buyer_id' => $buyerId,
+                'seller_id' => $listing['seller_id'],
+                'winning_bid_id' => $winningBid['id'] ?? null,
+                'base_price' => $basePrice,
+                'service_fee' => $serviceFee,
+                'escrow_insurance' => $escrowInsurance,
+                'total_amount' => $totalAmount,
+                'platform_revenue' => $serviceFee,
+                'seller_earning' => $sellerEarning,
+                'payment_method' => $method,
+            ]
+        );
+
+        if ($created) {
+            $transaction = sg_fetch_one('SELECT id FROM transactions WHERE transaction_code = :code', ['code' => $transactionCode]);
+            if ($transaction) {
                 sg_execute(
-                    'UPDATE buyer_wallet_transactions
-                     SET direction = "debit", status = "completed", description = :description
-                     WHERE bid_id = :bid_id AND type = "bid_deposit_lock"',
-                    ['bid_id' => $winningBid['id'], 'description' => 'Jaminan lelang selesai dipakai dan siap dikembalikan.']
+                    'INSERT INTO escrow_ledger (transaction_id, user_id, type, amount, balance_after, notes)
+                     VALUES (:transaction_id, :user_id, "lock", :amount, :balance_after, :notes)',
+                    [
+                        'transaction_id' => $transaction['id'],
+                        'user_id' => $listing['seller_id'],
+                        'amount' => $sellerEarning,
+                        'balance_after' => $sellerEarning,
+                        'notes' => 'Escrow locked from checkout ' . $transactionCode,
+                    ]
                 );
-                $refundExists = sg_fetch_one(
-                    'SELECT id FROM buyer_wallet_transactions
-                     WHERE bid_id = :bid_id AND user_id = :user_id AND type = "bid_deposit_refund"
-                     LIMIT 1',
-                    ['bid_id' => $winningBid['id'], 'user_id' => $buyerId]
-                );
-                if (!$refundExists) {
-                    sg_wallet_activity($buyerId, 'bid_deposit_refund', sg_bid_deposit_amount(), 'release', 'completed', 'Jaminan lelang dikembalikan setelah pembayaran selesai.', (int) $transaction['id'], (int) $winningBid['id']);
+                if ($winningBid) {
+                    sg_execute('UPDATE bids SET bid_status = "paid", deposit_status = "refunded" WHERE id = :id', ['id' => $winningBid['id']]);
+                    sg_execute(
+                        'UPDATE buyer_wallet_transactions
+                         SET direction = "debit", status = "completed", description = :description
+                         WHERE bid_id = :bid_id AND type = "bid_deposit_lock"',
+                        ['bid_id' => $winningBid['id'], 'description' => 'Jaminan lelang selesai dipakai dan siap dikembalikan.']
+                    );
+                    $refundExists = sg_fetch_one(
+                        'SELECT id FROM buyer_wallet_transactions
+                         WHERE bid_id = :bid_id AND user_id = :user_id AND type = "bid_deposit_refund"
+                         LIMIT 1',
+                        ['bid_id' => $winningBid['id'], 'user_id' => $buyerId]
+                    );
+                    if (!$refundExists) {
+                        sg_wallet_activity($buyerId, 'bid_deposit_refund', sg_bid_deposit_amount(), 'release', 'completed', 'Jaminan lelang dikembalikan setelah pembayaran selesai.', (int) $transaction['id'], (int) $winningBid['id']);
+                    }
                 }
             }
-        }
 
-        sg_execute('UPDATE ticket_listings SET listing_status = "sold" WHERE id = :id', ['id' => $listingId]);
-        sg_notify(
-            $buyerId,
-            'payment_success',
-            'Pembayaran Berhasil',
-            'Tiket ' . $listing['title'] . ' masuk ke akun kamu. Dana sekarang dikunci di escrow.',
-            $transaction ? (int) $transaction['id'] : $listingId
+            sg_execute('UPDATE ticket_listings SET listing_status = "sold" WHERE id = :id', ['id' => $listingId]);
+            sg_notify(
+                $buyerId,
+                'payment_success',
+                'Pembayaran Berhasil',
+                'Tiket ' . $listing['title'] . ' masuk ke akun kamu. Dana sekarang dikunci di escrow.',
+                $transaction ? (int) $transaction['id'] : $listingId
+            );
+            sg_notify(
+                (int) $listing['seller_id'],
+                'payment_success',
+                'Listing Terjual',
+                'Listing ' . $listing['title'] . ' terjual. Dana ditahan sementara di escrow SafeGate.',
+                $transaction ? (int) $transaction['id'] : $listingId
+            );
+            sg_flash('Pembayaran berhasil. Tiket masuk ke daftar tiket kamu dan dana dikunci di escrow.', 'success');
+            sg_redirect('my_tickets');
+        }
+    } else {
+        // MIDTRANS INTEGRATION for standard payment methods (bank_transfer, dana, gopay, ovo, etc.)
+        $created = sg_execute(
+            'INSERT INTO transactions
+                (transaction_code, listing_id, buyer_id, seller_id, winning_bid_id, base_price, service_fee, escrow_insurance, total_amount, platform_revenue, seller_earning, payment_method, payment_status, escrow_status)
+             VALUES
+                (:code, :listing_id, :buyer_id, :seller_id, :winning_bid_id, :base_price, :service_fee, :escrow_insurance, :total_amount, :platform_revenue, :seller_earning, :payment_method, "pending", "holding")',
+            [
+                'code' => $transactionCode,
+                'listing_id' => $listingId,
+                'buyer_id' => $buyerId,
+                'seller_id' => $listing['seller_id'],
+                'winning_bid_id' => $winningBid['id'] ?? null,
+                'base_price' => $basePrice,
+                'service_fee' => $serviceFee,
+                'escrow_insurance' => $escrowInsurance,
+                'total_amount' => $totalAmount,
+                'platform_revenue' => $serviceFee,
+                'seller_earning' => $sellerEarning,
+                'payment_method' => $method,
+            ]
         );
-        sg_notify(
-            (int) $listing['seller_id'],
-            'payment_success',
-            'Listing Terjual',
-            'Listing ' . $listing['title'] . ' terjual. Dana ditahan sementara di escrow SafeGate.',
-            $transaction ? (int) $transaction['id'] : $listingId
-        );
-        sg_flash('Pembayaran berhasil. Tiket masuk ke daftar tiket kamu dan dana dikunci di escrow.', 'success');
-        sg_redirect('my_tickets');
+
+        if ($created) {
+            $transaction = sg_fetch_one('SELECT id FROM transactions WHERE transaction_code = :code', ['code' => $transactionCode]);
+            if ($transaction) {
+                // Fetch buyer details
+                $buyer = sg_fetch_one('SELECT full_name, email, phone_number FROM users WHERE id = :id', ['id' => $buyerId]);
+                
+                // Initialize Midtrans Snap SDK
+                \Midtrans\Config::$serverKey = SG_MIDTRANS_SERVER_KEY;
+                \Midtrans\Config::$isProduction = SG_MIDTRANS_IS_PRODUCTION;
+                \Midtrans\Config::$isSanitized = true;
+                \Midtrans\Config::$is3ds = true;
+
+                // Build params
+                $params = [
+                    'transaction_details' => [
+                        'order_id' => $transactionCode,
+                        'gross_amount' => $totalAmount,
+                    ],
+                    'customer_details' => [
+                        'first_name' => $buyer['full_name'] ?? 'Buyer',
+                        'email' => $buyer['email'] ?? '',
+                        'phone' => $buyer['phone_number'] ?? '',
+                    ],
+                    'item_details' => [
+                        [
+                            'id' => 'ticket-' . $listingId,
+                            'price' => $basePrice,
+                            'quantity' => 1,
+                            'name' => 'Tiket: ' . substr($listing['title'], 0, 40),
+                        ],
+                        [
+                            'id' => 'service-fee',
+                            'price' => $serviceFee,
+                            'quantity' => 1,
+                            'name' => 'Biaya Layanan',
+                        ],
+                        [
+                            'id' => 'escrow-insurance',
+                            'price' => $escrowInsurance,
+                            'quantity' => 1,
+                            'name' => 'Asuransi Escrow',
+                        ]
+                    ]
+                ];
+
+                try {
+                    $snapToken = \Midtrans\Snap::getSnapToken($params);
+                    // Update token in DB
+                    sg_execute(
+                        'UPDATE transactions SET midtrans_snap_token = :token WHERE id = :id',
+                        ['token' => $snapToken, 'id' => $transaction['id']]
+                    );
+                    
+                    // Redirect to pembayaran page with snap token to trigger popup automatically
+                    sg_redirect_url('index.php?page=pembayaran&listing_id=' . $listingId . '&snap_token=' . $snapToken);
+                } catch (\Throwable $e) {
+                    // Delete the pending transaction to let them retry
+                    sg_execute('DELETE FROM transactions WHERE id = :id', ['id' => $transaction['id']]);
+                    sg_flash('Midtrans Error: ' . $e->getMessage(), 'error');
+                    sg_redirect_url('index.php?page=pembayaran&listing_id=' . $listingId);
+                }
+            }
+        } else {
+            sg_flash('Gagal membuat transaksi: ' . sg_db_error(), 'error');
+            sg_redirect_url('index.php?page=pembayaran&listing_id=' . $listingId);
+        }
     }
 
     sg_flash('Pembayaran gagal: ' . sg_db_error(), 'error');

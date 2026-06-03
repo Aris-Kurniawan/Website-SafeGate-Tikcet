@@ -308,6 +308,8 @@ function sg_ensure_buyer_finance_schema(): void
         'buyer_ticket_status' => 'ALTER TABLE transactions ADD COLUMN buyer_ticket_status ENUM("pending_use", "confirmed_used", "reported_issue") DEFAULT "pending_use" AFTER escrow_status',
         'buyer_confirmed_at' => 'ALTER TABLE transactions ADD COLUMN buyer_confirmed_at TIMESTAMP NULL AFTER buyer_ticket_status',
         'buyer_reported_at' => 'ALTER TABLE transactions ADD COLUMN buyer_reported_at TIMESTAMP NULL AFTER buyer_confirmed_at',
+        'midtrans_snap_token' => 'ALTER TABLE transactions ADD COLUMN midtrans_snap_token VARCHAR(255) NULL AFTER paid_at',
+        'midtrans_transaction_status' => 'ALTER TABLE transactions ADD COLUMN midtrans_transaction_status VARCHAR(50) NULL AFTER midtrans_snap_token',
     ];
     foreach ($transactionColumns as $column => $sql) {
         if (!sg_column_exists('transactions', $column)) {
@@ -1417,4 +1419,131 @@ function sg_run_cronjobs(): void
            AND auction_end_at IS NOT NULL 
            AND auction_end_at <= NOW()'
     );
+}
+
+/**
+ * Menyelesaikan transaksi setelah pembayaran sukses melalui Midtrans.
+ */
+function sg_complete_transaction_payment(array $transaction): bool
+{
+    if ($transaction['payment_status'] === 'paid') {
+        return true;
+    }
+
+    $transactionId = (int) $transaction['id'];
+    $listingId = (int) $transaction['listing_id'];
+    $buyerId = (int) $transaction['buyer_id'];
+    $sellerId = (int) $transaction['seller_id'];
+    $winningBidId = $transaction['winning_bid_id'] ? (int) $transaction['winning_bid_id'] : null;
+    $sellerEarning = (int) $transaction['seller_earning'];
+    $transactionCode = $transaction['transaction_code'];
+
+    // 1. Update status pembayaran menjadi 'paid'
+    $updated = sg_execute(
+        'UPDATE transactions 
+         SET payment_status = "paid", paid_at = NOW() 
+         WHERE id = :id AND payment_status != "paid"',
+        ['id' => $transactionId]
+    );
+
+    if (!$updated) {
+        return false;
+    }
+
+    // 2. Kunci dana di escrow_ledger
+    sg_execute(
+        'INSERT INTO escrow_ledger (transaction_id, user_id, type, amount, balance_after, notes)
+         VALUES (:transaction_id, :user_id, "lock", :amount, :balance_after, :notes)',
+        [
+            'transaction_id' => $transactionId,
+            'user_id' => $sellerId,
+            'amount' => $sellerEarning,
+            'balance_after' => $sellerEarning,
+            'notes' => 'Escrow locked from checkout ' . $transactionCode,
+        ]
+    );
+
+    // 3. Kembalikan uang deposit bid yang lain jika transaksi berasal dari lelang
+    if ($winningBidId) {
+        sg_execute('UPDATE bids SET bid_status = "paid", deposit_status = "refunded" WHERE id = :id', ['id' => $winningBidId]);
+        sg_execute(
+            'UPDATE buyer_wallet_transactions
+             SET direction = "debit", status = "completed", description = :description
+             WHERE bid_id = :bid_id AND type = "bid_deposit_lock"',
+            ['bid_id' => $winningBidId, 'description' => 'Jaminan lelang selesai dipakai dan siap dikembalikan.']
+        );
+        $refundExists = sg_fetch_one(
+            'SELECT id FROM buyer_wallet_transactions
+             WHERE bid_id = :bid_id AND user_id = :user_id AND type = "bid_deposit_refund"
+             LIMIT 1',
+            ['bid_id' => $winningBidId, 'user_id' => $buyerId]
+        );
+        if (!$refundExists) {
+            sg_wallet_activity($buyerId, 'bid_deposit_refund', sg_bid_deposit_amount(), 'release', 'completed', 'Jaminan lelang dikembalikan setelah pembayaran selesai.', $transactionId, $winningBidId);
+        }
+    }
+
+    // 4. Ubah status tiket listing menjadi terjual
+    sg_execute('UPDATE ticket_listings SET listing_status = "sold" WHERE id = :id', ['id' => $listingId]);
+
+    // 5. Ambil detail listing/event untuk dikirimkan notifikasi
+    $listing = sg_fetch_one(
+        'SELECT e.title FROM events e JOIN ticket_listings tl ON tl.event_id = e.id WHERE tl.id = :id',
+        ['id' => $listingId]
+    );
+    $title = $listing ? $listing['title'] : 'Tiket';
+
+    // 6. Kirim notifikasi ke buyer dan seller
+    sg_notify(
+        $buyerId,
+        'payment_success',
+        'Pembayaran Berhasil',
+        'Tiket ' . $title . ' masuk ke akun kamu. Dana sekarang dikunci di escrow.',
+        $transactionId
+    );
+    sg_notify(
+        $sellerId,
+        'payment_success',
+        'Listing Terjual',
+        'Listing ' . $title . ' terjual. Dana ditahan sementara di escrow SafeGate.',
+        $transactionId
+    );
+
+    return true;
+}
+
+/**
+ * Menandai transaksi sebagai gagal dari status Midtrans.
+ */
+function sg_fail_transaction_payment(array $transaction, string $status): void
+{
+    if ($transaction['payment_status'] === 'failed') {
+        return;
+    }
+    sg_execute(
+        'UPDATE transactions 
+         SET payment_status = "failed", midtrans_transaction_status = :status 
+         WHERE id = :id',
+        ['status' => $status, 'id' => $transaction['id']]
+    );
+}
+
+/**
+ * Memperbarui status pembayaran di database berdasarkan status transaksi dari Midtrans.
+ */
+function sg_update_midtrans_transaction(array $transaction, string $midtransStatus): void
+{
+    $midtransStatus = strtolower(trim($midtransStatus));
+
+    // Update status internal midtrans di database
+    sg_execute(
+        'UPDATE transactions SET midtrans_transaction_status = :status WHERE id = :id',
+        ['status' => $midtransStatus, 'id' => $transaction['id']]
+    );
+
+    if (in_array($midtransStatus, ['settlement', 'capture'], true)) {
+        sg_complete_transaction_payment($transaction);
+    } elseif (in_array($midtransStatus, ['deny', 'expire', 'cancel'], true)) {
+        sg_fail_transaction_payment($transaction, $midtransStatus);
+    }
 }

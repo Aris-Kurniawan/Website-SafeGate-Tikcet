@@ -4,8 +4,158 @@ require_once __DIR__ . '/../../core/safegate_repository.php';
 // 1. Definisikan judul halaman
 $page_title = "Pilih Metode Pembayaran - SafeGate";
 
+$payment_result = $_GET['payment_result'] ?? '';
+$order_id = $_GET['order_id'] ?? '';
+
+if ($payment_result !== '' && $order_id !== '') {
+    $transaction = sg_fetch_one(
+        'SELECT t.*, e.title, e.venue, e.city, e.event_date, tl.section, tl.row, tl.seat
+         FROM transactions t
+         JOIN ticket_listings tl ON tl.id = t.listing_id
+         JOIN events e ON e.id = tl.event_id
+         WHERE t.transaction_code = :code LIMIT 1',
+        ['code' => $order_id]
+    );
+
+    if ($transaction) {
+        // Jika status di DB masih pending, verifikasi dengan Midtrans status API
+        if ($transaction['payment_status'] === 'pending') {
+            \Midtrans\Config::$serverKey = SG_MIDTRANS_SERVER_KEY;
+            \Midtrans\Config::$isProduction = SG_MIDTRANS_IS_PRODUCTION;
+            
+            try {
+                $status = \Midtrans\Transaction::status($order_id);
+                $transaction_status = $status->transaction_status;
+                sg_update_midtrans_transaction($transaction, $transaction_status);
+                
+                // Ambil ulang transaksi terupdate
+                $transaction = sg_fetch_one(
+                    'SELECT t.*, e.title, e.venue, e.city, e.event_date, tl.section, tl.row, tl.seat
+                     FROM transactions t
+                     JOIN ticket_listings tl ON tl.id = t.listing_id
+                     JOIN events e ON e.id = tl.event_id
+                     WHERE t.transaction_code = :code LIMIT 1',
+                    ['code' => $order_id]
+                );
+            } catch (\Throwable $e) {
+                // Bypass/Log error jika gagal menghubungi Midtrans
+            }
+        }
+    }
+    
+    // Tampilkan halaman hasil pembayaran (Success, Pending, atau Gagal)
+    $page_title = "Status Pembayaran - SafeGate";
+    ob_start();
+    ?>
+    <section class="container mx-auto py-5" style="max-width: 800px; padding-left: 1.5rem; padding-right: 1.5rem; margin-top: 4rem; margin-bottom: 5rem;">
+        <div class="sg-glass rounded-4 p-5 text-center position-relative overflow-hidden">
+            <?php if (!$transaction): ?>
+                <iconify-icon icon="ph:warning-bold" class="text-danger mb-3" style="font-size: 4.5rem;"></iconify-icon>
+                <h1 class="h3 fw-bold text-white mb-2">Transaksi Tidak Ditemukan</h1>
+                <p class="text-safegate-text-sec mb-4">Transaksi dengan kode <strong><?= sg_h($order_id) ?></strong> tidak valid.</p>
+                <a href="index.php?page=penjualan" class="btn btn-safegate-neon rounded-pill fw-bold px-5 py-2.5">Kembali Ke Marketplace</a>
+            <?php else: 
+                $paymentStatus = $transaction['payment_status'];
+                $eventTitle = sg_h($transaction['title']);
+                $totalPaid = sg_rupiah($transaction['total_amount']);
+                $section = sg_h($transaction['section']);
+                $rowNum = sg_h($transaction['row']);
+                $seat = sg_h($transaction['seat']);
+                $eventDate = date('d F Y, H:i', strtotime($transaction['event_date']));
+                $eventLocation = sg_h($transaction['venue'] . ', ' . $transaction['city']);
+            ?>
+                <?php if ($paymentStatus === 'paid'): ?>
+                    <!-- SUCCESS LAYOUT -->
+                    <div class="d-flex align-items-center justify-content-center mx-auto rounded-circle mb-4 bg-safegate-success" style="width: 80px; height: 80px; box-shadow: 0 0 30px rgba(46, 204, 113, 0.4);">
+                        <iconify-icon icon="ph:check-bold" class="text-black fs-1 fw-bold"></iconify-icon>
+                    </div>
+                    <h1 class="h3 fw-bold text-white mb-2">Pembayaran Berhasil!</h1>
+                    <p class="text-safegate-text-sec mb-4 mx-auto" style="max-width: 550px;">
+                        Selamat! Tiket Anda telah berhasil diamankan. Protokol Escrow SafeGate aktif melindungi dana Anda hingga 24 jam setelah acara selesai.
+                    </p>
+                    
+                    <!-- Ticket Details Box -->
+                    <div class="text-start mx-auto p-4 mb-4 rounded-4" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); max-width: 600px;">
+                        <h4 class="text-white fw-bold mb-3 fs-5"><?= $eventTitle ?></h4>
+                        <div class="row g-3 text-safegate-text-sec fs-7 mb-3">
+                            <div class="col-6">
+                                <span class="d-block text-uppercase fw-bold text-white-50" style="font-size: 0.65rem; letter-spacing: 0.05em;">Kode Transaksi</span>
+                                <span class="fw-bold text-white"><?= sg_h($order_id) ?></span>
+                            </div>
+                            <div class="col-6">
+                                <span class="d-block text-uppercase fw-bold text-white-50" style="font-size: 0.65rem; letter-spacing: 0.05em;">Total Terbayar</span>
+                                <span class="fw-bold text-safegate-neon"><?= $totalPaid ?></span>
+                            </div>
+                            <div class="col-6">
+                                <span class="d-block text-uppercase fw-bold text-white-50" style="font-size: 0.65rem; letter-spacing: 0.05em;">Waktu & Tempat</span>
+                                <span><?= $eventDate ?><br><?= $eventLocation ?></span>
+                            </div>
+                            <div class="col-6">
+                                <span class="d-block text-uppercase fw-bold text-white-50" style="font-size: 0.65rem; letter-spacing: 0.05em;">Posisi Kursi</span>
+                                <span>Section <?= $section ?>, Row <?= $rowNum ?>, Seat <?= $seat ?></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+                        <a href="index.php?page=my_tickets" class="btn btn-safegate-neon rounded-pill fw-bold px-5 py-2.5 sg-btn-glow">Lihat Tiket Saya</a>
+                        <a href="index.php?page=penjualan" class="btn btn-outline-light rounded-pill fw-bold px-4 py-2.5">Kembali ke Beranda</a>
+                    </div>
+                <?php elseif ($paymentStatus === 'pending'): ?>
+                    <!-- PENDING LAYOUT -->
+                    <div class="d-flex align-items-center justify-content-center mx-auto rounded-circle mb-4 bg-warning animate-pulse" style="width: 80px; height: 80px; box-shadow: 0 0 30px rgba(241, 196, 15, 0.4);">
+                        <iconify-icon icon="ph:clock-bold" class="text-black fs-1 fw-bold"></iconify-icon>
+                    </div>
+                    <h1 class="h3 fw-bold text-white mb-2">Menunggu Pembayaran</h1>
+                    <p class="text-safegate-text-sec mb-4 mx-auto" style="max-width: 550px;">
+                        Transaksi Anda telah dibuat. Silakan selesaikan pembayaran Anda sesuai instruksi di Midtrans. Status tiket akan diperbarui secara otomatis setelah pembayaran terverifikasi.
+                    </p>
+                    
+                    <!-- Ticket Details Box -->
+                    <div class="text-start mx-auto p-4 mb-4 rounded-4" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); max-width: 600px;">
+                        <h4 class="text-white fw-bold mb-3 fs-5"><?= $eventTitle ?></h4>
+                        <div class="row g-3 text-safegate-text-sec fs-7">
+                            <div class="col-6">
+                                <span class="d-block text-uppercase fw-bold text-white-50" style="font-size: 0.65rem; letter-spacing: 0.05em;">Kode Transaksi</span>
+                                <span class="fw-bold text-white"><?= sg_h($order_id) ?></span>
+                            </div>
+                            <div class="col-6">
+                                <span class="d-block text-uppercase fw-bold text-white-50" style="font-size: 0.65rem; letter-spacing: 0.05em;">Jumlah Tagihan</span>
+                                <span class="fw-bold text-safegate-neon"><?= $totalPaid ?></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+                        <a href="index.php?page=my_tickets" class="btn btn-safegate-neon rounded-pill fw-bold px-5 py-2.5">Cek Status Tiket</a>
+                        <a href="index.php?page=pembayaran&payment_result=pending&order_id=<?= urlencode($order_id) ?>" class="btn btn-outline-light rounded-pill fw-bold px-4 py-2.5">Refresh Status</a>
+                    </div>
+                <?php else: ?>
+                    <!-- FAILED LAYOUT -->
+                    <div class="d-flex align-items-center justify-content-center mx-auto rounded-circle mb-4 bg-danger" style="width: 80px; height: 80px; box-shadow: 0 0 30px rgba(231, 76, 60, 0.4);">
+                        <iconify-icon icon="ph:x-bold" class="text-white fs-1 fw-bold"></iconify-icon>
+                    </div>
+                    <h1 class="h3 fw-bold text-white mb-2">Pembayaran Gagal atau Dibatalkan</h1>
+                    <p class="text-safegate-text-sec mb-4 mx-auto" style="max-width: 550px;">
+                        Mohon maaf, pembayaran Anda tidak dapat diproses atau telah dibatalkan. Silakan lakukan proses pembelian tiket kembali.
+                    </p>
+                    
+                    <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+                        <a href="index.php?page=penjualan" class="btn btn-safegate-neon rounded-pill fw-bold px-5 py-2.5">Kembali Ke Marketplace</a>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+    </section>
+    <?php
+    $content = ob_get_clean();
+    require_once __DIR__ . '/../../layouts/public_layout.php';
+    return;
+}
+
 // 2. Mulai menangkap output konten (Output Buffering)
 ob_start();
+
 
 $listing_id = isset($_GET['listing_id']) ? (int) $_GET['listing_id'] : 0;
 $listing = $listing_id > 0 ? sg_get_listing_detail($listing_id) : null;
@@ -114,6 +264,10 @@ $back_url = $listing
     ? 'index.php?page=detail_tiket&listing_id=' . urlencode((string) $listing_id)
     : 'index.php?page=detail_tiket&title=' . urlencode($title) . '&price=' . urlencode($raw_price) . '&image=' . urlencode($image) . '&date=' . urlencode($date) . '&location=' . urlencode($location) . '&seksi=' . urlencode($seksi) . '&baris=' . urlencode($baris) . '&kursi=' . urlencode($kursi);
 ?>
+
+<?php if (isset($_GET['snap_token'])): ?>
+    <script src="<?= SG_MIDTRANS_IS_PRODUCTION ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' ?>" data-client-key="<?= SG_MIDTRANS_CLIENT_KEY ?>"></script>
+<?php endif; ?>
 
 <style>
 .sg-payment-selected {
@@ -356,6 +510,27 @@ $back_url = $listing
         const myModal = new bootstrap.Modal(document.getElementById('paymentSuccessModal'));
         myModal.show();
     }
+
+    <?php if (isset($_GET['snap_token'])): ?>
+    window.addEventListener('DOMContentLoaded', (event) => {
+        if (typeof snap !== 'undefined') {
+            snap.pay('<?= sg_h($_GET['snap_token']) ?>', {
+                onSuccess: function(result) {
+                    window.location.href = 'index.php?page=pembayaran&payment_result=success&order_id=' + result.order_id;
+                },
+                onPending: function(result) {
+                    window.location.href = 'index.php?page=pembayaran&payment_result=pending&order_id=' + result.order_id;
+                },
+                onError: function(result) {
+                    window.location.href = 'index.php?page=pembayaran&payment_result=error&order_id=' + result.order_id;
+                },
+                onClose: function() {
+                    window.location.href = 'index.php?page=pembayaran&listing_id=<?= (int)$listing_id ?>';
+                }
+            });
+        }
+    });
+    <?php endif; ?>
 </script>
 
 <!-- Bootstrap JS dependency bundle for Modal support -->
