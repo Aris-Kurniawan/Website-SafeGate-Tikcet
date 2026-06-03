@@ -12,7 +12,7 @@ require_once dirname(__DIR__) . '/vendor/autoload.php';
 define('SG_DB_HOST', getenv('SG_DB_HOST'));
 define('SG_DB_NAME', getenv('SG_DB_NAME'));
 define('SG_DB_USER', getenv('SG_DB_USER'));
-define('SG_DB_PASS', getenv('SG_DB_PAS  S'));
+define('SG_DB_PASS', getenv('SG_DB_PASS'));
 
 // Midtrans Configurations (Default Sandbox from User)
 define('SG_MIDTRANS_SERVER_KEY', getenv('SG_MIDTRANS_SERVER_KEY'));
