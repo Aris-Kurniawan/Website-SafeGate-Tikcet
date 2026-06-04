@@ -21,6 +21,11 @@ const faceValueInput = document.getElementById('faceValueInput');
 const ticketSection = document.getElementById('ticketSection');
 const ticketRow = document.getElementById('ticketRow');
 const ticketSeat = document.getElementById('ticketSeat');
+const auctionDuration = document.getElementById('auctionDuration');
+const customDurationWrap = document.getElementById('customDurationWrap');
+const customDuration = document.getElementById('customDuration');
+const customDurationUnitWrap = document.getElementById('customDurationUnitWrap');
+const customDurationUnit = document.getElementById('customDurationUnit');
 const eventButtons = Array.from(document.querySelectorAll('.sg-event-option'));
 const stepItems = Array.from(document.querySelectorAll('#listingStepper li'));
 const allowedTicketExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'pkpass'];
@@ -57,6 +62,34 @@ function updatePricingState() {
 
     if (listButton) listButton.disabled = false;
 }
+
+function syncCustomDuration() {
+    if (!auctionDuration || !customDurationWrap) return;
+
+    const isCustom = auctionDuration.value === 'custom';
+    customDurationWrap.hidden = !isCustom;
+    if (customDurationUnitWrap) customDurationUnitWrap.hidden = !isCustom;
+    if (customDuration) {
+        customDuration.required = isCustom;
+        customDuration.min = '1';
+        customDuration.max = customDurationUnit?.value === 'minutes' ? '43200' : '720';
+        customDuration.placeholder = customDurationUnit?.value === 'minutes' ? 'Contoh: 30' : 'Contoh: 36';
+        if (!isCustom) {
+            customDuration.value = '';
+            if (customDurationUnit) customDurationUnit.value = 'hours';
+        }
+    }
+}
+
+auctionDuration?.addEventListener('change', () => {
+    syncCustomDuration();
+    setActiveStep('pricing');
+});
+customDurationUnit?.addEventListener('change', () => {
+    syncCustomDuration();
+    setActiveStep('pricing');
+});
+syncCustomDuration();
 
 if (faceValuePrice) {
     faceValuePrice.addEventListener('focus', () => {
@@ -183,6 +216,20 @@ if (listButton) {
             return;
         }
 
+        if (auctionDuration?.value === 'custom') {
+            const durationValue = Number(customDuration?.value || 0);
+            const unit = customDurationUnit?.value === 'minutes' ? 'minutes' : 'hours';
+            const maxDuration = unit === 'minutes' ? 43200 : 720;
+            if (!Number.isInteger(durationValue) || durationValue < 1 || durationValue > maxDuration) {
+                listStatus.textContent = unit === 'minutes'
+                    ? 'Isi durasi custom antara 1 sampai 43.200 menit.'
+                    : 'Isi durasi custom antara 1 sampai 720 jam.';
+                listStatus.classList.add('is-error');
+                setActiveStep('pricing');
+                return;
+            }
+        }
+
         const hasFile = ticketFile && ticketFile.files.length > 0;
         if (!hasFile) {
             setUploadStatus('Upload bukti tiket dulu sebelum listing.', true);
@@ -211,6 +258,8 @@ if (btnFixedPrice && btnAuction) {
         btnAuction.classList.remove('is-active');
         labelReservePrice.hidden = true;
         labelDuration.hidden = true;
+        if (customDurationWrap) customDurationWrap.hidden = true;
+        if (customDurationUnitWrap) customDurationUnitWrap.hidden = true;
         textStartingBid.textContent = 'Fixed Price (Rp)';
         
         // Buat input harga memakan seluruh lebar jika field lain disembunyikan
@@ -224,11 +273,12 @@ if (btnFixedPrice && btnAuction) {
         btnFixedPrice.classList.remove('is-active');
         labelReservePrice.hidden = false;
         labelDuration.hidden = false;
+        syncCustomDuration();
         textStartingBid.textContent = 'Starting Bid (Rp)';
         
         // Kembalikan ke grid asli (3 kolom)
         if (pricingInputsGrid) {
-            pricingInputsGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            pricingInputsGrid.style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
         }
     });
 }

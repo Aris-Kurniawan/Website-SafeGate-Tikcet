@@ -51,7 +51,6 @@ ob_start();
                         <?php else: ?>
                             <button type="submit" name="listing_status" value="paused">Pause</button>
                         <?php endif; ?>
-                        <button type="submit" name="listing_status" value="promoted">Promote</button>
                         <button type="submit" name="listing_status" value="cancelled">Cancel</button>
                     </form>
                 <?php else: ?>

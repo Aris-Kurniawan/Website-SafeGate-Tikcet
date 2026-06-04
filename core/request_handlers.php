@@ -100,13 +100,29 @@ function sg_handle_create_listing(): void
     $startingBid = (int) preg_replace('/[^\d]/', '', (string) ($_POST['starting_bid'] ?? '0'));
     $reservePrice = (int) preg_replace('/[^\d]/', '', (string) ($_POST['reserve_price'] ?? '0'));
     $faceValue = (int) preg_replace('/[^\d]/', '', (string) ($_POST['face_value'] ?? '0'));
-    $duration = (int) ($_POST['duration'] ?? 24);
+    $durationRaw = (string) ($_POST['duration'] ?? '24');
+    $customDuration = (int) ($_POST['custom_duration'] ?? 0);
+    $customDurationUnit = ($_POST['custom_duration_unit'] ?? 'hours') === 'minutes' ? 'minutes' : 'hours';
+    $duration = $durationRaw === 'custom' ? $customDuration : (int) $durationRaw;
+    $durationMinutes = $durationRaw === 'custom' && $customDurationUnit === 'minutes'
+        ? $customDuration
+        : $duration * 60;
     $section = strtoupper(trim((string) ($_POST['section'] ?? '')));
     $row = strtoupper(trim((string) ($_POST['row'] ?? '')));
     $seat = strtoupper(trim((string) ($_POST['seat'] ?? '')));
 
     if ($startingBid <= 0 || $faceValue <= 0) {
         sg_flash('Data harga belum lengkap. Isi Face Value dan Harga Jual (Starting Bid) dulu.', 'error');
+        sg_redirect('sell_ticket');
+    }
+
+    if ($durationRaw === 'custom' && $customDurationUnit === 'minutes') {
+        if ($durationMinutes < 1 || $durationMinutes > 43200) {
+            sg_flash('Durasi lelang custom menit harus diisi antara 1 sampai 43.200 menit.', 'error');
+            sg_redirect('sell_ticket');
+        }
+    } elseif ($duration < 1 || $duration > 720) {
+        sg_flash('Durasi lelang harus diisi antara 1 sampai 720 jam.', 'error');
         sg_redirect('sell_ticket');
     }
 
@@ -119,7 +135,9 @@ function sg_handle_create_listing(): void
         sg_flash('Upload bukti tiket wajib sebelum membuat listing.', 'error');
         sg_redirect('sell_ticket');
     }
-    $auctionEndAt = date('Y-m-d H:i:s', time() + ($duration * 3600));
+    sg_ensure_listing_status_schema();
+    $auctionEndRow = sg_fetch_one('SELECT DATE_ADD(NOW(), INTERVAL ' . (int) $durationMinutes . ' MINUTE) AS auction_end_at');
+    $auctionEndAt = $auctionEndRow['auction_end_at'] ?? date('Y-m-d H:i:s', time() + ($durationMinutes * 60));
 
     // 3. Simpan Event ke Database Terlebih Dahulu
     sg_execute(
@@ -183,7 +201,7 @@ function sg_handle_create_listing(): void
             'starting_bid' => $startingBid,
             'reserve_price' => $reservePrice ?: null,
             'current_highest_bid' => $startingBid,
-            'duration' => $duration,
+            'duration' => max(1, (int) ceil($durationMinutes / 60)),
             'auction_end_at' => $auctionEndAt,
             'proof' => $proofPath,
         ]
@@ -335,6 +353,49 @@ function sg_handle_kyc_submit(): void
     sg_redirect('settings');
 }
 
+function sg_save_cropped_profile_photo(string $field = 'cropped_profile_photo'): string
+{
+    unset($GLOBALS['sg_upload_error']);
+
+    $dataUrl = trim((string) ($_POST[$field] ?? ''));
+    if ($dataUrl === '') {
+        return '';
+    }
+
+    if (!preg_match('#^data:image/(jpeg|jpg|png|webp);base64,#i', $dataUrl, $matches)) {
+        $GLOBALS['sg_upload_error'] = 'Format crop foto profil tidak valid.';
+        return '';
+    }
+
+    $encoded = preg_replace('#^data:image/[^;]+;base64,#i', '', $dataUrl);
+    $bytes = base64_decode($encoded, true);
+    if ($bytes === false || strlen($bytes) <= 0 || strlen($bytes) > 4 * 1024 * 1024) {
+        $GLOBALS['sg_upload_error'] = 'Hasil crop foto profil tidak valid atau terlalu besar.';
+        return '';
+    }
+
+    if (!function_exists('getimagesizefromstring') || getimagesizefromstring($bytes) === false) {
+        $GLOBALS['sg_upload_error'] = 'Hasil crop bukan file gambar yang valid.';
+        return '';
+    }
+
+    $extension = strtolower($matches[1]) === 'jpg' ? 'jpeg' : strtolower($matches[1]);
+    $fileExtension = $extension === 'jpeg' ? 'jpg' : $extension;
+    $baseDir = dirname(__DIR__) . '/assets/uploads/profiles';
+    if (!is_dir($baseDir)) {
+        mkdir($baseDir, 0777, true);
+    }
+
+    $fileName = uniqid('sg_profile_', true) . '.' . $fileExtension;
+    $targetPath = $baseDir . '/' . $fileName;
+    if (file_put_contents($targetPath, $bytes) === false) {
+        $GLOBALS['sg_upload_error'] = 'Hasil crop foto profil gagal disimpan.';
+        return '';
+    }
+
+    return 'assets/uploads/profiles/' . $fileName;
+}
+
 function sg_handle_buyer_profile_update(): void
 {
     $userId = sg_current_user_id();
@@ -353,7 +414,15 @@ function sg_handle_buyer_profile_update(): void
         sg_redirect('buyer_profile');
     }
 
-    $photoPath = sg_upload_file('profile_photo', 'profiles', '', ['jpg', 'jpeg', 'png', 'webp'], 3 * 1024 * 1024);
+    $photoPath = sg_save_cropped_profile_photo();
+    if (sg_upload_error()) {
+        sg_flash('Upload foto profil gagal: ' . sg_upload_error(), 'error');
+        sg_redirect('buyer_profile');
+    }
+
+    if ($photoPath === '') {
+        $photoPath = sg_upload_file('profile_photo', 'profiles', '', ['jpg', 'jpeg', 'png', 'webp'], 3 * 1024 * 1024);
+    }
     if (sg_upload_error()) {
         sg_flash('Upload foto profil gagal: ' . sg_upload_error(), 'error');
         sg_redirect('buyer_profile');
@@ -448,7 +517,15 @@ function sg_handle_seller_profile_update(): void
         sg_redirect('settings');
     }
 
-    $photoPath = sg_upload_file('profile_photo', 'profiles', '', ['jpg', 'jpeg', 'png', 'webp'], 3 * 1024 * 1024);
+    $photoPath = sg_save_cropped_profile_photo();
+    if (sg_upload_error()) {
+        sg_flash('Upload foto profil gagal: ' . sg_upload_error(), 'error');
+        sg_redirect('settings');
+    }
+
+    if ($photoPath === '') {
+        $photoPath = sg_upload_file('profile_photo', 'profiles', '', ['jpg', 'jpeg', 'png', 'webp'], 3 * 1024 * 1024);
+    }
     if (sg_upload_error()) {
         sg_flash('Upload foto profil gagal: ' . sg_upload_error(), 'error');
         sg_redirect('settings');
@@ -856,7 +933,7 @@ function sg_handle_login(): void
     $_SESSION['user_id'] = (int) $user['id'];
     $_SESSION['role'] = $user['role'];
 
-    sg_redirect(sg_role_home($user['role']));
+    sg_redirect('home');
 }
 
 function sg_handle_checkout_payment(): void
@@ -1608,23 +1685,118 @@ function sg_handle_export_seller_transactions(): void
         'status' => $_GET['status'] ?? 'All Status',
     ]);
 
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename=safegate-seller-transactions.csv');
+    $exportedAt = date('Y-m-d_H-i-s');
 
-    $output = fopen('php://output', 'w');
-    fputcsv($output, ['Transaction Code', 'Event', 'Date', 'Type', 'Amount', 'Status', 'Note']);
-    foreach ($ledger['transactions'] as $row) {
-        fputcsv($output, [
-            $row['id'],
-            $row['title'],
-            $row['date'] . ' ' . $row['time'],
-            $row['type'],
-            $row['amount'],
-            $row['status'],
-            $row['note'],
-        ]);
-    }
-    fclose($output);
+    header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+    header('Content-Disposition: attachment; filename=safegate-seller-transactions-' . $exportedAt . '.xls');
+    header('Cache-Control: max-age=0');
+
+    echo "\xEF\xBB\xBF";
+    ?>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Calibri, Arial, sans-serif;
+            color: #111827;
+        }
+
+        .report-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .report-meta {
+            color: #475569;
+            font-size: 12px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th {
+            background: #b7dce8;
+            border: 1px solid #1f2937;
+            color: #111827;
+            font-size: 14px;
+            font-weight: 700;
+            text-align: center;
+            padding: 8px 10px;
+            mso-pattern: auto none;
+        }
+
+        td {
+            border: 1px solid #1f2937;
+            font-size: 13px;
+            padding: 7px 10px;
+            vertical-align: middle;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .empty-row {
+            color: #64748b;
+            font-style: italic;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <table>
+        <tr>
+            <td colspan="7" class="report-title">SafeGate Seller Transaction History</td>
+        </tr>
+        <tr>
+            <td colspan="7" class="report-meta">Generated At: <?= sg_h(date('d M Y H:i')) ?></td>
+        </tr>
+        <tr>
+            <td colspan="7" class="report-meta">
+                Filter: <?= sg_h($_GET['q'] ?? '-') ?> |
+                Date Range: <?= sg_h($_GET['date_range'] ?? 'Last 30 Days') ?> |
+                Status: <?= sg_h($_GET['status'] ?? 'All Status') ?>
+            </td>
+        </tr>
+        <tr><td colspan="7"></td></tr>
+        <tr>
+            <th>Date</th>
+            <th>Transaction ID</th>
+            <th>Event</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Note</th>
+        </tr>
+        <?php if (empty($ledger['transactions'])): ?>
+            <tr>
+                <td colspan="7" class="empty-row">No transactions found</td>
+            </tr>
+        <?php endif; ?>
+        <?php foreach ($ledger['transactions'] as $row): ?>
+            <tr>
+                <td class="text-center"><?= sg_h($row['date'] . ' ' . $row['time']) ?></td>
+                <td class="text-center"><?= sg_h($row['id']) ?></td>
+                <td><?= sg_h($row['title']) ?></td>
+                <td class="text-center"><?= sg_h($row['type']) ?></td>
+                <td class="text-right"><?= sg_h($row['amount']) ?></td>
+                <td class="text-center"><?= sg_h($row['status']) ?></td>
+                <td><?= sg_h($row['note']) ?></td>
+            </tr>
+        <?php endforeach; ?>
+    </table>
+</body>
+</html>
+    <?php
     exit;
 }
 

@@ -2,17 +2,22 @@
 // core/db_connect.php
 // Koneksi database SafeGate + helper kecil agar view tidak berisi query mentah.
 
+date_default_timezone_set(getenv('SG_APP_TIMEZONE') ?: 'Asia/Jakarta');
+
 if (PHP_SAPI !== 'cli' && session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Load Composer autoloader
-require_once dirname(__DIR__) . '/vendor/autoload.php';
+// Load Composer autoloader only when dependencies are installed.
+$sgComposerAutoload = dirname(__DIR__) . '/vendor/autoload.php';
+if (is_file($sgComposerAutoload)) {
+    require_once $sgComposerAutoload;
+}
 
-define('SG_DB_HOST', getenv('SG_DB_HOST'));
-define('SG_DB_NAME', getenv('SG_DB_NAME'));
-define('SG_DB_USER', getenv('SG_DB_USER'));
-define('SG_DB_PASS', getenv('SG_DB_PASS'));
+define('SG_DB_HOST', getenv('SG_DB_HOST') ?: '127.0.0.1');
+define('SG_DB_NAME', getenv('SG_DB_NAME') ?: 'safegate_db');
+define('SG_DB_USER', getenv('SG_DB_USER') ?: 'root');
+define('SG_DB_PASS', getenv('SG_DB_PASS') ?: '');
 
 // Midtrans Configurations (Default Sandbox from User)
 define('SG_MIDTRANS_SERVER_KEY', getenv('SG_MIDTRANS_SERVER_KEY'));

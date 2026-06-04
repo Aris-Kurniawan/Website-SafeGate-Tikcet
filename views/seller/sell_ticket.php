@@ -103,7 +103,7 @@ ob_start();
                     <button type="button" id="btnFixedPrice">Fixed Price</button>
                     <button type="button" id="btnAuction" class="is-active">Auction</button>
                 </div>
-                <div class="sg-auction-input-grid" id="pricingInputsGrid" style="grid-template-columns: 1fr 1fr;">
+                <div class="sg-auction-input-grid" id="pricingInputsGrid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
                     <label id="labelFaceValue">
                         <span>Face Value / Harga Asli (Rp)</span>
                         <input id="faceValuePrice" name="face_value" type="text" inputmode="numeric" placeholder="Contoh: 1500000" required>
@@ -117,11 +117,26 @@ ob_start();
                         <input id="reservePrice" name="reserve_price" type="text" placeholder="Min. price to sell">
                     </label>
                     <label id="labelDuration">
-                        <span>Duration</span>
+                        <span>Waktu Lelang</span>
                         <select id="auctionDuration" name="duration">
-                            <option value="24">24 Hours</option>
-                            <option value="72">3 Days</option>
-                            <option value="168">7 Days</option>
+                            <option value="6">6 Jam</option>
+                            <option value="12">12 Jam</option>
+                            <option value="24" selected>24 Jam</option>
+                            <option value="48">2 Hari</option>
+                            <option value="72">3 Hari</option>
+                            <option value="168">7 Hari</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </label>
+                    <label id="customDurationWrap" hidden>
+                        <span>Durasi Custom</span>
+                        <input id="customDuration" name="custom_duration" type="number" min="1" max="43200" step="1" placeholder="Contoh: 30">
+                    </label>
+                    <label id="customDurationUnitWrap" hidden>
+                        <span>Satuan Custom</span>
+                        <select id="customDurationUnit" name="custom_duration_unit">
+                            <option value="minutes">Menit</option>
+                            <option value="hours" selected>Jam</option>
                         </select>
                     </label>
                 </div>
