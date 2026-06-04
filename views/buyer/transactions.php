@@ -20,7 +20,7 @@ ob_start();
         </div>
     </div>
 
-    <article class="sg-buyer-panel sg-buyer-transactions-panel">
+    <article class="sg-buyer-panel">
         <table class="sg-buyer-table">
             <thead>
                 <tr>
@@ -37,15 +37,7 @@ ob_start();
                     <?php foreach ($rows as $row): ?>
                         <tr>
                             <td><strong><?= sg_h($row['transaction_code']) ?></strong><br><span class="text-safegate-text-sec"><?= date('d M Y, H:i', strtotime($row['created_at'])) ?></span></td>
-                            <td>
-                                <div class="sg-buyer-transaction-event">
-                                    <img class="sg-buyer-transaction-thumb" src="<?= sg_h(sg_event_image($row['title'], $row['image_path'] ?? '')) ?>" alt="<?= sg_h($row['title']) ?>">
-                                    <div>
-                                        <strong><?= sg_h($row['title']) ?></strong>
-                                        <span><?= sg_h($row['venue']) ?>, <?= sg_h($row['city']) ?></span>
-                                    </div>
-                                </div>
-                            </td>
+                            <td><?= sg_h($row['title']) ?><br><span class="text-safegate-text-sec"><?= sg_h($row['venue']) ?>, <?= sg_h($row['city']) ?></span></td>
                             <td><span class="sg-buyer-chip"><?= sg_h($row['payment_status']) ?></span></td>
                             <td><span class="sg-buyer-chip is-muted"><?= sg_h($row['escrow_status']) ?></span></td>
                             <td class="text-end fw-bold"><?= sg_rupiah($row['total_amount']) ?></td>

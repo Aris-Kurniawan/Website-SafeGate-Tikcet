@@ -32,7 +32,6 @@ ob_start();
         <div class="col-12 col-lg-8">
             <form class="sg-glass rounded-4 p-4 p-md-5" action="index.php?page=buyer_profile" method="post" enctype="multipart/form-data">
                 <input type="hidden" name="sg_action" value="buyer_profile_update">
-                <input id="buyerCroppedProfilePhoto" type="hidden" name="cropped_profile_photo" value="">
 
                 <label class="sg-profile-photo-control sg-buyer-profile-photo-control" for="buyerProfilePhoto">
                     <span class="sg-profile-avatar <?= $profilePhoto !== '' ? 'has-photo' : '' ?>">
@@ -45,7 +44,7 @@ ob_start();
                         <i><iconify-icon icon="ph:camera"></iconify-icon></i>
                     </span>
                     <strong class="sg-change-photo">Change Photo</strong>
-                    <input id="buyerProfilePhoto" name="profile_photo" type="file" accept=".jpg,.jpeg,.png,.webp" data-profile-crop-input data-profile-preview="buyerProfilePreview" data-profile-initials="buyerProfileInitials" data-profile-hidden="buyerCroppedProfilePhoto" hidden>
+                    <input id="buyerProfilePhoto" name="profile_photo" type="file" accept=".jpg,.jpeg,.png,.webp" hidden>
                 </label>
 
                 <div class="mb-4">
@@ -120,7 +119,20 @@ ob_start();
     </div>
 </section>
 
-<script src="assets/js/profile-photo-cropper.js"></script>
+<script>
+document.getElementById('buyerProfilePhoto')?.addEventListener('change', (event) => {
+    const file = event.target.files?.[0];
+    const preview = document.getElementById('buyerProfilePreview');
+    const initials = document.getElementById('buyerProfileInitials');
+    const avatar = event.target.closest('.sg-profile-photo-control')?.querySelector('.sg-profile-avatar');
+    if (!file || !preview || !avatar) return;
+
+    preview.src = URL.createObjectURL(file);
+    preview.hidden = false;
+    avatar.classList.add('has-photo');
+    if (initials) initials.hidden = true;
+});
+</script>
 
 <?php
 $content = ob_get_clean();

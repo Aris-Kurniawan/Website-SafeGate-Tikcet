@@ -7,8 +7,6 @@ $seller_id = sg_current_user_id();
 $metrics = sg_get_seller_overview($seller_id);
 $notifications = sg_get_notifications($seller_id, 5);
 $unread_notifications = sg_unread_notification_count($seller_id);
-$seller_profile = $seller_id ? sg_fetch_one('SELECT full_name FROM users WHERE id = :id LIMIT 1', ['id' => $seller_id]) : null;
-$seller_name = trim((string) ($seller_profile['full_name'] ?? 'Vendor'));
 
 ob_start();
 ?>
@@ -25,7 +23,7 @@ ob_start();
 
     <div class="sg-vendor-heading sg-overview-heading">
         <div>
-            <h1>Welcome back, <?= sg_h($seller_name) ?></h1>
+            <h1>Welcome back, Vendor</h1>
             <p>System status: Operational. Your encryption keys are active.</p>
         </div>
         <span class="sg-vendor-badge"><iconify-icon icon="ph:seal-check-fill"></iconify-icon> Institutional Vendor</span>

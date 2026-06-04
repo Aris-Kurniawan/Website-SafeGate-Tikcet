@@ -25,7 +25,6 @@ function sg_listing_status_label(string $status): string
         'sold' => 'Sold',
         'cancelled' => 'Cancelled',
         'promoted' => 'Promoted',
-        'closed' => 'Closed',
     ];
 
     return $labels[$status] ?? ucwords(str_replace('_', ' ', $status));
@@ -319,24 +318,6 @@ function sg_ensure_buyer_finance_schema(): void
     }
 }
 
-function sg_ensure_listing_status_schema(): void
-{
-    static $done = false;
-    if ($done || !sg_db()) {
-        return;
-    }
-    $done = true;
-
-    $column = sg_fetch_one('SHOW COLUMNS FROM ticket_listings LIKE "listing_status"');
-    if ($column && strpos((string) $column['Type'], "'closed'") === false) {
-        sg_execute(
-            'ALTER TABLE ticket_listings
-             MODIFY listing_status ENUM("pending_review", "active", "paused", "sold", "cancelled", "promoted", "closed")
-             DEFAULT "pending_review"'
-        );
-    }
-}
-
 function sg_bid_deposit_amount(): int
 {
     return 50000;
@@ -461,7 +442,7 @@ function sg_get_buyer_transaction_rows(?int $buyerId): array
 
     return sg_fetch_all(
         'SELECT t.transaction_code, t.base_price, t.total_amount, t.payment_status, t.escrow_status, t.buyer_ticket_status, t.created_at,
-                e.title, e.venue, e.city, e.image_path
+                e.title, e.venue, e.city
          FROM transactions t
          JOIN ticket_listings tl ON tl.id = t.listing_id
          JOIN events e ON e.id = tl.event_id
@@ -1429,8 +1410,6 @@ function sg_run_cronjobs(): void
 {
     $db = sg_db();
     if (!$db) return;
-
-    sg_ensure_listing_status_schema();
     
     // Ubah status listing menjadi 'closed' jika waktu auction_end_at sudah terlewati
     sg_execute(

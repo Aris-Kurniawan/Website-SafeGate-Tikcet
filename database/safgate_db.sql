@@ -88,7 +88,7 @@ CREATE TABLE ticket_listings (
     auction_duration_hours INT NULL,
     auction_end_at DATETIME NULL,
     ticket_proof_path VARCHAR(500) NOT NULL,
-    listing_status ENUM('pending_review', 'active', 'paused', 'sold', 'cancelled', 'promoted', 'closed') DEFAULT 'pending_review',
+    listing_status ENUM('pending_review', 'active', 'paused', 'sold', 'cancelled', 'promoted') DEFAULT 'pending_review',
     is_promoted TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

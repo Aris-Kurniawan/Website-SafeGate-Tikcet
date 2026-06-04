@@ -239,46 +239,30 @@
         const kycForm = kycPanel;
         const nik = qs('input[name="nik"]', kycPanel);
         const submit = qs('button[type="submit"]', kycPanel);
+        const drop = qs('.sg-doc-drop', kycPanel);
         const danger = qs('.sg-danger-label', kycPanel);
-        const uploadDrops = qsa('.sg-doc-drop', kycPanel).map((drop) => {
-            const input = qs('input[type="file"]', drop);
-            const preview = qs('img', drop);
-            const title = qs('strong', drop);
-            const status = qs('small', drop);
-            const acceptsPdf = input?.accept?.toLowerCase().includes('pdf') || false;
-
-            return {
-                drop,
-                input,
-                preview,
-                title,
-                status,
-                defaultTitle: title?.textContent || 'Drag & drop or click to upload',
-                defaultStatus: status?.textContent || '',
-                allowedExtensions: acceptsPdf ? ['jpg', 'jpeg', 'png', 'pdf'] : ['jpg', 'jpeg', 'png'],
-                previewLabel: input?.name === 'selfie_photo' ? 'Preview selfie siap.' : 'Preview KTP siap.',
-                missingMessage: input?.name === 'selfie_photo' ? 'Upload selfie dengan KTP dulu sebelum submit.' : 'Upload dokumen KTP dulu sebelum submit.',
-            };
-        });
+        const fileInput = qs('input[type="file"]', kycPanel);
+        const preview = qs('#kycPreview', kycPanel);
+        const title = qs('strong', drop);
+        const status = qs('small', drop);
+        const defaultTitle = title?.textContent || 'Drag & drop or click to upload';
+        const defaultStatus = status?.textContent || 'Upload front side of your National ID (JPG, PNG, PDF - Max 5MB)';
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
 
         function validateKyc() {
             const validNik = nik ? /^\d{16}$/.test(nik.value.trim()) : false;
-            const missingUpload = uploadDrops.find(({ input }) => input && !input.disabled && input.files.length === 0);
-            const hasUploads = !missingUpload;
-            submit?.classList.toggle('is-ready', validNik && hasUploads);
-            return { validNik, hasUploads, missingUpload };
+            const hasFile = fileInput && fileInput.files.length > 0;
+            submit?.classList.toggle('is-ready', validNik && hasFile);
+            return { validNik, hasFile };
         }
 
-        function setKycStatus(target, message, isError = false) {
-            const status = target?.status || null;
+        function setKycStatus(message, isError = false) {
             if (!status) return;
             status.textContent = message;
             status.style.color = isError ? '#ff6868' : '';
         }
 
-        function resetKycPreview(target, resetText = false) {
-            if (!target) return;
-            const { preview, drop, title } = target;
+        function resetKycPreview(resetText = false) {
             if (preview) {
                 preview.hidden = true;
                 preview.style.display = 'none';
@@ -286,8 +270,8 @@
             }
             drop?.classList.remove('has-preview');
             if (resetText) {
-                if (title) title.textContent = target.defaultTitle;
-                setKycStatus(target, target.defaultStatus);
+                if (title) title.textContent = defaultTitle;
+                setKycStatus(defaultStatus);
             }
         }
 
@@ -296,31 +280,28 @@
             validateKyc();
         });
 
-        function handleKycFile(file, target) {
-            if (!target) return;
-            const { input, preview, drop, title } = target;
-
+        function handleKycFile(file) {
             if (!file) {
-                resetKycPreview(target, true);
+                resetKycPreview(true);
                 validateKyc();
                 return;
             }
 
             const extension = file.name.split('.').pop().toLowerCase();
-            if (!target.allowedExtensions.includes(extension)) {
-                input.value = '';
-                resetKycPreview(target);
-                if (title) title.textContent = target.defaultTitle;
-                setKycStatus(target, target.allowedExtensions.includes('pdf') ? 'Format harus JPG, PNG, atau PDF.' : 'Format harus JPG atau PNG.', true);
+            if (!allowedExtensions.includes(extension)) {
+                fileInput.value = '';
+                resetKycPreview();
+                if (title) title.textContent = defaultTitle;
+                setKycStatus('Format harus JPG, PNG, atau PDF.', true);
                 validateKyc();
                 return;
             }
 
             if (file.size > 5 * 1024 * 1024) {
-                input.value = '';
-                resetKycPreview(target);
-                if (title) title.textContent = target.defaultTitle;
-                setKycStatus(target, 'Ukuran file maksimal 5MB.', true);
+                fileInput.value = '';
+                resetKycPreview();
+                if (title) title.textContent = defaultTitle;
+                setKycStatus('Ukuran file maksimal 5MB.', true);
                 validateKyc();
                 return;
             }
@@ -336,57 +317,53 @@
                     drop?.classList.add('has-preview');
                 };
                 reader.readAsDataURL(file);
-                setKycStatus(target, `${target.previewLabel} Dokumen bisa dikirim untuk verifikasi.`);
+                setKycStatus('Preview KTP siap. Dokumen bisa dikirim untuk verifikasi.');
             } else {
-                resetKycPreview(target);
+                resetKycPreview();
                 if (title) title.textContent = file.name;
-                setKycStatus(target, `${file.name} siap dikirim untuk verifikasi. Preview hanya tersedia untuk JPG/PNG.`);
+                setKycStatus(`${file.name} siap dikirim untuk verifikasi. Preview hanya tersedia untuk JPG/PNG.`);
             }
             validateKyc();
         }
 
-        uploadDrops.forEach((target) => {
-            const { drop, input } = target;
+        drop?.addEventListener('click', (event) => {
+            if (event.target === fileInput) return;
+            fileInput?.click();
+        });
 
-            drop?.addEventListener('click', (event) => {
-                if (event.target === input) return;
-                input?.click();
-            });
+        fileInput?.addEventListener('change', () => {
+            handleKycFile(fileInput.files[0]);
+        });
 
-            input?.addEventListener('change', () => {
-                handleKycFile(input.files[0], target);
-            });
-
-            ['dragenter', 'dragover'].forEach((eventName) => {
-                drop?.addEventListener(eventName, (event) => {
-                    event.preventDefault();
-                    drop.classList.add('is-dragging');
-                });
-            });
-
-            ['dragleave', 'drop'].forEach((eventName) => {
-                drop?.addEventListener(eventName, (event) => {
-                    event.preventDefault();
-                    drop.classList.remove('is-dragging');
-                });
-            });
-
-            drop?.addEventListener('drop', (event) => {
-                const file = event.dataTransfer?.files?.[0];
-                if (!file || !input) return;
-                const transfer = new DataTransfer();
-                transfer.items.add(file);
-                input.files = transfer.files;
-                handleKycFile(file, target);
+        ['dragenter', 'dragover'].forEach((eventName) => {
+            drop?.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                drop.classList.add('is-dragging');
             });
         });
 
-        kycForm?.addEventListener('submit', (event) => {
-            const { validNik, hasUploads, missingUpload } = validateKyc();
-            if (!validNik || !hasUploads) {
+        ['dragleave', 'drop'].forEach((eventName) => {
+            drop?.addEventListener(eventName, (event) => {
                 event.preventDefault();
-                const message = !validNik ? 'Isi NIK 16 digit dulu sebelum submit KYC.' : missingUpload?.missingMessage || 'Upload dokumen KYC dulu sebelum submit.';
-                if (missingUpload) setKycStatus(missingUpload, message, true);
+                drop.classList.remove('is-dragging');
+            });
+        });
+
+        drop?.addEventListener('drop', (event) => {
+            const file = event.dataTransfer?.files?.[0];
+            if (!file || !fileInput) return;
+            const transfer = new DataTransfer();
+            transfer.items.add(file);
+            fileInput.files = transfer.files;
+            handleKycFile(file);
+        });
+
+        kycForm?.addEventListener('submit', (event) => {
+            const { validNik, hasFile } = validateKyc();
+            if (!validNik || !hasFile) {
+                event.preventDefault();
+                const message = !validNik ? 'Isi NIK 16 digit dulu sebelum submit KYC.' : 'Upload dokumen KTP dulu sebelum submit.';
+                setKycStatus(message, true);
                 showToast(message, 'error');
                 return;
             }
