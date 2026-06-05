@@ -21,7 +21,7 @@ function sg_env(string $key, string $default = ''): string
 }
 
 define('SG_DB_HOST', sg_env('SG_DB_HOST', 'localhost'));
-define('SG_DB_NAME', sg_env('SG_DB_NAME', 'safgate_db'));
+define('SG_DB_NAME', sg_env('SG_DB_NAME', 'safegate_db'));
 define('SG_DB_USER', sg_env('SG_DB_USER', 'root'));
 define('SG_DB_PASS', sg_env('SG_DB_PASS', ''));
 

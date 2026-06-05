@@ -58,12 +58,32 @@
                 if (nextUrl.origin !== window.location.origin || nextUrl.href === window.location.href) return;
 
                 event.preventDefault();
-                link.classList.add('sg-nav-exiting');
-                body.classList.add('sg-dashboard-page-leaving');
 
+                // Visual feedback: mark exiting link & deactivate current
+                link.classList.add('sg-nav-exiting');
+                const currentActive = link.closest('.sg-sidebar-nav')?.querySelector('a.is-active');
+                if (currentActive && currentActive !== link) {
+                    currentActive.classList.remove('is-active');
+                    currentActive.style.opacity = '.45';
+                    currentActive.style.transition = 'opacity .3s ease';
+                }
+
+                // Apply leaving state to body (triggers CSS exit animation + shimmer bar)
+                body.classList.add('sg-dashboard-page-leaving');
+                if (body.classList.contains('sg-buyer-shell')) {
+                    body.classList.add('sg-buyer-page-leaving');
+                }
+
+                // Smooth scroll to top during exit
+                const mainEl = document.querySelector('.sg-dashboard-main, .sg-buyer-main');
+                if (mainEl && mainEl.scrollTop > 0) {
+                    mainEl.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+
+                // Navigate after exit animation completes (synced with CSS .32s transition)
                 window.setTimeout(() => {
                     window.location.href = nextUrl.href;
-                }, 180);
+                }, 320);
             });
         });
     }
@@ -381,6 +401,8 @@
 
             drop?.addEventListener('click', (event) => {
                 if (event.target === input) return;
+                event.preventDefault();
+                event.stopPropagation();
                 input?.click();
             });
 
@@ -436,8 +458,6 @@
                 input.readOnly = false;
             }
         });
-
-
     }
 
     document.addEventListener('DOMContentLoaded', () => {

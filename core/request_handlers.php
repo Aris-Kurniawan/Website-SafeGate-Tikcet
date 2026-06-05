@@ -890,7 +890,7 @@ function sg_handle_admin_settle_transaction(): void
 function sg_handle_signup(): void
 {
     if (!sg_db()) {
-        sg_flash('Database belum aktif. Nyalakan MySQL dan import safgate_db.sql dulu.', 'error');
+        sg_flash('Database belum aktif. Nyalakan MySQL dan import safegate_db.sql dulu.', 'error');
         sg_redirect('signup');
     }
 
@@ -931,7 +931,7 @@ function sg_handle_signup(): void
 function sg_handle_login(): void
 {
     if (!sg_db()) {
-        sg_flash('Database belum aktif. Nyalakan MySQL dan import safgate_db.sql dulu.', 'error');
+        sg_flash('Database belum aktif. Nyalakan MySQL dan import safegate_db.sql dulu.', 'error');
         sg_redirect('login');
     }
 
@@ -960,7 +960,7 @@ function sg_handle_login(): void
 function sg_handle_checkout_payment(): void
 {
     if (!sg_db()) {
-        sg_flash('Database belum aktif. Nyalakan MySQL dan import safgate_db.sql dulu.', 'error');
+        sg_flash('Database belum aktif. Nyalakan MySQL dan import safegate_db.sql dulu.', 'error');
         sg_redirect('penjualan');
     }
 
