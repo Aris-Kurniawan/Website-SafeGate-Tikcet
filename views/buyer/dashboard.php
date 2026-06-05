@@ -6,6 +6,10 @@ $buyer_page = 'buyer_dashboard';
 $buyer_id = sg_current_user_id();
 $dashboard = sg_get_buyer_dashboard($buyer_id);
 $notifications = sg_get_notifications($buyer_id, 4);
+$sellerKyc = sg_get_user_kyc_submission($buyer_id);
+$sellerStatus = strtolower((string) ($sellerKyc['status'] ?? 'unsubmitted'));
+$sellerCtaLabel = $sellerStatus === 'approved' ? 'Dashboard Seller' : ($sellerStatus === 'pending' ? 'Status Seller' : 'Daftar Jadi Seller');
+$sellerCtaHref = $sellerStatus === 'approved' ? 'index.php?page=seller_overview' : 'index.php?page=seller_register';
 $flash = sg_flash();
 
 ob_start();
@@ -21,7 +25,7 @@ ob_start();
         </div>
         <div class="sg-buyer-actions">
             <a class="sg-buyer-btn" href="index.php?page=penjualan"><iconify-icon icon="ph:magnifying-glass"></iconify-icon> Cari Tiket</a>
-            <a class="sg-buyer-btn is-neon" href="index.php?page=seller_overview"><iconify-icon icon="ph:storefront"></iconify-icon> Dashboard Seller</a>
+            <a class="sg-buyer-btn is-neon" href="<?= sg_h($sellerCtaHref) ?>"><iconify-icon icon="ph:storefront"></iconify-icon> <?= sg_h($sellerCtaLabel) ?></a>
         </div>
     </div>
 

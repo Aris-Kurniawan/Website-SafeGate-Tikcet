@@ -22,7 +22,7 @@ ob_start();
 
     <div class="sg-active-grid">
         <?php if (!$listings): ?>
-            <article class="sg-panel sg-listing-card" style="grid-column: 1 / -1;">
+            <article class="sg-panel sg-listing-card sg-listing-card-empty" style="grid-column: 1 / -1;">
                 <div class="sg-listing-thumb"><iconify-icon icon="ph:ticket"></iconify-icon></div>
                 <div>
                     <h2>Belum ada listing dari database</h2>
@@ -51,7 +51,6 @@ ob_start();
                         <?php else: ?>
                             <button type="submit" name="listing_status" value="paused">Pause</button>
                         <?php endif; ?>
-                        <button type="submit" name="listing_status" value="promoted">Promote</button>
                         <button type="submit" name="listing_status" value="cancelled">Cancel</button>
                     </form>
                 <?php else: ?>

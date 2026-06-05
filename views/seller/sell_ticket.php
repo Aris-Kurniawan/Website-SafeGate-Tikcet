@@ -5,7 +5,7 @@ $sellerId = sg_current_user_id();
 $kycStatus = sg_fetch_one('SELECT status FROM kyc_verifications WHERE user_id = :user_id ORDER BY id DESC LIMIT 1', ['user_id' => $sellerId]);
 if (!$kycStatus || $kycStatus['status'] !== 'approved') {
     sg_flash('Identitas kamu belum diverifikasi oleh admin. Lengkapi KYC dan tunggu persetujuan terlebih dahulu sebelum menjual tiket.', 'error');
-    sg_redirect('settings');
+    sg_redirect('seller_register');
 }
 
 $page_title = 'Sell Your Ticket - SafeGate';
@@ -103,7 +103,7 @@ ob_start();
                     <button type="button" id="btnFixedPrice">Fixed Price</button>
                     <button type="button" id="btnAuction" class="is-active">Auction</button>
                 </div>
-                <div class="sg-auction-input-grid" id="pricingInputsGrid" style="grid-template-columns: 1fr 1fr;">
+                <div class="sg-auction-input-grid" id="pricingInputsGrid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
                     <label id="labelFaceValue">
                         <span>Face Value / Harga Asli (Rp)</span>
                         <input id="faceValuePrice" name="face_value" type="text" inputmode="numeric" placeholder="Contoh: 1500000" required>
@@ -117,11 +117,36 @@ ob_start();
                         <input id="reservePrice" name="reserve_price" type="text" placeholder="Min. price to sell">
                     </label>
                     <label id="labelDuration">
-                        <span>Duration</span>
+                        <span>Waktu Lelang</span>
                         <select id="auctionDuration" name="duration">
-                            <option value="24">24 Hours</option>
-                            <option value="72">3 Days</option>
-                            <option value="168">7 Days</option>
+                            <option value="6">6 Jam</option>
+                            <option value="12">12 Jam</option>
+                            <option value="24" selected>24 Jam</option>
+                            <option value="48">2 Hari</option>
+                            <option value="72">3 Hari</option>
+                            <option value="168">7 Hari</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </label>
+                    <label id="customDurationWrap" hidden>
+                        <span>Durasi Custom</span>
+                        <div class="sg-number-stepper">
+                            <input id="customDuration" name="custom_duration" type="number" min="1" max="43200" step="1" placeholder="Contoh: 30">
+                            <div class="sg-number-stepper-actions" aria-label="Kontrol durasi custom">
+                                <button type="button" data-stepper-action="up" aria-label="Tambah durasi">
+                                    <iconify-icon icon="ph:caret-up-bold"></iconify-icon>
+                                </button>
+                                <button type="button" data-stepper-action="down" aria-label="Kurangi durasi">
+                                    <iconify-icon icon="ph:caret-down-bold"></iconify-icon>
+                                </button>
+                            </div>
+                        </div>
+                    </label>
+                    <label id="customDurationUnitWrap" hidden>
+                        <span>Satuan Custom</span>
+                        <select id="customDurationUnit" name="custom_duration_unit">
+                            <option value="minutes">Menit</option>
+                            <option value="hours" selected>Jam</option>
                         </select>
                     </label>
                 </div>

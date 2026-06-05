@@ -2,21 +2,32 @@
 // core/db_connect.php
 // Koneksi database SafeGate + helper kecil agar view tidak berisi query mentah.
 
+date_default_timezone_set(getenv('SG_APP_TIMEZONE') ?: 'Asia/Jakarta');
+
 if (PHP_SAPI !== 'cli' && session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Load Composer autoloader
-require_once dirname(__DIR__) . '/vendor/autoload.php';
+// Load Composer autoloader only when dependencies are installed.
+$sgComposerAutoload = dirname(__DIR__) . '/vendor/autoload.php';
+if (is_file($sgComposerAutoload)) {
+    require_once $sgComposerAutoload;
+}
 
-define('SG_DB_HOST', getenv('SG_DB_HOST'));
-define('SG_DB_NAME', getenv('SG_DB_NAME'));
-define('SG_DB_USER', getenv('SG_DB_USER'));
-define('SG_DB_PASS', getenv('SG_DB_PASS'));
+function sg_env(string $key, string $default = ''): string
+{
+    $value = getenv($key);
+    return $value === false || $value === '' ? $default : $value;
+}
+
+define('SG_DB_HOST', sg_env('SG_DB_HOST', 'localhost'));
+define('SG_DB_NAME', sg_env('SG_DB_NAME', 'safgate_db'));
+define('SG_DB_USER', sg_env('SG_DB_USER', 'root'));
+define('SG_DB_PASS', sg_env('SG_DB_PASS', ''));
 
 // Midtrans Configurations (Default Sandbox from User)
-define('SG_MIDTRANS_SERVER_KEY', getenv('SG_MIDTRANS_SERVER_KEY'));
-define('SG_MIDTRANS_CLIENT_KEY', getenv('SG_MIDTRANS_CLIENT_KEY'));
+define('SG_MIDTRANS_SERVER_KEY', sg_env('SG_MIDTRANS_SERVER_KEY'));
+define('SG_MIDTRANS_CLIENT_KEY', sg_env('SG_MIDTRANS_CLIENT_KEY'));
 define('SG_MIDTRANS_IS_PRODUCTION', getenv('SG_MIDTRANS_IS_PRODUCTION') === 'true');
 
 

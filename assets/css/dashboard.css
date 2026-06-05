@@ -5,6 +5,75 @@
     min-width: 0;
 }
 
+@keyframes sg-dashboard-content-in {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 14px, 0) scale(.992);
+        filter: blur(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+        filter: blur(0);
+    }
+}
+
+.sg-dashboard-main>section,
+.sg-buyer-main>.sg-buyer-content,
+.sg-buyer-main>section {
+    transform-origin: 50% 24px;
+    will-change: opacity, transform, filter;
+}
+
+.sg-dashboard-page-ready .sg-dashboard-main>section,
+.sg-dashboard-page-ready .sg-buyer-main>.sg-buyer-content,
+.sg-dashboard-page-ready .sg-buyer-main>section {
+    animation: sg-dashboard-content-in .42s cubic-bezier(.2, .86, .22, 1) both;
+}
+
+.sg-dashboard-page-leaving .sg-dashboard-main>section,
+.sg-dashboard-page-leaving .sg-buyer-main>.sg-buyer-content,
+.sg-dashboard-page-leaving .sg-buyer-main>section {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(.992);
+    filter: blur(5px);
+    transition: opacity .18s ease, transform .18s ease, filter .18s ease;
+}
+
+.sg-sidebar-nav a {
+    transition:
+        color .2s ease,
+        background .2s ease,
+        box-shadow .2s ease,
+        transform .2s ease;
+}
+
+.sg-sidebar-nav a:hover {
+    transform: translateX(3px);
+}
+
+.sg-sidebar-nav a.sg-nav-exiting {
+    color: var(--safegate-neon);
+    background: rgba(217, 255, 0, .09);
+    box-shadow: inset 0 0 0 1px rgba(217, 255, 0, .08), 0 12px 34px rgba(217, 255, 0, .12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sg-dashboard-page-ready .sg-dashboard-main>section,
+    .sg-dashboard-page-ready .sg-buyer-main>.sg-buyer-content,
+    .sg-dashboard-page-ready .sg-buyer-main>section,
+    .sg-dashboard-page-leaving .sg-dashboard-main>section,
+    .sg-dashboard-page-leaving .sg-buyer-main>.sg-buyer-content,
+    .sg-dashboard-page-leaving .sg-buyer-main>section,
+    .sg-sidebar-nav a {
+        animation: none;
+        transition: none;
+        transform: none;
+        filter: none;
+    }
+}
+
 /* Transaction history */
 .sg-transaction-page {
     width: min(1080px, calc(100% - 72px));
@@ -1158,6 +1227,54 @@
     font-size: 16px;
 }
 
+.sg-number-stepper {
+    position: relative;
+}
+
+.sg-number-stepper input[type="number"] {
+    width: 100%;
+    padding-right: 52px;
+    -moz-appearance: textfield;
+}
+
+.sg-number-stepper input[type="number"]::-webkit-outer-spin-button,
+.sg-number-stepper input[type="number"]::-webkit-inner-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+}
+
+.sg-number-stepper-actions {
+    position: absolute;
+    top: 50%;
+    right: 9px;
+    display: grid;
+    gap: 3px;
+    transform: translateY(-50%);
+}
+
+.sg-number-stepper-actions button {
+    width: 17px;
+    height: 13px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(217, 255, 0, .16);
+    border-radius: 5px;
+    background: rgba(217, 255, 0, .06);
+    color: #aeb8c7;
+    font-size: 9px;
+    line-height: 1;
+    transition: border-color .18s ease, color .18s ease, background .18s ease, transform .18s ease;
+}
+
+.sg-number-stepper-actions button:hover,
+.sg-number-stepper-actions button:focus-visible {
+    border-color: rgba(217, 255, 0, .55);
+    background: rgba(217, 255, 0, .14);
+    color: var(--safegate-neon);
+    outline: none;
+    transform: translateY(-1px);
+}
+
 .sg-auction-fairness {
     margin-top: 30px;
 }
@@ -1835,6 +1952,37 @@
     border-radius: 6px;
     background: #20242e;
     color: #fff;
+}
+
+.sg-listing-card-empty {
+    grid-template-columns: 52px minmax(0, 1fr) auto auto auto;
+    gap: 19px;
+    padding: 19px 22px;
+}
+
+.sg-listing-card-empty .sg-listing-thumb {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    font-size: 22px;
+}
+
+.sg-listing-card-empty h2 {
+    font-size: 16px;
+}
+
+.sg-listing-card-empty p {
+    margin-top: 4px;
+    font-size: 13px;
+}
+
+.sg-listing-card-empty strong {
+    font-size: 18px;
+}
+
+.sg-listing-card-empty span,
+.sg-listing-card-empty a {
+    font-size: 13px;
 }
 
 @media (max-width: 1180px) {
@@ -3263,8 +3411,13 @@
     margin-bottom: 28px;
 }
 
+.sg-page-active_listings .sg-vendor-heading h1 {
+    font-size: clamp(43px, 3.25vw, 47px);
+}
+
 .sg-page-active_listings .sg-vendor-heading p {
     max-width: 560px;
+    font-size: 15.3px;
 }
 
 .sg-page-active_listings .sg-active-grid {
@@ -4354,6 +4507,23 @@
     box-shadow: 0 12px 30px rgba(217,255,0,.18);
 }
 
+.sg-buyer-notice {
+    margin: 0 0 22px;
+    padding: 16px 18px;
+    border: 1px solid rgba(217, 255, 0, .2);
+    border-radius: 8px;
+    background: rgba(217, 255, 0, .07);
+    color: var(--safegate-neon);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.sg-buyer-notice.is-error {
+    border-color: rgba(255, 104, 104, .24);
+    background: rgba(255, 104, 104, .08);
+    color: #ff6868;
+}
+
 .sg-buyer-grid-3 {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -4364,6 +4534,195 @@
     display: grid;
     grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
     gap: 20px;
+}
+
+.sg-seller-register-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, .72fr) minmax(0, 1.28fr);
+    gap: 22px;
+    align-items: start;
+}
+
+.sg-seller-register-status,
+.sg-seller-register-form-panel {
+    padding: 28px;
+}
+
+.sg-seller-register-status {
+    position: sticky;
+    top: 24px;
+    overflow: hidden;
+}
+
+.sg-seller-register-status::after {
+    content: "";
+    position: absolute;
+    inset: auto -44px -60px auto;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(217,255,0,.13), transparent 68%);
+    pointer-events: none;
+}
+
+.sg-seller-register-status-icon {
+    width: 54px;
+    height: 54px;
+    display: grid;
+    place-items: center;
+    margin: 26px 0 18px;
+    border: 1px solid rgba(217, 255, 0, .22);
+    border-radius: 14px;
+    background: rgba(217, 255, 0, .08);
+    color: var(--safegate-neon);
+    font-size: 28px;
+}
+
+.sg-seller-register-status > strong {
+    display: inline-flex;
+    margin-bottom: 16px;
+    padding: 7px 10px;
+    border: 1px solid rgba(0, 255, 163, .36);
+    border-radius: 999px;
+    color: #00ffa3;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.sg-seller-register-status h2,
+.sg-seller-register-locked h2 {
+    margin: 0 0 12px;
+    color: #fff;
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: -.04em;
+}
+
+.sg-seller-register-status p,
+.sg-seller-register-status small,
+.sg-seller-register-form p,
+.sg-seller-register-locked p {
+    color: #a8b3c5;
+    line-height: 1.65;
+}
+
+.sg-seller-register-status small {
+    display: block;
+    margin-top: 18px;
+    color: #dbe2e8;
+    font-weight: 800;
+}
+
+.sg-seller-register-form {
+    display: grid;
+    gap: 18px;
+}
+
+.sg-seller-register-form .sg-panel-title-row {
+    margin-bottom: 0;
+}
+
+.sg-seller-register-form label {
+    display: grid;
+    gap: 9px;
+}
+
+.sg-seller-register-form label > span {
+    color: #d4d1c4;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+}
+
+.sg-seller-register-form input {
+    width: 100%;
+    min-height: 56px;
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 8px;
+    background: #080b10;
+    color: #fff;
+    padding: 0 16px;
+    font-size: 15px;
+    outline: none;
+}
+
+.sg-seller-register-form input:focus {
+    border-color: rgba(217, 255, 0, .42);
+    box-shadow: 0 0 0 3px rgba(217, 255, 0, .08);
+}
+
+.sg-register-drop {
+    min-height: 168px;
+    background: rgba(7, 11, 16, .54);
+    cursor: pointer;
+    transition: border-color .18s ease, background .18s ease;
+}
+
+.sg-register-drop:hover,
+.sg-register-drop.is-dragging {
+    border-color: rgba(217, 255, 0, .48);
+    background: rgba(217, 255, 0, .04);
+}
+
+.sg-register-submit {
+    width: 100%;
+    min-height: 56px;
+    border-radius: 7px;
+}
+
+.sg-seller-register-locked {
+    min-height: 420px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 16px;
+    text-align: center;
+}
+
+.sg-seller-register-locked > iconify-icon {
+    color: var(--safegate-neon);
+    font-size: 52px;
+}
+
+.sg-seller-approval-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    margin-bottom: 28px;
+    padding: 22px 24px;
+    border-color: rgba(217, 255, 0, .22);
+    background:
+        linear-gradient(115deg, rgba(217,255,0,.08), rgba(17,22,31,.96) 38%),
+        #11161f;
+}
+
+.sg-seller-approval-banner span {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--safegate-neon);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+.sg-seller-approval-banner h2 {
+    margin: 0 0 7px;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 900;
+}
+
+.sg-seller-approval-banner p {
+    margin: 0;
+    max-width: 760px;
+    color: #a8b3c5;
+    font-size: 14px;
+    line-height: 1.55;
 }
 
 .sg-buyer-panel,
@@ -4826,6 +5185,20 @@
         grid-template-columns: 1fr;
     }
 
+    .sg-seller-register-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sg-seller-register-status {
+        position: relative;
+        top: auto;
+    }
+
+    .sg-seller-approval-banner {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
     .sg-wallet-action-grid {
         grid-template-columns: 1fr;
     }
@@ -5198,5 +5571,427 @@
     .sg-buyer-frame.sg-sidebar-collapsed .sg-sidebar-nav,
     .sg-buyer-frame.sg-sidebar-collapsed .sg-sidebar-footer {
         display: none;
+    }
+}
+
+/* Seller/buyer dashboard polish */
+.sg-page-transaction .sg-ledger-total {
+    align-items: center;
+}
+
+.sg-page-transaction .sg-ledger-total strong {
+    display: block;
+    white-space: nowrap;
+    line-height: 1.05;
+}
+
+.sg-page-transaction .sg-filter-bar {
+    grid-template-columns: minmax(280px, 1fr) minmax(190px, 240px) minmax(170px, 220px) 52px 52px;
+    align-items: stretch;
+}
+
+.sg-page-transaction .sg-icon-button {
+    width: 52px;
+    min-width: 52px;
+    min-height: 52px;
+}
+
+.sg-buyer-transactions-panel {
+    overflow-x: auto;
+}
+
+.sg-buyer-transactions-panel .sg-buyer-table {
+    min-width: 940px;
+}
+
+.sg-buyer-transactions-panel .sg-buyer-table th:nth-child(2),
+.sg-buyer-transactions-panel .sg-buyer-table td:nth-child(2) {
+    min-width: 360px;
+}
+
+.sg-buyer-transaction-event {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+.sg-buyer-transaction-thumb {
+    width: 116px;
+    height: 78px;
+    flex: 0 0 116px;
+    border: 1px solid rgba(217, 255, 0, .18);
+    border-radius: 8px;
+    background: #070b12;
+    object-fit: cover;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .24);
+}
+
+.sg-buyer-transaction-event strong {
+    display: block;
+    color: #fff;
+    font-size: 15px;
+    line-height: 1.25;
+}
+
+.sg-buyer-transaction-event span {
+    display: block;
+    margin-top: 5px;
+    color: #9fb0ca;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.sg-dashboard-main iconify-icon,
+.sg-buyer-main iconify-icon {
+    font-size: 1.12em;
+}
+
+.sg-buyer-table th {
+    font-size: 12px;
+}
+
+.sg-buyer-table td {
+    font-size: 14px;
+}
+
+.sg-buyer-chip {
+    min-height: 26px;
+    padding-inline: 10px;
+    font-size: 11px;
+}
+
+.sg-buyer-btn {
+    min-height: 42px;
+    font-size: 13px;
+}
+
+.sg-seller-avatar.has-photo,
+.sg-buyer-sidebar .sg-seller-avatar.sg-buyer-avatar.has-photo {
+    overflow: hidden;
+}
+
+.sg-seller-avatar.has-photo img,
+.sg-buyer-sidebar .sg-seller-avatar.sg-buyer-avatar.has-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+@media (max-width: 980px) {
+    .sg-page-transaction .sg-filter-bar {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .sg-page-transaction .sg-icon-button {
+        width: 100%;
+    }
+}
+
+/* Final avatar parity: buyer profile card must match seller dashboard card. */
+.sg-sidebar .sg-seller-card,
+.sg-buyer-sidebar .sg-seller-card {
+    display: flex;
+    min-height: 98px;
+    gap: 12px;
+    padding: 26px 20px;
+    align-items: center;
+}
+
+.sg-sidebar .sg-seller-avatar,
+.sg-buyer-sidebar .sg-seller-avatar.sg-buyer-avatar {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    margin: 0;
+    border-radius: 50%;
+}
+
+.sg-sidebar .sg-seller-avatar.has-photo,
+.sg-buyer-sidebar .sg-seller-avatar.sg-buyer-avatar.has-photo {
+    background: #0b0f16;
+    overflow: hidden;
+}
+
+.sg-sidebar .sg-seller-avatar.has-photo img,
+.sg-buyer-sidebar .sg-seller-avatar.sg-buyer-avatar.has-photo img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: center center;
+    transform: none;
+}
+
+.sg-sidebar .sg-seller-card strong,
+.sg-buyer-sidebar .sg-seller-card strong {
+    display: block;
+    color: #fff;
+    font-size: 16px;
+    line-height: 1;
+    letter-spacing: -.02em;
+}
+
+.sg-sidebar .sg-seller-card span,
+.sg-buyer-sidebar .sg-seller-card span {
+    display: inline-flex;
+    width: 120px;
+    height: 23px;
+    margin-top: 7px;
+    align-items: center;
+    justify-content: center;
+}
+
+.sg-avatar-crop-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, .78);
+    backdrop-filter: blur(8px);
+}
+
+.sg-avatar-crop-modal[hidden] {
+    display: none;
+}
+
+.sg-avatar-crop-dialog {
+    width: min(340px, 94vw);
+    max-width: 340px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 16px;
+    background: #111821;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, .55);
+}
+
+.sg-avatar-crop-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.sg-avatar-crop-head strong {
+    display: block;
+    color: #fff;
+    font-size: 17px;
+    line-height: 1.1;
+}
+
+.sg-avatar-crop-head span {
+    display: block;
+    margin-top: 4px;
+    color: #9fb0ca;
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.sg-avatar-crop-close {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .04);
+    color: #fff;
+}
+
+.sg-avatar-crop-stage {
+    position: relative;
+    width: min(210px, 68vw);
+    height: min(210px, 68vw);
+    margin: 0 auto 16px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: #080c13;
+    border: 2px solid rgba(255, 255, 255, .92);
+    cursor: grab;
+    touch-action: none;
+    box-shadow: 0 0 0 999px rgba(0, 0, 0, .12), 0 16px 34px rgba(0, 0, 0, .35);
+}
+
+.sg-avatar-crop-stage:active {
+    cursor: grabbing;
+}
+
+.sg-avatar-crop-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    max-width: none;
+    user-select: none;
+    pointer-events: none;
+    will-change: transform, width, height;
+}
+
+.sg-avatar-crop-mask {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+        linear-gradient(to right, transparent 32.8%, rgba(255, 255, 255, .45) 33.1%, rgba(255, 255, 255, .45) 33.6%, transparent 33.9%),
+        linear-gradient(to right, transparent 65.9%, rgba(255, 255, 255, .45) 66.2%, rgba(255, 255, 255, .45) 66.7%, transparent 67%),
+        linear-gradient(to bottom, transparent 32.8%, rgba(255, 255, 255, .45) 33.1%, rgba(255, 255, 255, .45) 33.6%, transparent 33.9%),
+        linear-gradient(to bottom, transparent 65.9%, rgba(255, 255, 255, .45) 66.2%, rgba(255, 255, 255, .45) 66.7%, transparent 67%);
+    box-shadow: inset 0 0 26px rgba(0, 0, 0, .28);
+    pointer-events: none;
+}
+
+.sg-avatar-crop-zoom {
+    display: grid;
+    gap: 8px;
+    margin: 0 0 14px;
+    color: #c7d4ea;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.sg-avatar-crop-zoom input {
+    accent-color: var(--safegate-neon);
+}
+
+.sg-avatar-crop-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.sg-avatar-crop-actions button {
+    min-height: 42px;
+    border-radius: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.sg-avatar-crop-cancel {
+    border: 1px solid rgba(255, 255, 255, .14);
+    background: transparent;
+    color: #dbe2e8;
+}
+
+.sg-avatar-crop-apply {
+    border: 0;
+    background: var(--safegate-neon);
+    color: #070b12;
+}
+
+/* Seller page scale: keep sidebar unchanged, only adjust main content. */
+.sg-page-overview .sg-dashboard-main>section,
+.sg-page-settings .sg-dashboard-main>section {
+    zoom: .9;
+}
+
+.sg-page-sell_ticket .sg-dashboard-main>section {
+    zoom: .99;
+}
+
+.sg-page-transaction .sg-dashboard-main>section {
+    zoom: .73;
+}
+
+/* Seller content +10% request: only main page content grows, sidebar stays unchanged. */
+@media (min-width: 861px) {
+    .sg-page-overview .sg-dashboard-main>section {
+        zoom: .99;
+    }
+
+    .sg-page-wallet .sg-dashboard-main>section {
+        zoom: .72;
+    }
+
+    .sg-page-active_listings .sg-dashboard-main>section {
+        zoom: 1.1;
+    }
+
+    .sg-page-sell_ticket .sg-dashboard-main>section {
+        zoom: 1.09;
+    }
+}
+
+/* Unified dashboard gutters: keep sidebars fixed, align content neatly. */
+@media (min-width: 861px) {
+    .sg-dashboard-main>section.sg-vendor-page,
+    .sg-page-transaction .sg-dashboard-main>section.sg-transaction-page {
+        width: min(1280px, calc(100% - 128px));
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .sg-buyer-content {
+        width: min(1280px, calc(100% - clamp(64px, 6vw, 112px)));
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .sg-buyer-topbar {
+        padding-left: max(clamp(32px, 5vw, 72px), calc((100% - 1280px) / 2));
+        padding-right: max(clamp(32px, 5vw, 72px), calc((100% - 1280px) / 2));
+    }
+}
+
+/* Wallet: wider cards without changing typography scale. */
+@media (min-width: 861px) {
+    .sg-page-wallet .sg-dashboard-main>section.sg-wallet-page {
+        width: min(1500px, calc(100% - 48px));
+    }
+
+    .sg-page-wallet .sg-wallet-balance-card {
+        min-height: 198px;
+        padding-top: 34px;
+        padding-bottom: 32px;
+    }
+
+    .sg-page-wallet .sg-wallet-balance-card>iconify-icon {
+        width: 48px;
+        height: 48px;
+        padding: 12px;
+        font-size: 24px;
+    }
+
+    .sg-page-wallet .sg-wallet-balance-card span {
+        font-size: 13px;
+        letter-spacing: .14em;
+    }
+
+    .sg-page-wallet .sg-wallet-balance-card strong {
+        font-size: 36px;
+    }
+
+    .sg-page-wallet .sg-release-row {
+        font-size: 16px;
+    }
+
+    .sg-page-wallet .sg-release-track {
+        height: 7px;
+    }
+
+    .sg-page-wallet .sg-wallet-balance-card.is-available small {
+        gap: 8px;
+        padding: 10px 14px;
+        font-size: 15px;
+    }
+}
+
+/* Transaction History +10% for content only; keep the ledger title size unchanged. */
+@media (min-width: 861px) {
+    .sg-page-transaction .sg-dashboard-main>section.sg-transaction-page {
+        width: min(1460px, calc(100% - 48px));
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .sg-page-transaction .sg-ledger-total,
+    .sg-page-transaction .sg-filter-bar,
+    .sg-page-transaction .sg-transaction-card,
+    .sg-page-transaction .sg-ledger-footnote {
+        zoom: 1.1;
     }
 }
