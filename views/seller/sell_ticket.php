@@ -103,7 +103,7 @@ ob_start();
                     <button type="button" id="btnFixedPrice">Fixed Price</button>
                     <button type="button" id="btnAuction" class="is-active">Auction</button>
                 </div>
-                <div class="sg-auction-input-grid" id="pricingInputsGrid" style="grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));">
+                <div class="sg-auction-input-grid" id="pricingInputsGrid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
                     <label id="labelFaceValue">
                         <span>Face Value / Harga Asli (Rp)</span>
                         <input id="faceValuePrice" name="face_value" type="text" inputmode="numeric" placeholder="Contoh: 1500000" required>

@@ -437,7 +437,7 @@
     border-radius: 14px;
 }
 
-@media (max-width: 1380px) {
+@media (max-width: 1180px) {
     .sg-transaction-page,
     .sg-sell-v2 {
         width: min(100% - 40px, 960px);
@@ -1245,7 +1245,7 @@
 
 .sg-auction-input-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 18px;
 }
 
@@ -1261,10 +1261,14 @@
 .sg-withdraw-panel label span,
 .sg-kyc-panel label span,
 .sg-profile-panel label span {
+    display: block;
     color: #d0cdc1;
-    font-size: 15px;
-    letter-spacing: .03em;
+    font-size: 13px;
+    letter-spacing: 0;
     text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sg-auction-input-grid input,
@@ -1273,6 +1277,9 @@
 .sg-withdraw-panel select,
 .sg-kyc-panel input,
 .sg-profile-panel input {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
     min-height: 58px;
     padding: 0 16px;
     border: 1px solid rgba(255, 255, 255, .08);
@@ -2050,7 +2057,7 @@
     font-size: 13px;
 }
 
-@media (max-width: 1380px) {
+@media (max-width: 1180px) {
     .sg-dashboard-frame {
         grid-template-columns: 250px 1fr;
     }
@@ -2062,7 +2069,6 @@
         width: min(100% - 38px, 940px);
     }
 
-    .sg-metric-grid,
     .sg-overview-grid,
     .sg-wallet-balance-grid,
     .sg-wallet-grid,
@@ -2094,6 +2100,7 @@
         padding: 32px 0;
     }
 
+    .sg-metric-grid,
     .sg-auction-event,
     .sg-auction-input-grid,
     .sg-security-grid,
