@@ -12,6 +12,7 @@
     <link href="<?= $assets_path ?>/css/global.css" rel="stylesheet">
     <link href="<?= $assets_path ?>/css/dashboard.css" rel="stylesheet">
     <script src="<?= $assets_path ?>/js/utils.js"></script>
+    <script defer src="<?= $assets_path ?>/js/dashboard-interactions.js"></script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
 </head>
 <body class="bg-safegate-bg text-white sg-buyer-shell sg-buyer-page-<?= sg_h($buyer_page ?? 'dashboard') ?>">

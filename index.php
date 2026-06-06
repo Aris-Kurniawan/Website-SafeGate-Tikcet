@@ -21,6 +21,7 @@ $routes = [
     'buyer_wallet' => __DIR__ . '/views/buyer/wallet.php',
     'buyer_transactions' => __DIR__ . '/views/buyer/transactions.php',
     'buyer_profile' => __DIR__ . '/views/buyer/profile_settings.php',
+    'seller_register' => __DIR__ . '/views/buyer/seller_register.php',
     'ticket_verify' => __DIR__ . '/views/buyer/ticket_verify.php',
     'seller_overview' => __DIR__ . '/views/seller/overview.php',
     'sell_ticket' => __DIR__ . '/views/seller/sell_ticket.php',

@@ -4,9 +4,14 @@ require_once __DIR__ . '/../../core/safegate_repository.php';
 $page_title = 'Seller Overview - SafeGate';
 $dashboard_page = 'overview';
 $seller_id = sg_current_user_id();
+$seller_profile = sg_get_seller_profile($seller_id);
+$seller_name = trim((string) ($seller_profile['full_name'] ?? 'Vendor')) ?: 'Vendor';
+$seller_kyc = sg_get_user_kyc_submission($seller_id);
+$seller_kyc_status = strtolower((string) ($seller_kyc['status'] ?? 'unsubmitted'));
 $metrics = sg_get_seller_overview($seller_id);
 $notifications = sg_get_notifications($seller_id, 5);
 $unread_notifications = sg_unread_notification_count($seller_id);
+$flash = sg_flash();
 
 ob_start();
 ?>
@@ -23,11 +28,26 @@ ob_start();
 
     <div class="sg-vendor-heading sg-overview-heading">
         <div>
-            <h1>Welcome back, Vendor</h1>
+            <h1>Welcome back, <?= sg_h($seller_name) ?></h1>
             <p>System status: Operational. Your encryption keys are active.</p>
         </div>
         <span class="sg-vendor-badge"><iconify-icon icon="ph:seal-check-fill"></iconify-icon> Institutional Vendor</span>
     </div>
+
+    <?php if ($flash): ?>
+        <p class="sg-list-status <?= $flash['type'] === 'error' ? 'is-error' : '' ?>"><?= sg_h($flash['message']) ?></p>
+    <?php endif; ?>
+
+    <?php if ($seller_kyc_status !== 'approved'): ?>
+        <section class="sg-panel sg-seller-approval-banner">
+            <div>
+                <span><?= $seller_kyc_status === 'pending' ? 'Seller Registration Pending' : 'Seller Registration Required' ?></span>
+                <h2><?= $seller_kyc_status === 'pending' ? 'Menunggu persetujuan admin' : 'Lengkapi KTP dan selfie KTP dulu' ?></h2>
+                <p><?= $seller_kyc_status === 'pending' ? 'Dashboard ini sudah bisa kamu lihat, tapi fitur jual, listing, wallet seller, dan riwayat seller baru aktif setelah admin approve KYC.' : 'Untuk mulai menjual tiket, kirim data verifikasi seller. Admin akan meninjau sebelum fitur seller dibuka.' ?></p>
+            </div>
+            <a class="sg-buyer-btn is-neon" href="index.php?page=seller_register"><iconify-icon icon="ph:identification-card"></iconify-icon> <?= $seller_kyc_status === 'pending' ? 'Cek Status' : 'Daftar Seller' ?></a>
+        </section>
+    <?php endif; ?>
 
     <div class="sg-metric-grid">
         <article class="sg-metric-card">

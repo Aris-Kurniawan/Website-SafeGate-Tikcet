@@ -693,6 +693,10 @@ $sidebarPhoto = trim((string) ($sidebarUser['profile_photo_path'] ?? ''));
             <iconify-icon icon="ph:clock-counter-clockwise"></iconify-icon>
             <span>Transaction History</span>
         </a>
+        <a href="<?= $asset_prefix ?>index.php?page=buyer_dashboard">
+            <iconify-icon icon="ph:user-circle"></iconify-icon>
+            <span>Dashboard Pengguna</span>
+        </a>
         <hr>
         <a class="<?= $dashboard_page === 'settings' ? 'is-active' : '' ?>" href="<?= $asset_prefix ?>index.php?page=settings">
             <iconify-icon icon="ph:shield-check"></iconify-icon>

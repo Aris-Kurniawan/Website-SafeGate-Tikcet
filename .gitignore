@@ -1,7 +1,7 @@
 .designSystetm.md
 .database.md
 /assets/uploads/
+/vendor/
 .env
 
-# download composer ini dulu supaya bisa aktif payment gateway nya
-composer require midtrans/midtrans-php
+

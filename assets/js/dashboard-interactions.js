@@ -37,6 +37,57 @@
         }, 2600);
     }
 
+    function initDashboardPageTransitions() {
+        const isDashboard = body.classList.contains('sg-dashboard-shell') || body.classList.contains('sg-buyer-shell');
+        if (!isDashboard || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        window.requestAnimationFrame(() => {
+            body.classList.add('sg-dashboard-page-ready');
+        });
+
+        qsa('.sg-sidebar-nav a[href]').forEach((link) => {
+            link.addEventListener('click', (event) => {
+                if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                if (link.target && link.target !== '_self') return;
+                if (link.classList.contains('is-active')) return;
+
+                const href = link.getAttribute('href') || '';
+                if (!href || href.startsWith('#') || href.includes('sg_action=logout')) return;
+
+                const nextUrl = new URL(href, window.location.href);
+                if (nextUrl.origin !== window.location.origin || nextUrl.href === window.location.href) return;
+
+                event.preventDefault();
+
+                // Visual feedback: mark exiting link & deactivate current
+                link.classList.add('sg-nav-exiting');
+                const currentActive = link.closest('.sg-sidebar-nav')?.querySelector('a.is-active');
+                if (currentActive && currentActive !== link) {
+                    currentActive.classList.remove('is-active');
+                    currentActive.style.opacity = '.45';
+                    currentActive.style.transition = 'opacity .3s ease';
+                }
+
+                // Apply leaving state to body (triggers CSS exit animation + shimmer bar)
+                body.classList.add('sg-dashboard-page-leaving');
+                if (body.classList.contains('sg-buyer-shell')) {
+                    body.classList.add('sg-buyer-page-leaving');
+                }
+
+                // Smooth scroll to top during exit
+                const mainEl = document.querySelector('.sg-dashboard-main, .sg-buyer-main');
+                if (mainEl && mainEl.scrollTop > 0) {
+                    mainEl.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+
+                // Navigate after exit animation completes (synced with CSS .32s transition)
+                window.setTimeout(() => {
+                    window.location.href = nextUrl.href;
+                }, 320);
+            });
+        });
+    }
+
     function openModal(title, rows) {
         let modal = qs('.sg-dashboard-modal');
         if (!modal) {
@@ -239,30 +290,46 @@
         const kycForm = kycPanel;
         const nik = qs('input[name="nik"]', kycPanel);
         const submit = qs('button[type="submit"]', kycPanel);
-        const drop = qs('.sg-doc-drop', kycPanel);
         const danger = qs('.sg-danger-label', kycPanel);
-        const fileInput = qs('input[type="file"]', kycPanel);
-        const preview = qs('#kycPreview', kycPanel);
-        const title = qs('strong', drop);
-        const status = qs('small', drop);
-        const defaultTitle = title?.textContent || 'Drag & drop or click to upload';
-        const defaultStatus = status?.textContent || 'Upload front side of your National ID (JPG, PNG, PDF - Max 5MB)';
-        const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
+        const uploadDrops = qsa('.sg-doc-drop', kycPanel).map((drop) => {
+            const input = qs('input[type="file"]', drop);
+            const preview = qs('img', drop);
+            const title = qs('strong', drop);
+            const status = qs('small', drop);
+            const acceptsPdf = input?.accept?.toLowerCase().includes('pdf') || false;
+
+            return {
+                drop,
+                input,
+                preview,
+                title,
+                status,
+                defaultTitle: title?.textContent || 'Drag & drop or click to upload',
+                defaultStatus: status?.textContent || '',
+                allowedExtensions: acceptsPdf ? ['jpg', 'jpeg', 'png', 'pdf'] : ['jpg', 'jpeg', 'png'],
+                previewLabel: input?.name === 'selfie_photo' ? 'Preview selfie siap.' : 'Preview KTP siap.',
+                missingMessage: input?.name === 'selfie_photo' ? 'Upload selfie dengan KTP dulu sebelum submit.' : 'Upload dokumen KTP dulu sebelum submit.',
+            };
+        });
 
         function validateKyc() {
             const validNik = nik ? /^\d{16}$/.test(nik.value.trim()) : false;
-            const hasFile = fileInput && fileInput.files.length > 0;
-            submit?.classList.toggle('is-ready', validNik && hasFile);
-            return { validNik, hasFile };
+            const missingUpload = uploadDrops.find(({ input }) => input && !input.disabled && input.files.length === 0);
+            const hasUploads = !missingUpload;
+            submit?.classList.toggle('is-ready', validNik && hasUploads);
+            return { validNik, hasUploads, missingUpload };
         }
 
-        function setKycStatus(message, isError = false) {
+        function setKycStatus(target, message, isError = false) {
+            const status = target?.status || null;
             if (!status) return;
             status.textContent = message;
             status.style.color = isError ? '#ff6868' : '';
         }
 
-        function resetKycPreview(resetText = false) {
+        function resetKycPreview(target, resetText = false) {
+            if (!target) return;
+            const { preview, drop, title } = target;
             if (preview) {
                 preview.hidden = true;
                 preview.style.display = 'none';
@@ -270,8 +337,8 @@
             }
             drop?.classList.remove('has-preview');
             if (resetText) {
-                if (title) title.textContent = defaultTitle;
-                setKycStatus(defaultStatus);
+                if (title) title.textContent = target.defaultTitle;
+                setKycStatus(target, target.defaultStatus);
             }
         }
 
@@ -280,28 +347,31 @@
             validateKyc();
         });
 
-        function handleKycFile(file) {
+        function handleKycFile(file, target) {
+            if (!target) return;
+            const { input, preview, drop, title } = target;
+
             if (!file) {
-                resetKycPreview(true);
+                resetKycPreview(target, true);
                 validateKyc();
                 return;
             }
 
             const extension = file.name.split('.').pop().toLowerCase();
-            if (!allowedExtensions.includes(extension)) {
-                fileInput.value = '';
-                resetKycPreview();
-                if (title) title.textContent = defaultTitle;
-                setKycStatus('Format harus JPG, PNG, atau PDF.', true);
+            if (!target.allowedExtensions.includes(extension)) {
+                input.value = '';
+                resetKycPreview(target);
+                if (title) title.textContent = target.defaultTitle;
+                setKycStatus(target, target.allowedExtensions.includes('pdf') ? 'Format harus JPG, PNG, atau PDF.' : 'Format harus JPG atau PNG.', true);
                 validateKyc();
                 return;
             }
 
             if (file.size > 5 * 1024 * 1024) {
-                fileInput.value = '';
-                resetKycPreview();
-                if (title) title.textContent = defaultTitle;
-                setKycStatus('Ukuran file maksimal 5MB.', true);
+                input.value = '';
+                resetKycPreview(target);
+                if (title) title.textContent = target.defaultTitle;
+                setKycStatus(target, 'Ukuran file maksimal 5MB.', true);
                 validateKyc();
                 return;
             }
@@ -317,53 +387,59 @@
                     drop?.classList.add('has-preview');
                 };
                 reader.readAsDataURL(file);
-                setKycStatus('Preview KTP siap. Dokumen bisa dikirim untuk verifikasi.');
+                setKycStatus(target, `${target.previewLabel} Dokumen bisa dikirim untuk verifikasi.`);
             } else {
-                resetKycPreview();
+                resetKycPreview(target);
                 if (title) title.textContent = file.name;
-                setKycStatus(`${file.name} siap dikirim untuk verifikasi. Preview hanya tersedia untuk JPG/PNG.`);
+                setKycStatus(target, `${file.name} siap dikirim untuk verifikasi. Preview hanya tersedia untuk JPG/PNG.`);
             }
             validateKyc();
         }
 
-        drop?.addEventListener('click', (event) => {
-            if (event.target === fileInput) return;
-            fileInput?.click();
-        });
+        uploadDrops.forEach((target) => {
+            const { drop, input } = target;
 
-        fileInput?.addEventListener('change', () => {
-            handleKycFile(fileInput.files[0]);
-        });
-
-        ['dragenter', 'dragover'].forEach((eventName) => {
-            drop?.addEventListener(eventName, (event) => {
+            drop?.addEventListener('click', (event) => {
+                if (event.target === input) return;
                 event.preventDefault();
-                drop.classList.add('is-dragging');
+                event.stopPropagation();
+                input?.click();
             });
-        });
 
-        ['dragleave', 'drop'].forEach((eventName) => {
-            drop?.addEventListener(eventName, (event) => {
-                event.preventDefault();
-                drop.classList.remove('is-dragging');
+            input?.addEventListener('change', () => {
+                handleKycFile(input.files[0], target);
             });
-        });
 
-        drop?.addEventListener('drop', (event) => {
-            const file = event.dataTransfer?.files?.[0];
-            if (!file || !fileInput) return;
-            const transfer = new DataTransfer();
-            transfer.items.add(file);
-            fileInput.files = transfer.files;
-            handleKycFile(file);
+            ['dragenter', 'dragover'].forEach((eventName) => {
+                drop?.addEventListener(eventName, (event) => {
+                    event.preventDefault();
+                    drop.classList.add('is-dragging');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach((eventName) => {
+                drop?.addEventListener(eventName, (event) => {
+                    event.preventDefault();
+                    drop.classList.remove('is-dragging');
+                });
+            });
+
+            drop?.addEventListener('drop', (event) => {
+                const file = event.dataTransfer?.files?.[0];
+                if (!file || !input) return;
+                const transfer = new DataTransfer();
+                transfer.items.add(file);
+                input.files = transfer.files;
+                handleKycFile(file, target);
+            });
         });
 
         kycForm?.addEventListener('submit', (event) => {
-            const { validNik, hasFile } = validateKyc();
-            if (!validNik || !hasFile) {
+            const { validNik, hasUploads, missingUpload } = validateKyc();
+            if (!validNik || !hasUploads) {
                 event.preventDefault();
-                const message = !validNik ? 'Isi NIK 16 digit dulu sebelum submit KYC.' : 'Upload dokumen KTP dulu sebelum submit.';
-                setKycStatus(message, true);
+                const message = !validNik ? 'Isi NIK 16 digit dulu sebelum submit KYC.' : missingUpload?.missingMessage || 'Upload dokumen KYC dulu sebelum submit.';
+                if (missingUpload) setKycStatus(missingUpload, message, true);
                 showToast(message, 'error');
                 return;
             }
@@ -382,11 +458,10 @@
                 input.readOnly = false;
             }
         });
-
-
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        initDashboardPageTransitions();
         initOverview();
         initTransactions();
         initWallet();
