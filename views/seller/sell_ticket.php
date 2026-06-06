@@ -29,7 +29,8 @@ ob_start();
         <p class="sg-list-status <?= $flash['type'] === 'error' ? 'is-error' : '' ?>"><?= sg_h($flash['message']) ?></p>
     <?php endif; ?>
 
-    <form id="listingForm" class="sg-auction-grid" action="index.php?page=sell_ticket" method="post" enctype="multipart/form-data">
+    <form id="listingForm" class="sg-auction-grid" action="index.php?page=sell_ticket" method="post"
+        enctype="multipart/form-data">
         <input type="hidden" name="sg_action" value="create_listing">
 
         <div class="sg-auction-stack">
@@ -43,7 +44,7 @@ ob_start();
                     #eventThumbnail::-webkit-file-upload-button,
                     #eventThumbnail::file-selector-button {
                         background: #1a1e28;
-                        border: 1px solid rgba(255,255,255,0.1);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
                         color: #c8c3ba;
                         padding: 8px 14px;
                         border-radius: 4px;
@@ -55,6 +56,7 @@ ob_start();
                         transition: all 0.2s ease;
                         vertical-align: middle;
                     }
+
                     #eventThumbnail::-webkit-file-upload-button:hover,
                     #eventThumbnail::file-selector-button:hover {
                         background: rgba(217, 255, 0, 0.1);
@@ -65,19 +67,23 @@ ob_start();
                 <div class="sg-auction-input-grid">
                     <label style="grid-column: span 3;">
                         <span>Thumbnail / Poster Event (JPG/PNG, Max 5MB)</span>
-                        <input id="eventThumbnail" name="event_thumbnail" type="file" accept=".jpg,.jpeg,.png" required style="padding: 11px 16px; height: 58px; box-sizing: border-box; line-height: normal;">
+                        <input id="eventThumbnail" name="event_thumbnail" type="file" accept=".jpg,.jpeg,.png" required
+                            style="padding: 11px 16px; height: 58px; box-sizing: border-box; line-height: normal;">
                     </label>
                     <label style="grid-column: span 3;">
                         <span>Nama Acara / Konser</span>
-                        <input id="eventTitle" name="event_title" type="text" placeholder="Contoh: Coldplay - Music of the Spheres" maxlength="200" required>
+                        <input id="eventTitle" name="event_title" type="text"
+                            placeholder="Contoh: Coldplay - Music of the Spheres" maxlength="200" required>
                     </label>
                     <label style="grid-column: span 2;">
                         <span>Lokasi (Venue)</span>
-                        <input id="eventVenue" name="event_venue" type="text" placeholder="Contoh: Gelora Bung Karno" maxlength="200" required>
+                        <input id="eventVenue" name="event_venue" type="text" placeholder="Contoh: Gelora Bung Karno"
+                            maxlength="200" required>
                     </label>
                     <label style="grid-column: span 1;">
                         <span>Kota</span>
-                        <input id="eventCity" name="event_city" type="text" placeholder="Jakarta" maxlength="100" style="min-width: 0; width: 100%; box-sizing: border-box;" required>
+                        <input id="eventCity" name="event_city" type="text" placeholder="Jakarta" maxlength="100"
+                            style="min-width: 0; width: 100%; box-sizing: border-box;" required>
                     </label>
                     <label style="grid-column: span 1;">
                         <span>Tanggal Acara</span>
@@ -89,7 +95,11 @@ ob_start();
                     </label>
                     <label style="grid-column: span 3;">
                         <span>Kategori Tiket, Benefit, dan Alasan Jual</span>
-                        <textarea id="eventDescription" name="event_description" placeholder="Sebutkan kategori tiket (misal VIP Platinum), apa saja benefitnya, dan kenapa tiket ini dijual..." rows="3" style="width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 8px;" required></textarea>
+                        <textarea id="eventDescription" name="event_description"
+                            placeholder="Sebutkan kategori tiket (misal VIP Platinum), apa saja benefitnya, dan kenapa tiket ini dijual..."
+                            rows="3"
+                            style="width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 8px;"
+                            required></textarea>
                     </label>
                 </div>
             </section>
@@ -103,18 +113,17 @@ ob_start();
                     <button type="button" id="btnFixedPrice">Fixed Price</button>
                     <button type="button" id="btnAuction" class="is-active">Auction</button>
                 </div>
-                <div class="sg-auction-input-grid" id="pricingInputsGrid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+                <div class="sg-auction-input-grid" id="pricingInputsGrid"
+                    style="grid-template-columns: repeat(3, minmax(0, 1fr));">
                     <label id="labelFaceValue">
                         <span>Face Value / Harga Asli (Rp)</span>
-                        <input id="faceValuePrice" name="face_value" type="text" inputmode="numeric" placeholder="Contoh: 1500000" required>
+                        <input id="faceValuePrice" name="face_value" type="text" inputmode="numeric"
+                            placeholder="Contoh: 1500000" required>
                     </label>
                     <label id="labelStartingBid">
                         <span id="textStartingBid">Starting Bid (Rp)</span>
-                        <input id="sellingPrice" name="starting_bid" type="text" inputmode="numeric" placeholder="Contoh: 2000000" required>
-                    </label>
-                    <label id="labelReservePrice">
-                        <span>Reserve Price (Rp)</span>
-                        <input id="reservePrice" name="reserve_price" type="text" placeholder="Min. price to sell">
+                        <input id="sellingPrice" name="starting_bid" type="text" inputmode="numeric"
+                            placeholder="Contoh: 2000000" required>
                     </label>
                     <label id="labelDuration">
                         <span>Waktu Lelang</span>
@@ -131,7 +140,8 @@ ob_start();
                     <label id="customDurationWrap" hidden>
                         <span>Durasi Custom</span>
                         <div class="sg-number-stepper">
-                            <input id="customDuration" name="custom_duration" type="number" min="1" max="43200" step="1" placeholder="Contoh: 30">
+                            <input id="customDuration" name="custom_duration" type="number" min="1" max="43200" step="1"
+                                placeholder="Contoh: 30">
                             <div class="sg-number-stepper-actions" aria-label="Kontrol durasi custom">
                                 <button type="button" data-stepper-action="up" aria-label="Tambah durasi">
                                     <iconify-icon icon="ph:caret-up-bold"></iconify-icon>
@@ -187,12 +197,23 @@ ob_start();
             <section class="sg-panel sg-auction-summary">
                 <h2>Auction Summary</h2>
                 <dl>
-                    <div><dt>Listing Type</dt><dd>Auction (Timed)</dd></div>
-                    <div><dt>Security Deposit</dt><dd>Locked by SafeGate</dd></div>
-                    <div><dt>Success Fee</dt><dd class="text-safegate-neon">5% from Final Bid</dd></div>
+                    <div>
+                        <dt>Listing Type</dt>
+                        <dd>Auction (Timed)</dd>
+                    </div>
+                    <div>
+                        <dt>Security Deposit</dt>
+                        <dd>Locked by SafeGate</dd>
+                    </div>
+                    <div>
+                        <dt>Success Fee</dt>
+                        <dd class="text-safegate-neon">5% from Final Bid</dd>
+                    </div>
                 </dl>
-                <div class="sg-auction-note"><iconify-icon icon="ph:shield-check"></iconify-icon> Tiket akan diverifikasi secara otomatis oleh sistem kami sebelum dilepas ke publik.</div>
-                <button id="listTicketButton" class="sg-start-auction" type="button">Start Auction <iconify-icon icon="ph:lightning"></iconify-icon></button>
+                <div class="sg-auction-note"><iconify-icon icon="ph:shield-check"></iconify-icon> Tiket akan
+                    diverifikasi secara otomatis oleh sistem kami sebelum dilepas ke publik.</div>
+                <button id="listTicketButton" class="sg-start-auction" type="button">Start Auction <iconify-icon
+                        icon="ph:lightning"></iconify-icon></button>
                 <p class="sg-list-status" id="listStatus" aria-live="polite"></p>
                 <div class="sg-encryption-strip">
                     <strong><i></i> Encryption Active</strong>
