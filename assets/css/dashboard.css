@@ -54,7 +54,7 @@
 .sg-buyer-main>.sg-buyer-content,
 .sg-buyer-main>section {
     transform-origin: 50% 0;
-    will-change: opacity, transform, filter;
+    will-change: opacity, transform;
 }
 
 .sg-dashboard-page-ready .sg-dashboard-main>section,
@@ -1313,7 +1313,8 @@
 .sg-number-stepper input[type="number"] {
     width: 100%;
     padding-right: 52px;
-    -moz-appearance: textfield;
+    -moz-appearance: textfield; /* Firefox fallback */
+    appearance: textfield;
 }
 
 .sg-number-stepper input[type="number"]::-webkit-outer-spin-button,
@@ -4947,12 +4948,13 @@
     margin-top: 9px;
     color: #9aa6b8;
     font-size: 11.5px;
-    font-weight: 650;
+    font-weight: 600;
     line-height: 1.5;
     letter-spacing: .01em;
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
+    line-clamp: 3;
     overflow: hidden;
 }
 
