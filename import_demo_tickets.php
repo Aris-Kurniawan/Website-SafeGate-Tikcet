@@ -13,23 +13,73 @@ if (!$userId) {
     exit;
 }
 
-// 1. Pastikan demo events terisi
-sg_ensure_demo_events();
+// 1. Pastikan demo events terisi secara aman
+$demoEventsData = [
+    [
+        'title' => 'The Eras Tour - London',
+        'venue' => 'Wembley Stadium',
+        'city' => 'London, UK',
+        'date' => '2026-08-17 19:00:00',
+        'time' => '19:00:00',
+        'desc' => 'Join Taylor Swift for a legendary journey through her musical eras.'
+    ],
+    [
+        'title' => 'Coldplay Music of the Spheres',
+        'venue' => 'GBK Stadium',
+        'city' => 'Jakarta',
+        'date' => '2026-09-08 20:00:00',
+        'time' => '20:00:00',
+        'desc' => 'Coldplay live concert with verified SafeGate access.'
+    ],
+    [
+        'title' => 'Premier League: London Derby',
+        'venue' => 'London Stadium',
+        'city' => 'London, UK',
+        'date' => '2026-10-12 18:30:00',
+        'time' => '18:30:00',
+        'desc' => 'Premium football seat with official listing verification.'
+    ]
+];
 
-// Ambil ID event
-$events = sg_fetch_all('SELECT id, title FROM events LIMIT 3');
-if (count($events) < 3) {
-    echo "Gagal mengambil data event demo.";
+$eventIds = [];
+foreach ($demoEventsData as $ed) {
+    $existing = sg_fetch_one('SELECT id FROM events WHERE title = :title LIMIT 1', ['title' => $ed['title']]);
+    if ($existing) {
+        $eventIds[] = $existing['id'];
+    } else {
+        $created = sg_execute(
+            'INSERT INTO events (title, venue, city, event_date, event_time, description)
+             VALUES (:title, :venue, :city, :event_date, :event_time, :description)',
+            [
+                'title' => $ed['title'],
+                'venue' => $ed['venue'],
+                'city' => $ed['city'],
+                'event_date' => $ed['date'],
+                'event_time' => $ed['time'],
+                'description' => $ed['desc']
+            ]
+        );
+        if ($created) {
+            $db = sg_db();
+            $eventIds[] = $db->lastInsertId();
+        }
+    }
+}
+
+if (count($eventIds) < 3) {
+    echo "Gagal memproses data event demo.";
     exit;
 }
 
-$sellerId = 5; // Verified Vendor
+// Ambil salah satu seller yang valid di database untuk menghindari error foreign key
+$sellerRow = sg_fetch_one("SELECT id FROM users WHERE role = 'seller' LIMIT 1");
+$sellerId = $sellerRow ? (int) $sellerRow['id'] : $userId;
 
 // Buat beberapa tiket dummy
 $ticketsData = [
     [
-        'event_id' => $events[0]['id'],
-        'title' => $events[0]['title'],
+        'event_id' => $eventIds[0],
+        'title' => $demoEventsData[0]['title'],
         'section' => 'VVIP-1',
         'row' => 'A',
         'seat' => '12',
@@ -37,8 +87,8 @@ $ticketsData = [
         'proof' => 'assets/uploads/tickets/sample_eras.pdf'
     ],
     [
-        'event_id' => $events[1]['id'],
-        'title' => $events[1]['title'],
+        'event_id' => $eventIds[1],
+        'title' => $demoEventsData[1]['title'],
         'section' => 'CAT-2',
         'row' => 'F',
         'seat' => '24',
@@ -46,8 +96,8 @@ $ticketsData = [
         'proof' => 'assets/uploads/tickets/sample_coldplay.pdf'
     ],
     [
-        'event_id' => $events[2]['id'],
-        'title' => $events[2]['title'],
+        'event_id' => $eventIds[2],
+        'title' => $demoEventsData[2]['title'],
         'section' => 'WEST-B',
         'row' => 'K',
         'seat' => '07',
