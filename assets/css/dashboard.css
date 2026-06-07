@@ -6192,3 +6192,10 @@
         zoom: 1.1;
     }
 }
+
+/* Fix overview layout for mobile: stack the sales chart and operations/alerts panels vertically */
+@media (max-width: 860px) {
+    .sg-overview-page .sg-overview-grid {
+        grid-template-columns: 1fr !important;
+    }
+}

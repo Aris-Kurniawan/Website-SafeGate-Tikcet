@@ -13,8 +13,15 @@ $notifications = sg_get_notifications($seller_id, 5);
 $unread_notifications = sg_unread_notification_count($seller_id);
 $flash = sg_flash();
 
+// Mark all notifications for this seller as read in database on page load
+if ($seller_id > 0) {
+    sg_execute('UPDATE notifications SET is_read = 1 WHERE user_id = :user_id AND is_read = 0', ['user_id' => $seller_id]);
+}
+
 ob_start();
 ?>
+
+
 
 <section class="sg-vendor-page sg-overview-page">
     <header class="sg-vendor-topline">

@@ -14,6 +14,42 @@
     <script src="<?= $assets_path ?>/js/utils.js"></script>
     <script defer src="<?= $assets_path ?>/js/dashboard-interactions.js"></script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <style>
+    /* Buyer dashboard mobile responsiveness overrides */
+    @media (max-width: 860px) {
+        /* Force the navigation menu items to stack vertically downwards */
+        .sg-buyer-sidebar .sg-buyer-nav {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 4px !important;
+            padding: 12px 16px !important;
+        }
+
+        /* Hide all sections of the sidebar when collapsed on mobile */
+        .sg-buyer-frame.sg-sidebar-collapsed .sg-seller-card,
+        .sg-buyer-frame.sg-sidebar-collapsed .sg-buyer-nav,
+        .sg-buyer-frame.sg-sidebar-collapsed .sg-sidebar-footer {
+            display: none !important;
+        }
+
+        .sg-buyer-sidebar .sg-buyer-nav a {
+            width: 100% !important;
+            min-height: 48px !important;
+            border-radius: 6px !important;
+        }
+
+        /* Adjust layout and padding of cards and footers to match the vertical stack */
+        .sg-buyer-sidebar .sg-seller-card {
+            padding: 16px 20px !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+        }
+
+        .sg-buyer-sidebar .sg-sidebar-footer {
+            padding: 12px 16px !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+        }
+    }
+    </style>
 </head>
 <body class="bg-safegate-bg text-white sg-buyer-shell sg-buyer-page-<?= sg_h($buyer_page ?? 'dashboard') ?>">
     <div class="sg-buyer-frame">

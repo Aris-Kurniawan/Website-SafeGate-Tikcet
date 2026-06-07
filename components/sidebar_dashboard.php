@@ -678,7 +678,7 @@ $sidebar_unread_count = $sidebar_seller_id > 0 ? sg_unread_notification_count($s
         <a class="<?= $dashboard_page === 'overview' ? 'is-active' : '' ?> d-flex align-items-center" href="<?= $asset_prefix ?>index.php?page=seller_overview">
             <iconify-icon icon="ph:squares-four"></iconify-icon>
             <span>Overview</span>
-            <?php if ($sidebar_unread_count > 0): ?>
+            <?php if ($sidebar_unread_count > 0 && $dashboard_page !== 'overview'): ?>
                 <span class="badge rounded-pill bg-danger ms-auto" style="font-size: 11px; padding: 4px 8px;"><?= $sidebar_unread_count ?></span>
             <?php endif; ?>
         </a>
