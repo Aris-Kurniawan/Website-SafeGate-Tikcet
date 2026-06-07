@@ -28,10 +28,10 @@ echo "Mengimpor data ke database 'safegate_db'...\n";
 try {
     // Menonaktifkan penyiapan query emulasi untuk mengizinkan multi-query jika perlu
     $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
-    
+
     // Eksekusi seluruh isi file SQL
     $db->exec($sql);
-    
+
     echo "--------------------------------------------------------\n";
     echo "SUKSES! Semua data dummy berhasil diimpor ke database.\n";
     echo "Akun percobaan yang siap digunakan:\n";

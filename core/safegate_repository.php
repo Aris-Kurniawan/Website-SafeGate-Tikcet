@@ -322,6 +322,9 @@ function sg_ensure_buyer_finance_schema(): void
     if (!sg_column_exists('disputes', 'reported_by')) {
         sg_execute('ALTER TABLE disputes ADD COLUMN reported_by ENUM("buyer", "seller") DEFAULT "buyer" AFTER seller_id');
     }
+
+    // Pastikan ENUM payment_method pada tabel transactions menyertakan 'midtrans'
+    sg_execute("ALTER TABLE transactions MODIFY COLUMN payment_method ENUM('bank_transfer', 'dana', 'gopay', 'ovo', 'usdc', 'midtrans') NOT NULL");
 }
 
 function sg_ensure_listing_status_schema(): void

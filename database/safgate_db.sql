@@ -128,7 +128,7 @@ CREATE TABLE transactions (
     total_amount BIGINT NOT NULL,
     platform_revenue BIGINT NOT NULL,
     seller_earning BIGINT NOT NULL,
-    payment_method ENUM('bank_transfer', 'dana', 'gopay', 'ovo', 'usdc') NOT NULL,
+    payment_method ENUM('bank_transfer', 'dana', 'gopay', 'ovo', 'usdc', 'midtrans') NOT NULL,
     payment_status ENUM('pending', 'paid', 'failed', 'refunded') DEFAULT 'pending',
     escrow_status ENUM('holding', 'released', 'refunded', 'disputed') DEFAULT 'holding',
     buyer_ticket_status ENUM('pending_use', 'confirmed_used', 'reported_issue') DEFAULT 'pending_use',
