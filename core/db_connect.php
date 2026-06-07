@@ -24,10 +24,10 @@ function sg_env(string $key, string $default = ''): string
     return $value === false || $value === '' || $value === null ? $default : (string) $value;
 }
 
-define('SG_DB_HOST', sg_env('SG_DB_HOST', 'localhost'));
-define('SG_DB_NAME', sg_env('SG_DB_NAME', 'safegate_db'));
-define('SG_DB_USER', sg_env('SG_DB_USER', 'root'));
-define('SG_DB_PASS', sg_env('SG_DB_PASS', ''));
+define('SG_DB_HOST', sg_env('DB_HOST', sg_env('SG_DB_HOST', 'localhost')));
+define('SG_DB_NAME', sg_env('DB_NAME', sg_env('SG_DB_NAME', 'safegate_db')));
+define('SG_DB_USER', sg_env('DB_USER', sg_env('SG_DB_USER', 'root')));
+define('SG_DB_PASS', sg_env('DB_PASS', sg_env('SG_DB_PASS', '')));
 
 // Midtrans Configurations (Default Sandbox from User)
 define('SG_MIDTRANS_SERVER_KEY', sg_env('SG_MIDTRANS_SERVER_KEY'));
