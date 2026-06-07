@@ -7,6 +7,7 @@ ob_start();
 ?>
 
 <style>
+/* Date Picker Reset */
 .sg-home-search input[type="date"]::-webkit-calendar-picker-indicator {
     opacity: 0;
     display: none;
@@ -16,21 +17,175 @@ ob_start();
     appearance: none;
     -webkit-appearance: none;
 }
+
+/* Responsive Hero Section */
+.sg-hero-section {
+    max-width: 1200px; 
+    padding-left: 1.5rem; 
+    padding-right: 1.5rem; 
+    margin-top: 3rem; 
+    margin-bottom: 3rem;
+}
+
+/* Responsive Title */
+.sg-hero-title {
+    font-size: clamp(2rem, 5vw, 4.2rem) !important;
+    line-height: 1.15 !important;
+}
+
+/* Responsive Search Form styling */
+.sg-home-search {
+    background: rgba(18, 22, 31, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    max-width: 560px;
+    min-height: 56px;
+    padding: 0.35rem;
+    display: flex;
+    align-items: center;
+    border-radius: 50rem; /* pill shape on desktop and mobile */
+    gap: 0;
+}
+
+.sg-search-col-q {
+    flex: 1 1 30%;
+    min-width: 0;
+}
+
+.sg-search-col-date {
+    flex: 1 1 32%;
+    min-width: 0;
+    border-left: 1px solid rgba(255,255,255,0.08);
+}
+
+.sg-search-col-loc {
+    flex: 1 1 24%;
+    min-width: 0;
+    border-left: 1px solid rgba(255,255,255,0.08);
+}
+
+.sg-search-col-btn {
+    flex: 0 0 auto;
+    min-width: 130px;
+}
+
+/* Floating badge responsive positions */
+.sg-hero-badge {
+    bottom: 3rem; 
+    left: 0; 
+    margin-left: -2rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+    .sg-hero-badge {
+        left: 50%;
+        transform: translateX(-50%);
+        margin-left: 0;
+        bottom: -0.75rem;
+        width: 90%;
+        text-align: center;
+        padding: 0.4rem 0.6rem !important;
+    }
+
+    .sg-hero-badge .fs-1 {
+        font-size: 1.2rem !important;
+    }
+    
+    .sg-hero-badge div {
+        font-size: 0.45rem !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .sg-hero-badge-pill {
+        font-size: 0.5rem !important;
+        padding: 0.25rem 0.5rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    .sg-hero-section {
+        margin-top: 1.5rem;
+        margin-bottom: 2rem;
+        padding-top: 1rem !important;
+        padding-bottom: 2rem !important; /* normal padding since search bar is in normal flow */
+    }
+
+    .sg-hero-title {
+        font-size: clamp(1.45rem, 6.5vw, 2.2rem) !important; /* Slightly enlarged and fully responsive */
+        line-height: 1.2 !important;
+    }
+
+    .safegate-logo-box {
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 6px !important;
+        box-shadow: 0 0 10px rgba(217, 255, 0, 0.4) !important;
+    }
+
+    .safegate-logo-box svg {
+        width: 14px !important;
+        height: 14px !important;
+        stroke-width: 3.5 !important;
+    }
+
+    .sg-hero-title .d-flex {
+        gap: 0.5rem !important;
+    }
+
+    .sg-home-search-wrapper {
+        margin-top: 2.5rem !important; /* pushes it below the columns in normal flow */
+        width: 100%;
+        display: block;
+    }
+
+    .sg-home-search {
+        min-height: 44px;
+        padding: 0.2rem;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .sg-home-search input {
+        font-size: 0.6rem !important;
+    }
+
+    .sg-home-search iconify-icon {
+        font-size: 0.8rem !important;
+    }
+
+    .sg-search-col-q,
+    .sg-search-col-date,
+    .sg-search-col-loc {
+        flex: 1 1 30%;
+        padding-left: 0.4rem !important;
+        padding-right: 0.2rem !important;
+        gap: 0.2rem !important;
+    }
+
+    .sg-search-col-btn {
+        flex: 0 0 auto;
+        min-width: 70px;
+    }
+
+    .sg-search-col-btn button {
+        font-size: 0.6rem !important;
+        padding: 0.4rem 0.8rem !important;
+    }
+}
 </style>
 
 <!-- Hero Section -->
-<section class="container-fluid mx-auto py-5 position-relative overflow-hidden"
-    style="max-width: 1200px; padding-left: 1.5rem; padding-right: 1.5rem; margin-top: 3rem; margin-bottom: 3rem;">
-    <div class="row align-items-center position-relative z-1" style="row-gap: 4rem;">
+<section class="container-fluid mx-auto py-5 position-relative overflow-hidden sg-hero-section">
+    <div class="row align-items-center position-relative z-1" style="row-gap: 2rem;">
         <!-- Left Content -->
-        <div class="col-12 col-lg-6 d-flex flex-column align-items-start">
-            <div class="d-flex align-items-center gap-2 rounded-pill mb-4 px-3 py-2"
+        <div class="col-7 col-lg-6 d-flex flex-column align-items-start">
+            <div class="d-flex align-items-center gap-2 rounded-pill mb-4 px-3 py-2 sg-hero-badge-pill"
                 style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); font-size: 0.6rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em;">
                 <span class="bg-safegate-neon rounded-circle" style="width: 6px; height: 6px;"></span>
                 <span class="text-safegate-neon">Institutional Security Layer</span>
             </div>
 
-            <h1 class="display-3 fw-bold text-white mb-4" style="line-height: 1.1; letter-spacing: -0.02em;">
+            <h1 class="display-3 fw-bold text-white mb-4 sg-hero-title" style="line-height: 1.1; letter-spacing: -0.02em;">
                 <span class="d-flex align-items-center gap-3 mb-2">
                     <span class="safegate-logo-box mt-2" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 0 24px rgba(217, 255, 0, 0.4);">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#090B10" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;">
@@ -44,52 +199,52 @@ ob_start();
                 Tanpa Penipuan.
             </h1>
 
-            <p class="text-safegate-text-sec mb-5" style="font-size: 0.95rem; line-height: 1.6; max-width: 28rem;">
+            <p class="text-safegate-text-sec mb-5 d-none d-md-block" style="font-size: 0.95rem; line-height: 1.6; max-width: 28rem;">
                 Dana terjamin di sistem Escrow hingga proses transaksi selesai. Hanya untuk penjual terverifikasi.
                 Nikmati pasar sekunder dengan keamanan standar institusi.
             </p>
 
-            <!-- Search Bar -->
-            <form action="index.php" method="get" class="w-100 rounded-pill d-flex align-items-center shadow-lg sg-home-search"
-                style="background: rgba(18, 22, 31, 0.72); border: 1px solid rgba(255, 255, 255, 0.08); max-width: 560px; min-height: 56px; padding: 0.35rem; gap: 0;">
-                <input type="hidden" name="page" value="penjualan">
-                <div class="d-flex align-items-center gap-2 px-3 py-1" style="flex: 1 1 30%; min-width: 0;">
-                    <iconify-icon icon="ph:magnifying-glass" class="text-safegate-neon" style="font-size: 1rem;"></iconify-icon>
-                    <input type="text" name="q" placeholder="Event or"
-                        class="bg-transparent border-0 text-white w-100 form-control shadow-none p-0"
-                        style="font-size: 0.74rem; min-width: 0;">
-                </div>
-                <div class="d-flex align-items-center gap-2 px-3 py-1"
-                    style="flex: 1 1 32%; min-width: 0; border-left: 1px solid rgba(255,255,255,0.08);">
-                    <iconify-icon icon="ph:calendar-blank" class="text-safegate-text-sec" style="font-size: 1rem;"></iconify-icon>
-                    <input type="text" name="date" placeholder="Tanggal"
-                        class="bg-transparent border-0 text-white w-100 form-control shadow-none p-0"
-                        style="font-size: 0.74rem; min-width: 0;">
-                </div>
-                <div class="d-flex align-items-center gap-2 px-3 py-1"
-                    style="flex: 1 1 24%; min-width: 0; border-left: 1px solid rgba(255,255,255,0.08);">
-                    <iconify-icon icon="ph:map-pin" class="text-safegate-text-sec" style="font-size: 1rem;"></iconify-icon>
-                    <input type="text" name="location" placeholder="Tempat"
-                        class="bg-transparent border-0 text-white w-100 form-control shadow-none p-0"
-                        style="font-size: 0.74rem; min-width: 0;">
-                </div>
-                <button type="submit" class="btn btn-safegate-neon rounded-pill fw-bold"
-                    style="font-size: 0.74rem; padding: 0.75rem 1.8rem; min-width: 130px; flex: 0 0 auto;">
-                    SEARCH
-                </button>
-            </form>
+            <!-- Search Bar Wrapper -->
+            <div class="sg-home-search-wrapper w-100 d-none d-md-block">
+                <form action="index.php" method="get" class="w-100 shadow-lg sg-home-search">
+                    <input type="hidden" name="page" value="penjualan">
+                    <div class="d-flex align-items-center gap-2 px-3 py-1 sg-search-col-q">
+                        <iconify-icon icon="ph:magnifying-glass" class="text-safegate-neon" style="font-size: 1rem;"></iconify-icon>
+                        <input type="text" name="q" placeholder="Event or Artist"
+                            class="bg-transparent border-0 text-white w-100 form-control shadow-none p-0"
+                            style="font-size: 0.74rem; min-width: 0;">
+                    </div>
+                    <div class="d-flex align-items-center gap-2 px-3 py-1 sg-search-col-date">
+                        <iconify-icon icon="ph:calendar-blank" class="text-safegate-text-sec" style="font-size: 1rem;"></iconify-icon>
+                        <input type="text" name="date" placeholder="Tanggal"
+                            class="bg-transparent border-0 text-white w-100 form-control shadow-none p-0"
+                            style="font-size: 0.74rem; min-width: 0;">
+                    </div>
+                    <div class="d-flex align-items-center gap-2 px-3 py-1 sg-search-col-loc">
+                        <iconify-icon icon="ph:map-pin" class="text-safegate-text-sec" style="font-size: 1rem;"></iconify-icon>
+                        <input type="text" name="location" placeholder="Tempat"
+                            class="bg-transparent border-0 text-white w-100 form-control shadow-none p-0"
+                            style="font-size: 0.74rem; min-width: 0;">
+                    </div>
+                    <div class="sg-search-col-btn">
+                        <button type="submit" class="btn btn-safegate-neon rounded-pill fw-bold w-100"
+                            style="font-size: 0.74rem; padding: 0.75rem 1.8rem; min-height: 44px; display: flex; align-items: center; justify-content: center;">
+                            SEARCH
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <!-- Right Content / Image -->
-        <div
-            class="col-12 col-lg-6 position-relative d-flex justify-content-lg-end justify-content-center mt-5 mt-lg-0">
+        <div class="col-5 col-lg-6 position-relative d-flex justify-content-lg-end justify-content-center mt-0">
             <!-- Glow effect behind image -->
             <div class="position-absolute bg-safegate-neon rounded-circle"
                 style="opacity: 0.15; filter: blur(120px); top: 10%; left: 10%; right: 10%; bottom: 10%; z-index: -1;">
             </div>
 
             <div class="position-relative"
-                style="width: 100%; max-width: 500px; aspect-ratio: 1; border-radius: 2rem; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05);">
+                style="width: 100%; max-width: 500px; aspect-ratio: 1; border-radius: 2rem; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255, 255, 255, 0.05);">
                 <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=800"
                     alt="Dashboard interaction" class="w-100 h-100 object-fit-cover">
                 <!-- Overlay Gradient -->
@@ -99,12 +254,42 @@ ob_start();
             </div>
 
             <!-- Floating Badge -->
-            <div class="position-absolute bg-safegate-neon text-black rounded-4 shadow"
-                style="bottom: 3rem; left: 0; padding: 1.25rem 1.5rem; z-index: 2; box-shadow: 0 10px 40px rgba(217,255,0,0.25); margin-left: -2rem;">
+            <div class="position-absolute bg-safegate-neon text-black rounded-4 shadow sg-hero-badge"
+                style="padding: 1.25rem 1.5rem; z-index: 2; box-shadow: 0 10px 40px rgba(217, 255, 0, 0.25);">
                 <div class="fs-1 fw-bold mb-0" style="font-weight: 900; letter-spacing: -0.05em;">99.8%</div>
-                <div class="fw-bold text-uppercase mt-1" style="font-size: 0.55rem; letter-spacing: 0.15em;">Verifikasi
-                    Sukses</div>
+                <div class="fw-bold text-uppercase mt-1" style="font-size: 0.55rem; letter-spacing: 0.15em;">Verifikasi Sukses</div>
             </div>
+        </div>
+
+        <!-- Search Bar Mobile Row -->
+        <div class="col-12 sg-home-search-wrapper d-block d-md-none">
+            <form action="index.php" method="get" class="w-100 shadow-lg sg-home-search">
+                <input type="hidden" name="page" value="penjualan">
+                <div class="d-flex align-items-center gap-2 px-3 py-1 sg-search-col-q">
+                    <iconify-icon icon="ph:magnifying-glass" class="text-safegate-neon" style="font-size: 1rem;"></iconify-icon>
+                    <input type="text" name="q" placeholder="Event or Artist"
+                        class="bg-transparent border-0 text-white w-100 form-control shadow-none p-0"
+                        style="font-size: 0.74rem; min-width: 0;">
+                </div>
+                <div class="d-flex align-items-center gap-2 px-3 py-1 sg-search-col-date">
+                    <iconify-icon icon="ph:calendar-blank" class="text-safegate-text-sec" style="font-size: 1rem;"></iconify-icon>
+                    <input type="text" name="date" placeholder="Tanggal"
+                        class="bg-transparent border-0 text-white w-100 form-control shadow-none p-0"
+                        style="font-size: 0.74rem; min-width: 0;">
+                </div>
+                <div class="d-flex align-items-center gap-2 px-3 py-1 sg-search-col-loc">
+                    <iconify-icon icon="ph:map-pin" class="text-safegate-text-sec" style="font-size: 1rem;"></iconify-icon>
+                    <input type="text" name="location" placeholder="Tempat"
+                        class="bg-transparent border-0 text-white w-100 form-control shadow-none p-0"
+                        style="font-size: 0.74rem; min-width: 0;">
+                </div>
+                <div class="sg-search-col-btn">
+                    <button type="submit" class="btn btn-safegate-neon rounded-pill fw-bold w-100"
+                        style="font-size: 0.74rem; padding: 0.75rem 1.8rem; min-height: 44px; display: flex; align-items: center; justify-content: center;">
+                        SEARCH
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </section>
