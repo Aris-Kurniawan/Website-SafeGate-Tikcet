@@ -45,6 +45,17 @@ $current_bid_value = $listing ? (int) ($listing['current_highest_bid'] ?: $listi
 $listing_available = $listing && in_array($listing['listing_status'], ['active', 'promoted'], true);
 $reserve_met = !$listing || $reserve_price <= 0 || $current_bid_value >= $reserve_price;
 $current_user_id = sg_current_user_id();
+if ($current_user_id && $listing_id > 0) {
+    $hasWonPending = sg_fetch_one(
+        'SELECT id FROM bids 
+         WHERE listing_id = :listing_id AND bidder_id = :bidder_id AND is_winning_bid = 1 AND bid_status = "winner_pending_payment" LIMIT 1',
+        ['listing_id' => $listing_id, 'bidder_id' => $current_user_id]
+    );
+    if ($hasWonPending) {
+        header('Location: index.php?page=pembayaran&listing_id=' . $listing_id);
+        exit;
+    }
+}
 $is_own_listing = $listing && $current_user_id && (int) $listing['seller_id'] === (int) $current_user_id;
 $wallet_summary = $current_user_id ? sg_get_buyer_wallet_summary((int) $current_user_id) : ['available' => 0];
 $bid_deposit = sg_bid_deposit_amount();
@@ -75,11 +86,9 @@ if (strpos($clean_price, '.') !== false) {
 
 // Calculate breakdown dynamically
 if ($is_usdc) {
-    $service_fee = $price_val * 0.05;
-    $escrow_insurance = $price_val * 0.1111;
-    $service_fee = round($service_fee, 2);
-    $escrow_insurance = round($escrow_insurance, 2);
-    $total_price = $price_val + $service_fee + $escrow_insurance;
+    $service_fee = 0;
+    $escrow_insurance = 0;
+    $total_price = $price_val;
 
     $disp_price = number_format($price_val, 2, '.', '') . $currency_suffix;
     $disp_service = number_format($service_fee, 2, '.', '') . $currency_suffix;
@@ -89,9 +98,9 @@ if ($is_usdc) {
     $bid_placeholder = "0.00";
     $bid_currency = "USDC";
 } else {
-    $service_fee = round($price_val * 0.05);
-    $escrow_insurance = round($price_val * 0.11);
-    $total_price = $price_val + $service_fee + $escrow_insurance;
+    $service_fee = 0;
+    $escrow_insurance = 0;
+    $total_price = $price_val;
 
     $disp_price = $currency_prefix . number_format($price_val, 0, ',', '.');
     $disp_service = $currency_prefix . number_format($service_fee, 0, ',', '.');
@@ -275,19 +284,22 @@ $timer_seconds = $time_remaining % 60;
                             <div class="d-flex align-items-center gap-2">
                                 <div>
                                     <div id="timer-hours" class="sg-timer-number">
-                                        <?= str_pad($timer_hours, 2, '0', STR_PAD_LEFT) ?></div>
+                                        <?= str_pad($timer_hours, 2, '0', STR_PAD_LEFT) ?>
+                                    </div>
                                     <div class="sg-timer-label">Jam</div>
                                 </div>
                                 <div class="sg-timer-colon">:</div>
                                 <div>
                                     <div id="timer-minutes" class="sg-timer-number">
-                                        <?= str_pad($timer_minutes, 2, '0', STR_PAD_LEFT) ?></div>
+                                        <?= str_pad($timer_minutes, 2, '0', STR_PAD_LEFT) ?>
+                                    </div>
                                     <div class="sg-timer-label">Menit</div>
                                 </div>
                                 <div class="sg-timer-colon">:</div>
                                 <div>
                                     <div id="timer-seconds" class="sg-timer-number">
-                                        <?= str_pad($timer_seconds, 2, '0', STR_PAD_LEFT) ?></div>
+                                        <?= str_pad($timer_seconds, 2, '0', STR_PAD_LEFT) ?>
+                                    </div>
                                     <div class="sg-timer-label">Detik</div>
                                 </div>
                             </div>
@@ -300,8 +312,8 @@ $timer_seconds = $time_remaining % 60;
                             <?php if ($current_user_id && !$is_own_listing && $wallet_summary['available'] < $bid_deposit): ?>
                                 <div class="mb-3 p-3 rounded-3"
                                     style="background:rgba(255,210,64,.08);border:1px solid rgba(255,210,64,.2);color:#ffd98a;font-size:.78rem;">
-                                    Saldo jaminan kurang. Top up <?= sg_rupiah($bid_deposit) ?> di <a
-                                        href="index.php?page=buyer_wallet"
+                                    Saldo aktif kurang. Anda harus memiliki saldo aktif minimal
+                                    <?= sg_rupiah($bid_deposit) ?> di <a href="index.php?page=buyer_wallet"
                                         style="color:var(--safegate-neon);font-weight:800;">Wallet & Escrow</a> untuk ikut
                                     lelang.
                                 </div>
@@ -467,6 +479,7 @@ $timer_seconds = $time_remaining % 60;
                             seconds = 59;
                         } else {
                             clearInterval(interval);
+                            window.location.reload();
                         }
                     }
                 }

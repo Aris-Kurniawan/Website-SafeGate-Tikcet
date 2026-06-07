@@ -45,8 +45,25 @@ ob_start();
                             <span class="sg-buyer-chip">Escrow <?= sg_h($ticket['escrow_status']) ?></span>
                             <span
                                 class="sg-buyer-chip is-muted"><?= sg_h(str_replace('_', ' ', $ticket['buyer_ticket_status'] ?? 'pending_use')) ?></span>
-                            <?php if (!empty($ticket['dispute_status'])): ?>
-                                <span class="sg-buyer-chip is-danger">Dispute <?= sg_h($ticket['dispute_status']) ?></span>
+                            <?php if (!empty($ticket['dispute_status'])): 
+                                $dispStatus = $ticket['dispute_status'];
+                                $dispClass = 'is-danger';
+                                $dispLabel = 'Dispute ' . ucwords(str_replace('_', ' ', $dispStatus));
+                                if ($dispStatus === 'resolved_refund') {
+                                    $dispClass = 'bg-success text-white';
+                                    $dispLabel = 'Refund Disetujui Admin';
+                                } elseif ($dispStatus === 'resolved_release') {
+                                    $dispClass = 'bg-warning text-black';
+                                    $dispLabel = 'Claim Ditolak Admin';
+                                } elseif ($dispStatus === 'open') {
+                                    $dispClass = 'bg-danger text-white';
+                                    $dispLabel = 'Dispute Terbuka';
+                                } elseif ($dispStatus === 'under_review') {
+                                    $dispClass = 'bg-warning text-black';
+                                    $dispLabel = 'Dispute Ditinjau Admin';
+                                }
+                            ?>
+                                <span class="sg-buyer-chip <?= $dispClass ?>"><?= $dispLabel ?></span>
                             <?php endif; ?>
                         </div>
                         <h2><?= sg_h($ticket['title']) ?></h2>
@@ -75,16 +92,36 @@ ob_start();
                                 <strong class="fs-5"><?= sg_rupiah($ticket['total_amount']) ?></strong>
                             </div>
                             <div class="d-flex flex-wrap gap-2">
-                                <a class="sg-buyer-btn"
-                                    href="index.php?page=transaction_detail&code=<?= urlencode($ticket['transaction_code']) ?>">Detail</a>
-                                <?php if (($ticket['buyer_ticket_status'] ?? 'pending_use') === 'pending_use'): ?>
-                                    <a class="sg-buyer-btn is-neon"
-                                        href="index.php?page=ticket_verify&transaction_id=<?= (int) $ticket['transaction_id'] ?>">Verifikasi
-                                        Tiket</a>
+                                <?php if (($ticket['payment_status'] ?? 'pending') !== 'paid'): ?>
+                                    <?php 
+                                    $snapTokenQuery = !empty($ticket['midtrans_snap_token']) ? '&snap_token=' . urlencode($ticket['midtrans_snap_token']) : '';
+                                    $paymentUrl = 'index.php?page=pembayaran&listing_id=' . (int)$ticket['listing_id'] . $snapTokenQuery;
+                                    ?>
+                                    <a class="sg-buyer-btn is-neon" href="<?= $paymentUrl ?>">Melanjutkan Pembayaran</a>
                                 <?php else: ?>
                                     <a class="sg-buyer-btn"
-                                        href="index.php?page=ticket_verify&transaction_id=<?= (int) $ticket['transaction_id'] ?>">Lihat
-                                        Verifikasi</a>
+                                        href="index.php?page=transaction_detail&code=<?= urlencode($ticket['transaction_code']) ?>">Detail</a>
+                                    <?php if (($ticket['buyer_ticket_status'] ?? 'pending_use') === 'pending_use'): ?>
+                                        <a class="sg-buyer-btn is-neon"
+                                            href="index.php?page=ticket_verify&transaction_id=<?= (int) $ticket['transaction_id'] ?>">Verifikasi
+                                            Tiket</a>
+                                    <?php else: ?>
+                                        <a class="sg-buyer-btn"
+                                            href="index.php?page=ticket_verify&transaction_id=<?= (int) $ticket['transaction_id'] ?>">Lihat
+                                            Verifikasi</a>
+                                    <?php endif; ?>
+                                    <?php if (!empty($ticket['ticket_proof'])): ?>
+                                        <a class="sg-buyer-btn"
+                                            href="<?= sg_h($ticket['ticket_proof']) ?>"
+                                            target="_blank">
+                                            <iconify-icon icon="ph:eye-bold" class="align-middle me-1"></iconify-icon>Lihat Tiket
+                                        </a>
+                                        <a class="sg-buyer-btn"
+                                            href="<?= sg_h($ticket['ticket_proof']) ?>"
+                                            download="Ticket-<?= sg_h($ticket['transaction_code']) ?>.<?= pathinfo($ticket['ticket_proof'], PATHINFO_EXTENSION) ?>">
+                                            <iconify-icon icon="ph:download-bold" class="align-middle me-1"></iconify-icon>Download
+                                        </a>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -155,9 +192,13 @@ ob_start();
                                 style="font-size: 0.75rem; color: var(--safegate-text-sec);"><?= $isListingActive ? 'Lelang Berlangsung' : 'Lelang Berakhir' ?></span>
                         </div>
                         <div>
-                            <a href="index.php?page=detail_tiket&listing_id=<?= (int) $bid['listing_id'] ?>"
-                                style="padding: 8px 16px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; text-decoration: none; font-size: 0.85rem; transition: 0.2s; white-space: nowrap;">Lihat
-                                Lelang</a>
+                            <?php if ($isWinner && $bid['bid_status'] === 'winner_pending_payment'): ?>
+                                <a href="index.php?page=pembayaran&listing_id=<?= (int) $bid['listing_id'] ?>"
+                                    style="padding: 8px 16px; background: var(--safegate-neon); border: 1px solid var(--safegate-neon); border-radius: 6px; color: #000; font-weight: bold; text-decoration: none; font-size: 0.85rem; transition: 0.2s; white-space: nowrap;">Bayar Sekarang</a>
+                            <?php else: ?>
+                                <a href="index.php?page=detail_tiket&listing_id=<?= (int) $bid['listing_id'] ?>"
+                                    style="padding: 8px 16px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; text-decoration: none; font-size: 0.85rem; transition: 0.2s; white-space: nowrap;">Lihat Lelang</a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </article>

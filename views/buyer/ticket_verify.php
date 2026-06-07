@@ -48,7 +48,13 @@ ob_start();
                 <?php if ($ticket['buyer_ticket_status'] === 'confirmed_used'): ?>
                     <div class="sg-buyer-notice mt-4">Tiket sudah dikonfirmasi valid. Escrow dilepas ke seller.</div>
                 <?php elseif ($ticket['buyer_ticket_status'] === 'reported_issue'): ?>
-                    <div class="sg-buyer-notice mt-4" style="background:rgba(255,88,88,.08);border-color:rgba(255,88,88,.2);color:#ff6868;">Laporan masalah sudah dikirim. Admin akan meninjau dispute.</div>
+                    <?php if ($ticket['escrow_status'] === 'released'): ?>
+                        <div class="sg-buyer-notice mt-4" style="background:rgba(255,185,0,.08);border-color:rgba(255,185,0,.2);color:#ffb900;">Sengketa Selesai: Keputusan Admin menyatakan tiket valid, dana dilepas ke seller.</div>
+                    <?php elseif ($ticket['escrow_status'] === 'refunded'): ?>
+                        <div class="sg-buyer-notice mt-4" style="background:rgba(217,255,0,.08);border-color:rgba(217,255,0,.2);color:var(--safegate-neon);">Sengketa Selesai: Keputusan Admin menyetujui klaim Anda. Dana di-refund ke saldo dompet pembeli Anda.</div>
+                    <?php else: ?>
+                        <div class="sg-buyer-notice mt-4" style="background:rgba(255,88,88,.08);border-color:rgba(255,88,88,.2);color:#ff6868;">Laporan masalah sudah dikirim. Admin akan meninjau sengketa.</div>
+                    <?php endif; ?>
                 <?php else: ?>
                     <form class="sg-buyer-form mt-4" action="index.php?page=ticket_verify&transaction_id=<?= (int) $ticket['id'] ?>" method="post">
                         <input type="hidden" name="sg_action" value="buyer_confirm_ticket">

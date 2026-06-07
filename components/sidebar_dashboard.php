@@ -7,6 +7,8 @@ $sidebarUser = !empty($_SESSION['user_id'])
     : null;
 $sidebarName = $sidebarUser['full_name'] ?? 'Verified Vendor';
 $sidebarPhoto = trim((string) ($sidebarUser['profile_photo_path'] ?? ''));
+$sidebar_seller_id = !empty($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
+$sidebar_unread_count = $sidebar_seller_id > 0 ? sg_unread_notification_count($sidebar_seller_id) : 0;
 ?>
 <style>
 /* Logo Brand Styling */
@@ -673,9 +675,12 @@ $sidebarPhoto = trim((string) ($sidebarUser['profile_photo_path'] ?? ''));
     </div>
 
     <nav class="sg-sidebar-nav">
-        <a class="<?= $dashboard_page === 'overview' ? 'is-active' : '' ?>" href="<?= $asset_prefix ?>index.php?page=seller_overview">
+        <a class="<?= $dashboard_page === 'overview' ? 'is-active' : '' ?> d-flex align-items-center" href="<?= $asset_prefix ?>index.php?page=seller_overview">
             <iconify-icon icon="ph:squares-four"></iconify-icon>
             <span>Overview</span>
+            <?php if ($sidebar_unread_count > 0): ?>
+                <span class="badge rounded-pill bg-danger ms-auto" style="font-size: 11px; padding: 4px 8px;"><?= $sidebar_unread_count ?></span>
+            <?php endif; ?>
         </a>
         <a class="<?= $dashboard_page === 'sell_ticket' ? 'is-active' : '' ?>" href="<?= $asset_prefix ?>index.php?page=sell_ticket">
             <iconify-icon icon="ph:ticket"></iconify-icon>

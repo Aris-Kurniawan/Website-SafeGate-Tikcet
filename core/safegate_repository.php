@@ -205,10 +205,11 @@ function sg_get_notifications(?int $userId, int $limit = 6): array
     }
 
     return sg_fetch_all(
-        'SELECT id, type, title, body, is_read, related_id, created_at
-         FROM notifications
-         WHERE user_id = :user_id
-         ORDER BY created_at DESC
+        'SELECT n.id, n.type, n.title, n.body, n.is_read, n.related_id, n.created_at, t.transaction_code
+         FROM notifications n
+         LEFT JOIN transactions t ON t.id = n.related_id AND n.type IN ("payment_success", "dispute_opened", "dispute_decision", "escrow_released")
+         WHERE n.user_id = :user_id
+         ORDER BY n.created_at DESC
          LIMIT ' . max(1, min(20, $limit)),
         ['user_id' => $userId]
     );
@@ -316,6 +317,10 @@ function sg_ensure_buyer_finance_schema(): void
         if (!sg_column_exists('transactions', $column)) {
             sg_execute($sql);
         }
+    }
+
+    if (!sg_column_exists('disputes', 'reported_by')) {
+        sg_execute('ALTER TABLE disputes ADD COLUMN reported_by ENUM("buyer", "seller") DEFAULT "buyer" AFTER seller_id');
     }
 }
 
@@ -512,12 +517,35 @@ function sg_process_expired_bid_deadlines(int $listingId): void
          WHERE id = :id',
         ['id' => $expired['id']]
     );
-    sg_execute(
-        'UPDATE buyer_wallet_transactions
-         SET status = "completed", direction = "debit", description = :description
-         WHERE bid_id = :bid_id AND type = "bid_deposit_lock"',
-        ['bid_id' => $expired['id'], 'description' => 'Jaminan hangus karena pembayaran melewati batas 2 jam.']
+    $lockExists = sg_fetch_one(
+        'SELECT id FROM buyer_wallet_transactions WHERE bid_id = :bid_id AND type = "bid_deposit_lock" LIMIT 1',
+        ['bid_id' => $expired['id']]
     );
+    if ($lockExists) {
+        sg_execute(
+            'UPDATE buyer_wallet_transactions
+             SET status = "completed", direction = "debit", description = :description
+             WHERE bid_id = :bid_id AND type = "bid_deposit_lock"',
+            ['bid_id' => $expired['id'], 'description' => 'Jaminan hangus karena pembayaran melewati batas 2 jam.']
+        );
+    } else {
+        $penaltyExists = sg_fetch_one(
+            'SELECT id FROM buyer_wallet_transactions WHERE bid_id = :bid_id AND type = "bid_deposit_penalty" LIMIT 1',
+            ['bid_id' => $expired['id']]
+        );
+        if (!$penaltyExists) {
+            sg_wallet_activity(
+                (int) $expired['bidder_id'],
+                'bid_deposit_penalty',
+                50000,
+                'debit',
+                'completed',
+                'Denda jaminan lelang hangus karena pembayaran tiket ' . $expired['title'] . ' melewati batas 2 jam.',
+                null,
+                (int) $expired['id']
+            );
+        }
+    }
     sg_notify(
         (int) $expired['bidder_id'],
         'auction_lost',
@@ -527,7 +555,7 @@ function sg_process_expired_bid_deadlines(int $listingId): void
     );
 
     $runnerUp = sg_fetch_one(
-        'SELECT b.*, u.full_name
+        'SELECT b.*, u.full_name, u.email
          FROM bids b
          JOIN users u ON u.id = b.bidder_id
          WHERE b.listing_id = :listing_id
@@ -556,6 +584,16 @@ function sg_process_expired_bid_deadlines(int $listingId): void
             'Kamu menjadi pemenang cadangan untuk ' . $expired['title'] . '. Selesaikan pembayaran dalam 2 jam.',
             $listingId
         );
+
+        // Kirim email notifikasi ke pemenang cadangan (runner-up)
+        $emailSubject = 'Pemberitahuan Pemenang Cadangan Lelang - SafeGate';
+        $emailBody = "<h1>Selamat, " . sg_h($runnerUp['full_name']) . "!</h1>"
+                   . "<p>Anda terpilih sebagai pemenang cadangan lelang untuk tiket <b>" . sg_h($expired['title']) . "</b> karena pemenang sebelumnya gagal menyelesaikan pembayaran.</p>"
+                   . "<p>Penawaran Anda sebesar <b>" . sg_rupiah($runnerUp['bid_amount']) . "</b> kini menjadi penawaran pemenang.</p>"
+                   . "<p>Harap segera menyelesaikan pembayaran Anda dalam waktu <b>selambat-lambatnya 2 jam</b> dari sekarang.</p>"
+                   . "<p>Jika Anda tidak menyelesaikan pembayaran dalam batas waktu tersebut, maka <b>uang jaminan lelang Anda sebesar Rp 50.000 akan ditarik/dihanguskan</b> oleh sistem.</p>"
+                   . "<br><p>Salam hangat,<br>Tim SafeGate</p>";
+        sg_send_email($runnerUp['email'], $runnerUp['full_name'], $emailSubject, $emailBody);
     }
 }
 
@@ -786,8 +824,8 @@ function sg_get_buyer_tickets(?int $buyerId): array
 
     return sg_fetch_all(
         'SELECT t.id AS transaction_id, t.transaction_code, t.total_amount, t.payment_status, t.escrow_status,
-                COALESCE(t.buyer_ticket_status, "pending_use") AS buyer_ticket_status, t.created_at,
-                tl.section, tl.row, tl.seat, e.title, e.venue, e.city, e.event_date, e.image_path
+                COALESCE(t.buyer_ticket_status, "pending_use") AS buyer_ticket_status, t.created_at, t.midtrans_snap_token,
+                tl.id AS listing_id, tl.section, tl.row, tl.seat, tl.ticket_proof_path AS ticket_proof, e.title, e.venue, e.city, e.event_date, e.image_path
                 ,(SELECT d.status FROM disputes d WHERE d.transaction_id = t.id ORDER BY d.opened_at DESC LIMIT 1) AS dispute_status
          FROM transactions t
          JOIN ticket_listings tl ON tl.id = t.listing_id
@@ -836,9 +874,9 @@ function sg_get_seller_withdrawals(?int $sellerId): array
         $class = $row['status'] === 'pending' ? 'processing' : $row['status'];
 
         return [
-            'date' => date('d M', strtotime($row['created_at'])) . '<br>' . date('Y', strtotime($row['created_at'])),
-            'method' => str_replace(' ', '<br>', sg_method_label($row['method'])),
-            'amount' => str_replace(' ', '<br>', sg_rupiah($row['amount'])),
+            'date' => date('d M Y', strtotime($row['created_at'])),
+            'method' => sg_method_label($row['method']),
+            'amount' => sg_rupiah($row['amount']),
             'status' => ucwords($row['status']),
             'class' => $class,
         ];
@@ -1251,13 +1289,18 @@ function sg_get_admin_disputes(): array
     }
 
     return array_map(static function (array $row): array {
+        $reportedByRaw = $row['reported_by'] ?? 'buyer';
+        $reportedByName = $reportedByRaw === 'seller' ? $row['seller_name'] : $row['buyer_name'];
         return [
             'id' => 'SG-' . $row['id'],
             'item' => $row['transaction_code'],
             'amount' => sg_rupiah($row['total_amount']),
             'pool' => number_format((int) $row['total_amount'], 0, ',', '.') . ' IDR',
             'status' => in_array($row['status'], ['open', 'under_review'], true) ? 'FROZEN' : 'RESOLVED',
-            'reported_by' => 'Reported by ' . $row['buyer_name'],
+            'status_raw' => $row['status'],
+            'resolution_raw' => $row['resolution'],
+            'reported_by_raw' => $reportedByRaw,
+            'reported_by' => 'Reported by ' . $reportedByName,
             'updated_time' => 'Updated ' . sg_time_ago($row['opened_at']),
             'buyer_claim' => $row['buyer_claim'],
             'seller_defense' => $row['seller_defense'] ?: 'Seller belum mengirim pembelaan.',
@@ -1473,6 +1516,99 @@ function sg_run_cronjobs(): void
     if (!$db) return;
 
     sg_ensure_listing_status_schema();
+
+    // Dapatkan semua listing yang akan berakhir dan proses pemenangnya sebelum ditutup
+    $endedListings = sg_fetch_all(
+        'SELECT tl.id, e.title, tl.seller_id
+         FROM ticket_listings tl
+         JOIN events e ON e.id = tl.event_id
+         WHERE tl.listing_status IN ("active", "promoted") 
+           AND tl.auction_end_at IS NOT NULL 
+           AND tl.auction_end_at <= NOW()'
+    );
+
+    foreach ($endedListings as $listing) {
+        $logCron = "[" . date('Y-m-d H:i:s') . "] processing ended listing ID " . $listing['id'] . " ('" . $listing['title'] . "')";
+        file_put_contents(dirname(__DIR__) . '/cron_debug.log', $logCron . PHP_EOL, FILE_APPEND);
+
+        // Cari bid tertinggi untuk lelang yang berakhir ini
+        $winningBid = sg_fetch_one(
+            'SELECT b.id, b.bidder_id, b.bid_amount, u.email, u.full_name
+             FROM bids b
+             JOIN users u ON u.id = b.bidder_id
+             WHERE b.listing_id = :listing_id
+             ORDER BY b.bid_amount DESC, b.created_at ASC
+             LIMIT 1',
+            ['listing_id' => $listing['id']]
+        );
+
+        if ($winningBid) {
+            $logCronWinner = "[" . date('Y-m-d H:i:s') . "] listing ID " . $listing['id'] . " has winner Bidder ID " . $winningBid['bidder_id'] . " (" . $winningBid['email'] . ") bid amount " . $winningBid['bid_amount'];
+            file_put_contents(dirname(__DIR__) . '/cron_debug.log', $logCronWinner . PHP_EOL, FILE_APPEND);
+
+            // Tetapkan bid tertinggi sebagai pemenang mutlak dan set batas waktu pembayaran 2 jam dari sekarang
+            sg_execute(
+                'UPDATE bids 
+                 SET is_winning_bid = 1, bid_status = "winner_pending_payment", payment_deadline_at = DATE_ADD(NOW(), INTERVAL 2 HOUR)
+                 WHERE id = :id',
+                ['id' => $winningBid['id']]
+            );
+
+            // Set penawaran lainnya sebagai tersalip (outbid)
+            sg_execute(
+                'UPDATE bids 
+                 SET is_winning_bid = 0, bid_status = "outbid" 
+                 WHERE listing_id = :listing_id AND id != :id',
+                ['listing_id' => $listing['id'], 'id' => $winningBid['id']]
+            );
+
+            // Kirim notifikasi in-app
+            sg_notify(
+                (int) $winningBid['bidder_id'],
+                'auction_won',
+                'Selamat! Anda Menang Lelang',
+                'Anda memenangkan lelang untuk ' . $listing['title'] . '. Selesaikan pembayaran dalam 2 jam.',
+                $listing['id']
+            );
+
+            // Kirim notifikasi kalah ke penawar lainnya
+            $otherBidders = sg_fetch_all(
+                'SELECT DISTINCT bidder_id 
+                 FROM bids 
+                 WHERE listing_id = :listing_id AND bidder_id != :winner_id',
+                ['listing_id' => $listing['id'], 'winner_id' => $winningBid['bidder_id']]
+            );
+            foreach ($otherBidders as $ob) {
+                sg_notify(
+                    (int) $ob['bidder_id'],
+                    'auction_lost',
+                    'Lelang Berakhir: Anda Kalah',
+                    'Lelang untuk ' . $listing['title'] . ' telah berakhir. Penawaran Anda kalah dari penawaran tertinggi.',
+                    $listing['id']
+                );
+            }
+
+            // Kirim email notifikasi riil ke pemenang lelang
+            $emailSubject = 'Selamat! Anda Memenangkan Lelang - SafeGate';
+            $emailBody = "<h1>Selamat, " . sg_h($winningBid['full_name']) . "!</h1>"
+                       . "<p>Lelang untuk tiket <b>" . sg_h($listing['title']) . "</b> telah resmi berakhir.</p>"
+                       . "<p>Anda berhasil memenangkan lelang dengan penawaran tertinggi sebesar <b>" . sg_rupiah($winningBid['bid_amount']) . "</b>.</p>"
+                       . "<p>Harap segera menyelesaikan pembayaran Anda dalam waktu <b>selambat-lambatnya 2 jam</b> dari sekarang.</p>"
+                       . "<p>Jika Anda tidak menyelesaikan pembayaran dalam batas waktu 2 jam, maka <b>uang jaminan lelang Anda (Rp 50.000) akan ditarik/dihanguskan</b> oleh sistem.</p>"
+                       . "<br><p>Salam hangat,<br>Tim SafeGate</p>";
+            
+            $logEmailStart = "[" . date('Y-m-d H:i:s') . "] sending winner email to " . $winningBid['email'] . "...";
+            file_put_contents(dirname(__DIR__) . '/cron_debug.log', $logEmailStart . PHP_EOL, FILE_APPEND);
+            
+            $emailSent = sg_send_email($winningBid['email'], $winningBid['full_name'], $emailSubject, $emailBody);
+            
+            $logEmailEnd = "[" . date('Y-m-d H:i:s') . "] winner email send status: " . ($emailSent ? "SUCCESS" : "FAILED");
+            file_put_contents(dirname(__DIR__) . '/cron_debug.log', $logEmailEnd . PHP_EOL, FILE_APPEND);
+        } else {
+            $logCronNoWinner = "[" . date('Y-m-d H:i:s') . "] listing ID " . $listing['id'] . " has no winner (no bids found)";
+            file_put_contents(dirname(__DIR__) . '/cron_debug.log', $logCronNoWinner . PHP_EOL, FILE_APPEND);
+        }
+    }
     
     // Ubah status listing menjadi 'closed' jika waktu auction_end_at sudah terlewati
     sg_execute(
@@ -1482,6 +1618,7 @@ function sg_run_cronjobs(): void
            AND auction_end_at IS NOT NULL 
            AND auction_end_at <= NOW()'
     );
+
 }
 
 /**
@@ -1529,20 +1666,26 @@ function sg_complete_transaction_payment(array $transaction): bool
     // 3. Kembalikan uang deposit bid yang lain jika transaksi berasal dari lelang
     if ($winningBidId) {
         sg_execute('UPDATE bids SET bid_status = "paid", deposit_status = "refunded" WHERE id = :id', ['id' => $winningBidId]);
-        sg_execute(
-            'UPDATE buyer_wallet_transactions
-             SET direction = "debit", status = "completed", description = :description
-             WHERE bid_id = :bid_id AND type = "bid_deposit_lock"',
-            ['bid_id' => $winningBidId, 'description' => 'Jaminan lelang selesai dipakai dan siap dikembalikan.']
-        );
-        $refundExists = sg_fetch_one(
-            'SELECT id FROM buyer_wallet_transactions
-             WHERE bid_id = :bid_id AND user_id = :user_id AND type = "bid_deposit_refund"
-             LIMIT 1',
+        $lockExists = sg_fetch_one(
+            'SELECT id FROM buyer_wallet_transactions WHERE bid_id = :bid_id AND user_id = :user_id AND type = "bid_deposit_lock" LIMIT 1',
             ['bid_id' => $winningBidId, 'user_id' => $buyerId]
         );
-        if (!$refundExists) {
-            sg_wallet_activity($buyerId, 'bid_deposit_refund', sg_bid_deposit_amount(), 'release', 'completed', 'Jaminan lelang dikembalikan setelah pembayaran selesai.', $transactionId, $winningBidId);
+        if ($lockExists) {
+            sg_execute(
+                'UPDATE buyer_wallet_transactions
+                 SET direction = "debit", status = "completed", description = :description
+                 WHERE bid_id = :bid_id AND type = "bid_deposit_lock"',
+                ['bid_id' => $winningBidId, 'description' => 'Jaminan lelang selesai dipakai dan siap dikembalikan.']
+            );
+            $refundExists = sg_fetch_one(
+                'SELECT id FROM buyer_wallet_transactions
+                 WHERE bid_id = :bid_id AND user_id = :user_id AND type = "bid_deposit_refund"
+                 LIMIT 1',
+                ['bid_id' => $winningBidId, 'user_id' => $buyerId]
+            );
+            if (!$refundExists) {
+                sg_wallet_activity($buyerId, 'bid_deposit_refund', sg_bid_deposit_amount(), 'release', 'completed', 'Jaminan lelang dikembalikan setelah pembayaran selesai.', $transactionId, $winningBidId);
+            }
         }
     }
 

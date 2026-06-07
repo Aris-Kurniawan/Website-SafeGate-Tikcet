@@ -21,7 +21,7 @@ $statusCopy = [
         'icon' => 'ph:seal-check-fill',
     ],
     'pending' => [
-        'label' => 'Waiting Review',
+        'label' => 'Verifikasi Tengah Berlangsung',
         'title' => 'Pendaftaran seller sedang ditinjau admin',
         'body' => 'Dashboard seller bisa dibuka, tetapi fitur jual tiket, listing, wallet seller, dan transaksi seller tetap dikunci sampai admin menyetujui KYC.',
         'icon' => 'ph:clock-countdown',
@@ -81,7 +81,7 @@ ob_start();
                 <form class="sg-seller-register-form" action="index.php?page=seller_register" method="post" enctype="multipart/form-data">
                     <input type="hidden" name="sg_action" value="kyc_submit">
                     <input type="hidden" name="return_page" value="seller_register">
-                    <input type="hidden" name="success_page" value="seller_overview">
+                    <input type="hidden" name="success_page" value="seller_register">
 
                     <div class="sg-panel-title-row">
                         <h2>Verifikasi Seller</h2>
@@ -129,7 +129,7 @@ ob_start();
             <?php else: ?>
                 <div class="sg-seller-register-locked">
                     <iconify-icon icon="<?= $status === 'approved' ? 'ph:seal-check-fill' : 'ph:hourglass-high' ?>"></iconify-icon>
-                    <h2><?= $status === 'approved' ? 'Akses seller aktif' : 'Data sedang direview' ?></h2>
+                    <h2><?= $status === 'approved' ? 'Akses seller aktif' : 'Verifikasi Tengah Berlangsung' ?></h2>
                     <p><?= $status === 'approved' ? 'Kamu sudah bisa membuat listing dan mengelola penjualan.' : 'Tunggu admin menyetujui KYC. Kalau sudah approved, fitur jual tiket otomatis terbuka.' ?></p>
                     <a class="sg-buyer-btn is-neon" href="index.php?page=seller_overview">Masuk Dashboard Seller</a>
                 </div>

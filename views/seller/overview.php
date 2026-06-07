@@ -21,7 +21,14 @@ ob_start();
         <p><iconify-icon icon="ph:map-pin"></iconify-icon> Main Net Node #0412</p>
         <div>
             <button type="button" aria-label="Search"><iconify-icon icon="ph:magnifying-glass"></iconify-icon></button>
-            <button type="button" aria-label="Notifications" title="<?= (int) $unread_notifications ?> unread notifications"><iconify-icon icon="ph:bell"></iconify-icon></button>
+            <button type="button" class="position-relative" aria-label="Notifications" title="<?= (int) $unread_notifications ?> unread notifications" onclick="document.getElementById('notifications-section').scrollIntoView({ behavior: 'smooth' })">
+                <iconify-icon icon="ph:bell"></iconify-icon>
+                <?php if ($unread_notifications > 0): ?>
+                    <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" style="width: 10px; height: 10px;">
+                        <span class="visually-hidden">New alerts</span>
+                    </span>
+                <?php endif; ?>
+            </button>
             <button type="button" aria-label="Settings"><iconify-icon icon="ph:gear-six"></iconify-icon></button>
         </div>
     </header>
@@ -100,7 +107,7 @@ ob_start();
                 <div class="sg-progress-item"><span>Active Listings</span><strong><?= (int) $metrics['active_listings'] ?> Tiket</strong><i style="--value: 34%"></i></div>
                 <div class="sg-progress-item"><span>Sold This Month</span><strong><?= (int) $metrics['sold_month'] ?> Tiket</strong><i style="--value: 76%"></i></div>
             </section>
-            <section class="sg-panel sg-alert-panel">
+            <section class="sg-panel sg-alert-panel" id="notifications-section">
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
                     <h2>! System Alerts</h2>
                     <?php if ($unread_notifications > 0): ?>
@@ -109,10 +116,23 @@ ob_start();
                 </div>
                 <?php if ($notifications): ?>
                     <?php foreach (array_slice($notifications, 0, 3) as $notification): ?>
-                        <p class="<?= (int) $notification['is_read'] ? 'is-muted' : '' ?>">
+                        <?php 
+                        $link = '#';
+                        $hasLink = false;
+                        if (!empty($notification['transaction_code'])) {
+                            $link = 'index.php?page=transaction_detail&code=' . urlencode($notification['transaction_code']);
+                            $hasLink = true;
+                        }
+                        ?>
+                        <p class="<?= (int) $notification['is_read'] ? 'is-muted' : '' ?>" <?= $hasLink ? 'style="cursor: pointer; position: relative;" onclick="window.location.href=\'' . $link . '\'"' : '' ?>>
                             <b></b>
                             <span class="sg-alert-content">
-                                <strong><?= sg_h($notification['title']) ?></strong>
+                                <strong>
+                                    <?= sg_h($notification['title']) ?>
+                                    <?php if ($hasLink): ?>
+                                        <iconify-icon icon="ph:arrow-square-out-bold" class="ms-1" style="font-size:12px; color:#d9ff00; vertical-align: middle;"></iconify-icon>
+                                    <?php endif; ?>
+                                </strong>
                                 <em><?= sg_h($notification['body']) ?></em>
                                 <small><?= sg_h(sg_time_ago($notification['created_at'])) ?></small>
                             </span>

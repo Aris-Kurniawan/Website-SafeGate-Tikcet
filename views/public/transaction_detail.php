@@ -18,6 +18,7 @@ $ledger = $transaction ? sg_get_transaction_ledger((int) $transaction['id']) : [
 $disputes = $transaction ? sg_get_transaction_disputes((int) $transaction['id']) : [];
 $role = $_SESSION['role'] ?? '';
 $currentUserId = (int) ($_SESSION['user_id'] ?? 0);
+$isSeller = $transaction && ($currentUserId === (int) $transaction['seller_id']);
 $ledgerLabels = [
     'lock' => 'Dana Dikunci',
     'release' => 'Dana Dilepas',
@@ -247,15 +248,34 @@ ob_start();
                             <div class="rounded-4 p-4 text-center" style="background: rgba(255,255,255,.035); border: 1px dashed rgba(255,255,255,.12);">
                                 <iconify-icon icon="ph:shield-check-bold" class="text-safegate-neon fs-2"></iconify-icon>
                                 <p class="fw-bold text-white mt-2 mb-1">Tidak ada dispute aktif</p>
-                                <p class="text-safegate-text-sec small mb-0">Transaksi ini belum punya laporan masalah dari buyer.</p>
+                                <p class="text-safegate-text-sec small mb-0">Transaksi ini belum punya laporan masalah.</p>
                             </div>
+
+                            <?php if ($isSeller && !in_array($transaction['escrow_status'], ['released', 'refunded'], true)): ?>
+                                <div class="mt-4 pt-3 border-top border-secondary">
+                                    <h3 class="h6 fw-bold text-white mb-2">Laporkan Buyer / Masalah Transaksi</h3>
+                                    <p class="text-safegate-text-sec small mb-3">Jika buyer melakukan penipuan, kecurangan, atau tidak merespon, laporkan untuk membekukan dana escrow transaksi ini.</p>
+                                    <form method="post" action="index.php?page=transaction_detail&code=<?= urlencode($transaction['transaction_code']) ?>" class="sg-dispute-form">
+                                        <input type="hidden" name="sg_action" value="seller_report_buyer">
+                                        <input type="hidden" name="transaction_id" value="<?= (int) $transaction['id'] ?>">
+                                        <label class="text-safegate-text-sec fw-bold small text-uppercase mb-2" style="letter-spacing:.08em;" for="seller-claim">Alasan Pelaporan</label>
+                                        <textarea id="seller-claim" name="seller_claim" class="form-control rounded-4 mb-3" placeholder="Tulis alasan pelaporan dengan jelas (minimal 12 karakter)..." minlength="12" required></textarea>
+                                        <button type="submit" class="btn btn-danger rounded-pill fw-bold px-4" onclick="return confirm('Apakah Anda yakin ingin mengirim laporan ini? Escrow transaksi akan langsung dibekukan.')">Kirim Laporan Ke Admin</button>
+                                    </form>
+                                </div>
+                            <?php endif; ?>
                         <?php else: ?>
                             <?php foreach ($disputes as $dispute): ?>
-                                <?php $messages = sg_get_dispute_messages((int) $dispute['id']); ?>
+                                <?php 
+                                $messages = sg_get_dispute_messages((int) $dispute['id']); 
+                                $isSellerReport = ($dispute['reported_by'] ?? 'buyer') === 'seller';
+                                $claimTitle = $isSellerReport ? 'Claim Seller' : 'Claim Buyer';
+                                $defenseTitle = $isSellerReport ? 'Buyer Response / Defense' : 'Seller Defense';
+                                ?>
                                 <article class="rounded-4 p-3 p-md-4 mb-4" style="background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.08);">
                                     <div class="d-flex flex-column flex-sm-row justify-content-between gap-2 mb-3">
                                         <div>
-                                            <p class="text-safegate-neon fw-bold text-uppercase mb-1" style="letter-spacing:.1em; font-size:.72rem;">Claim Buyer</p>
+                                            <p class="text-safegate-neon fw-bold text-uppercase mb-1" style="letter-spacing:.1em; font-size:.72rem;"><?= $claimTitle ?></p>
                                             <p class="text-white mb-0"><?= nl2br(sg_h($dispute['buyer_claim'])) ?></p>
                                         </div>
                                         <span class="badge rounded-pill px-3 py-2 align-self-start" style="background: rgba(122,153,197,.14); color:#d7e2f4; border: 1px solid rgba(122,153,197,.2);">
@@ -267,7 +287,7 @@ ob_start();
                                         <div class="row g-3 mb-4">
                                             <?php if (!empty($dispute['seller_defense'])): ?>
                                                 <div class="col-12 col-md-6">
-                                                    <small class="text-safegate-text-sec fw-bold text-uppercase">Seller Defense</small>
+                                                    <small class="text-safegate-text-sec fw-bold text-uppercase"><?= $defenseTitle ?></small>
                                                     <p class="text-white mb-0 mt-1"><?= nl2br(sg_h($dispute['seller_defense'])) ?></p>
                                                 </div>
                                             <?php endif; ?>
@@ -279,8 +299,18 @@ ob_start();
                                             <?php endif; ?>
                                             <?php if (!empty($dispute['resolution'])): ?>
                                                 <div class="col-12">
-                                                    <small class="text-safegate-text-sec fw-bold text-uppercase">Resolution</small>
-                                                    <p class="text-white mb-0 mt-1"><?= nl2br(sg_h($dispute['resolution'])) ?></p>
+                                                    <small class="text-safegate-text-sec fw-bold text-uppercase">Keputusan Akhir Admin (Resolution)</small>
+                                                    <?php 
+                                                    $resText = $dispute['resolution'];
+                                                    if ($resText === 'release_seller') {
+                                                        $resMapped = 'Dana dilepas ke Seller (Claim Ditolak Admin/Tiket Valid).';
+                                                    } elseif ($resText === 'refund_buyer') {
+                                                        $resMapped = 'Dana dikembalikan (refund) ke Buyer.';
+                                                    } else {
+                                                        $resMapped = $resText;
+                                                    }
+                                                    ?>
+                                                    <p class="text-safegate-neon mb-0 mt-1 fw-bold"><?= sg_h($resMapped) ?></p>
                                                 </div>
                                             <?php endif; ?>
                                         </div>
@@ -291,11 +321,21 @@ ob_start();
                                             <p class="text-safegate-text-sec small mb-0">Belum ada pesan lanjutan.</p>
                                         <?php else: ?>
                                             <?php foreach ($messages as $message): ?>
-                                                <?php $mine = (int) $message['sender_id'] === $currentUserId; ?>
+                                                <?php 
+                                                $mine = (int) $message['sender_id'] === $currentUserId;
+                                                $senderRoleRaw = strtolower($message['sender_role'] ?? '');
+                                                if ($senderRoleRaw === 'admin') {
+                                                    $senderRoleLabel = 'SafeGate Admin';
+                                                } elseif ($senderRoleRaw === 'seller') {
+                                                    $senderRoleLabel = 'Seller (Tanggapan ke Admin)';
+                                                } else {
+                                                    $senderRoleLabel = 'Buyer (Laporan ke Admin)';
+                                                }
+                                                ?>
                                                 <div class="sg-dispute-message <?= $mine ? 'is-mine' : '' ?> rounded-4 p-3">
                                                     <div class="d-flex justify-content-between gap-3 mb-2">
                                                         <strong class="text-white"><?= sg_h($message['full_name']) ?></strong>
-                                                        <small class="text-safegate-text-sec"><?= sg_h(ucwords($message['sender_role'])) ?> · <?= date('d M H:i', strtotime($message['created_at'])) ?></small>
+                                                        <small class="text-safegate-text-sec"><?= sg_h($senderRoleLabel) ?> · <?= date('d M H:i', strtotime($message['created_at'])) ?></small>
                                                     </div>
                                                     <p class="text-safegate-text-sec mb-0"><?= nl2br(sg_h($message['message'])) ?></p>
                                                 </div>
@@ -308,9 +348,9 @@ ob_start();
                                             <input type="hidden" name="sg_action" value="dispute_message">
                                             <input type="hidden" name="dispute_id" value="<?= (int) $dispute['id'] ?>">
                                             <input type="hidden" name="transaction_code" value="<?= sg_h($transaction['transaction_code']) ?>">
-                                            <label class="text-safegate-text-sec fw-bold small text-uppercase mb-2" style="letter-spacing:.08em;" for="dispute-message-<?= (int) $dispute['id'] ?>">Tambah Pesan</label>
-                                            <textarea id="dispute-message-<?= (int) $dispute['id'] ?>" name="message" class="form-control rounded-4 mb-3" placeholder="Tulis update, bukti tambahan, atau catatan admin..." required></textarea>
-                                            <button type="submit" class="btn btn-safegate-neon rounded-pill fw-bold px-4">Kirim Pesan</button>
+                                            <label class="text-safegate-text-sec fw-bold small text-uppercase mb-2" style="letter-spacing:.08em;" for="dispute-message-<?= (int) $dispute['id'] ?>">Kirim Tanggapan / Bukti ke Admin</label>
+                                            <textarea id="dispute-message-<?= (int) $dispute['id'] ?>" name="message" class="form-control rounded-4 mb-3" placeholder="Tulis tanggapan atau penjelasan bukti Anda untuk ditinjau oleh Admin..." required></textarea>
+                                            <button type="submit" class="btn btn-safegate-neon rounded-pill fw-bold px-4">Kirim ke Admin</button>
                                         </form>
                                     <?php endif; ?>
                                 </article>

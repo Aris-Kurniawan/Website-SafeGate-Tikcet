@@ -19,8 +19,10 @@ $nav = [
         <a class="sg-side-brand" href="index.php?page=home" aria-label="SafeGate home">
             <div class="sg-logo-icon">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" stroke="#090B10" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
-                    <polyline points="17 6 23 6 23 12" stroke="#090B10" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" stroke="#090B10" stroke-width="3.5"
+                        stroke-linecap="round" stroke-linejoin="round"></polyline>
+                    <polyline points="17 6 23 6 23 12" stroke="#090B10" stroke-width="3.5" stroke-linecap="round"
+                        stroke-linejoin="round"></polyline>
                 </svg>
             </div>
             <span>SafeGate</span>
@@ -28,6 +30,23 @@ $nav = [
         <button class="sg-sidebar-toggle" aria-label="Toggle sidebar" onclick="toggleBuyerSidebar()">
             <iconify-icon icon="ph:list" id="buyer-sidebar-toggle-icon"></iconify-icon>
         </button>
+    </div>
+
+    <style>
+        .sg-sidebar-subheader {
+            padding: 18px 28px 4px 28px;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            color: rgba(255, 255, 255, 1);
+        }
+
+        .sg-sidebar-collapsed .sg-sidebar-subheader {
+            display: none !important;
+        }
+    </style>
+    <div class="sg-sidebar-subheader">
+        Buyer Dashboard
     </div>
 
     <div class="sg-seller-card">
@@ -67,29 +86,29 @@ $nav = [
 </aside>
 
 <script>
-function toggleBuyerSidebar() {
-    const frame = document.querySelector('.sg-buyer-frame');
-    const icon = document.getElementById('buyer-sidebar-toggle-icon');
-    if (!frame) return;
+    function toggleBuyerSidebar() {
+        const frame = document.querySelector('.sg-buyer-frame');
+        const icon = document.getElementById('buyer-sidebar-toggle-icon');
+        if (!frame) return;
 
-    frame.classList.toggle('sg-sidebar-collapsed');
-    const isCollapsed = frame.classList.contains('sg-sidebar-collapsed');
-    localStorage.setItem('sg-buyer-sidebar-collapsed', isCollapsed ? 'true' : 'false');
+        frame.classList.toggle('sg-sidebar-collapsed');
+        const isCollapsed = frame.classList.contains('sg-sidebar-collapsed');
+        localStorage.setItem('sg-buyer-sidebar-collapsed', isCollapsed ? 'true' : 'false');
 
-    if (icon) {
-        icon.setAttribute('icon', isCollapsed ? 'ph:list-bold' : 'ph:list');
+        if (icon) {
+            icon.setAttribute('icon', isCollapsed ? 'ph:list-bold' : 'ph:list');
+        }
     }
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-    const isCollapsed = localStorage.getItem('sg-buyer-sidebar-collapsed') === 'true';
-    const frame = document.querySelector('.sg-buyer-frame');
-    const icon = document.getElementById('buyer-sidebar-toggle-icon');
-    if (isCollapsed && frame) {
-        frame.classList.add('sg-sidebar-collapsed');
-    }
-    if (isCollapsed && icon) {
-        icon.setAttribute('icon', 'ph:list-bold');
-    }
-});
+    document.addEventListener('DOMContentLoaded', () => {
+        const isCollapsed = localStorage.getItem('sg-buyer-sidebar-collapsed') === 'true';
+        const frame = document.querySelector('.sg-buyer-frame');
+        const icon = document.getElementById('buyer-sidebar-toggle-icon');
+        if (isCollapsed && frame) {
+            frame.classList.add('sg-sidebar-collapsed');
+        }
+        if (isCollapsed && icon) {
+            icon.setAttribute('icon', 'ph:list-bold');
+        }
+    });
 </script>

@@ -100,9 +100,9 @@ customDurationStepperButtons.forEach((button) => {
         const max = Number(customDuration.max || 720);
         const current = Number(customDuration.value || 0);
         const direction = button.dataset.stepperAction === 'down' ? -1 : 1;
-            const nextValue = current
-                ? Math.min(max, Math.max(min, current + direction))
-                : min;
+        const nextValue = current
+            ? Math.min(max, Math.max(min, current + direction))
+            : min;
 
         customDuration.value = String(nextValue);
         customDuration.dispatchEvent(new Event('input', { bubbles: true }));
@@ -128,7 +128,7 @@ function checkEventDetails() {
     const eventThumbnail = document.getElementById('eventThumbnail');
     const eventTitle = document.getElementById('eventTitle');
     const eventVenue = document.getElementById('eventVenue');
-    
+
     if (eventThumbnail?.files.length > 0 || eventTitle?.value.length > 0) {
         setActiveStep('pricing');
     }
@@ -266,7 +266,6 @@ if (listButton) {
 // Pricing Mode Toggle Logic
 const btnFixedPrice = document.getElementById('btnFixedPrice');
 const btnAuction = document.getElementById('btnAuction');
-const labelReservePrice = document.getElementById('labelReservePrice');
 const labelDuration = document.getElementById('labelDuration');
 const textStartingBid = document.getElementById('textStartingBid');
 const pricingInputsGrid = document.getElementById('pricingInputsGrid');
@@ -275,26 +274,24 @@ if (btnFixedPrice && btnAuction) {
     btnFixedPrice.addEventListener('click', () => {
         btnFixedPrice.classList.add('is-active');
         btnAuction.classList.remove('is-active');
-        labelReservePrice.hidden = true;
         labelDuration.hidden = true;
         if (customDurationWrap) customDurationWrap.hidden = true;
         if (customDurationUnitWrap) customDurationUnitWrap.hidden = true;
         textStartingBid.textContent = 'Fixed Price (Rp)';
-        
-        // Buat input harga memakan seluruh lebar jika field lain disembunyikan
+
+        // Buat input harga memakan setengah lebar (2 kolom) jika durasi disembunyikan
         if (pricingInputsGrid) {
-            pricingInputsGrid.style.gridTemplateColumns = '1fr';
+            pricingInputsGrid.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
         }
     });
 
     btnAuction.addEventListener('click', () => {
         btnAuction.classList.add('is-active');
         btnFixedPrice.classList.remove('is-active');
-        labelReservePrice.hidden = false;
         labelDuration.hidden = false;
         syncCustomDuration();
         textStartingBid.textContent = 'Starting Bid (Rp)';
-        
+
         // Kembalikan ke grid asli (3 kolom)
         if (pricingInputsGrid) {
             pricingInputsGrid.style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';

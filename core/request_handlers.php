@@ -36,17 +36,17 @@ function sg_require_route_access(string $page): void
         'wallet' => ['buyer', 'seller'],
         'transaction' => ['buyer', 'seller'],
         'settings' => ['buyer', 'seller'],
-        'seller_register' => ['buyer', 'seller', 'admin'],
+        'seller_register' => ['buyer', 'seller'],
         'admin_overview' => ['admin'],
         'admin_transactions' => ['admin'],
         'admin_disputes' => ['admin'],
         'admin_kyc' => ['admin'],
-        'buyer_dashboard' => ['buyer', 'seller', 'admin'],
-        'my_tickets' => ['buyer', 'seller', 'admin'],
-        'buyer_wallet' => ['buyer', 'seller', 'admin'],
-        'buyer_transactions' => ['buyer', 'seller', 'admin'],
-        'buyer_profile' => ['buyer', 'seller', 'admin'],
-        'ticket_verify' => ['buyer', 'seller', 'admin'],
+        'buyer_dashboard' => ['buyer', 'seller'],
+        'my_tickets' => ['buyer', 'seller'],
+        'buyer_wallet' => ['buyer', 'seller'],
+        'buyer_transactions' => ['buyer', 'seller'],
+        'buyer_profile' => ['buyer', 'seller'],
+        'ticket_verify' => ['buyer', 'seller'],
     ];
 
     if (!isset($protectedRoutes[$page])) {
@@ -237,7 +237,7 @@ function sg_handle_withdrawal(): void
 
     $created = sg_execute(
         'INSERT INTO withdrawals (seller_id, amount, method, destination_account, status)
-         VALUES (:seller_id, :amount, :method, :destination, "pending")',
+         VALUES (:seller_id, :amount, :method, :destination, "success")',
         [
             'seller_id' => $sellerId,
             'amount' => $amount,
@@ -246,7 +246,7 @@ function sg_handle_withdrawal(): void
         ]
     );
 
-    sg_flash($created ? 'Request penarikan berhasil masuk database.' : 'Penarikan gagal: ' . sg_db_error(), $created ? 'success' : 'error');
+    sg_flash($created ? 'Penarikan saldo berhasil diproses secara instan.' : 'Penarikan gagal: ' . sg_db_error(), $created ? 'success' : 'error');
     sg_redirect('wallet');
 }
 
@@ -287,8 +287,8 @@ function sg_handle_buyer_wallet_withdraw(): void
         sg_redirect('buyer_wallet');
     }
 
-    $created = sg_wallet_activity($buyerId, 'withdrawal', $amount, 'debit', 'pending', 'Permintaan tarik saldo ke ' . $destination . '.');
-    sg_flash($created ? 'Permintaan tarik saldo tercatat di database.' : 'Tarik saldo gagal: ' . sg_db_error(), $created ? 'success' : 'error');
+    $created = sg_wallet_activity($buyerId, 'withdrawal', $amount, 'debit', 'completed', 'Tarik saldo instan ke ' . $destination . '.');
+    sg_flash($created ? 'Penarikan saldo berhasil diproses secara instan.' : 'Tarik saldo gagal: ' . sg_db_error(), $created ? 'success' : 'error');
     sg_redirect('buyer_wallet');
 }
 
@@ -629,6 +629,10 @@ function sg_handle_admin_kyc_decision(): void
                  ON DUPLICATE KEY UPDATE kyc_id = VALUES(kyc_id)',
                 ['user_id' => $kyc['user_id'], 'kyc_id' => $kyc['id']]
             );
+            sg_execute(
+                'UPDATE users SET role = "seller" WHERE id = :id',
+                ['id' => $kyc['user_id']]
+            );
         }
     }
 
@@ -946,6 +950,11 @@ function sg_handle_login(): void
         'email' => $email,
     ]);
 
+    if ($user && $user['role'] === 'admin') {
+        sg_flash('Admin tidak diperbolehkan login melalui halaman ini. Gunakan portal khusus admin.', 'error');
+        sg_redirect('login');
+    }
+
     if (!$user || !(int) $user['is_active'] || !password_verify($password, $user['password_hash'])) {
         sg_flash('Email atau password salah.', 'error');
         sg_redirect('login');
@@ -955,6 +964,83 @@ function sg_handle_login(): void
     $_SESSION['role'] = $user['role'];
 
     sg_redirect('home');
+}
+
+function sg_handle_admin_login(): void
+{
+    if (!sg_db()) {
+        sg_flash('Database belum aktif.', 'error');
+        sg_redirect('admin_login');
+    }
+
+    $email = strtolower(trim((string) ($_POST['email'] ?? '')));
+    $password = (string) ($_POST['password'] ?? '');
+
+    if ($email === 'admin@safegate.local') {
+        sg_ensure_demo_user('admin');
+    }
+
+    $user = sg_fetch_one('SELECT id, password_hash, role, is_active FROM users WHERE email = :email LIMIT 1', [
+        'email' => $email,
+    ]);
+
+    if (!$user || $user['role'] !== 'admin' || !(int) $user['is_active'] || !password_verify($password, $user['password_hash'])) {
+        sg_flash('Email atau password admin salah.', 'error');
+        sg_redirect('admin_login');
+    }
+
+    $_SESSION['user_id'] = (int) $user['id'];
+    $_SESSION['role'] = $user['role'];
+
+    sg_flash('Login Admin berhasil!', 'success');
+    sg_redirect('admin_overview');
+}
+
+function sg_handle_admin_signup(): void
+{
+    if (!sg_db()) {
+        sg_flash('Database belum aktif.', 'error');
+        sg_redirect('admin_signup');
+    }
+
+    $email = strtolower(trim((string) ($_POST['email'] ?? '')));
+    $fullName = trim((string) ($_POST['full_name'] ?? ''));
+    $phone = trim((string) ($_POST['phone_number'] ?? ''));
+    $password = (string) ($_POST['password'] ?? '');
+    $passwordConfirm = (string) ($_POST['password_confirm'] ?? '');
+    $secretKey = (string) ($_POST['secret_key'] ?? '');
+
+    $validSecret = $_ENV['ADMIN_SECRET_KEY'] ?? getenv('ADMIN_SECRET_KEY') ?? 'safegate-admin-secret';
+
+    if ($secretKey !== $validSecret) {
+        sg_flash('Secret Key Admin tidak valid!', 'error');
+        sg_redirect('admin_signup');
+    }
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $fullName === '' || strlen($password) < 8 || $password !== $passwordConfirm) {
+        sg_flash('Data signup belum valid. Password minimal 8 karakter.', 'error');
+        sg_redirect('admin_signup');
+    }
+
+    $existing = sg_fetch_one('SELECT id FROM users WHERE email = :email LIMIT 1', ['email' => $email]);
+    if ($existing) {
+        sg_flash('Email sudah terdaftar. Silakan login.', 'error');
+        sg_redirect('admin_login');
+    }
+
+    $created = sg_execute(
+        'INSERT INTO users (full_name, email, phone_number, password_hash, role)
+         VALUES (:full_name, :email, :phone, :password_hash, "admin")',
+        [
+            'full_name' => $fullName,
+            'email' => $email,
+            'phone' => $phone,
+            'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+        ]
+    );
+
+    sg_flash($created ? 'Akun Admin berhasil dibuat. Silakan login.' : 'Signup Admin gagal: ' . sg_db_error(), $created ? 'success' : 'error');
+    sg_redirect($created ? 'admin_login' : 'admin_signup');
 }
 
 function sg_handle_checkout_payment(): void
@@ -987,16 +1073,27 @@ function sg_handle_checkout_payment(): void
         sg_redirect('penjualan');
     }
 
-    if (!in_array($listing['listing_status'], ['active', 'promoted'], true)) {
-        sg_flash('Listing ini sudah tidak tersedia untuk dibeli.', 'error');
-        sg_redirect_url('index.php?page=detail_tiket&listing_id=' . $listingId);
-    }
-
     sg_process_expired_bid_deadlines($listingId);
     $winningBid = sg_fetch_one(
         'SELECT id, bidder_id FROM bids WHERE listing_id = :listing_id AND is_winning_bid = 1 ORDER BY bid_amount DESC LIMIT 1',
         ['listing_id' => $listingId]
     );
+
+    $isWinnerPending = false;
+    if ($listing['listing_status'] === 'closed') {
+        $checkWinner = sg_fetch_one(
+            'SELECT id FROM bids WHERE listing_id = :listing_id AND bidder_id = :bidder_id AND is_winning_bid = 1 AND bid_status = "winner_pending_payment" LIMIT 1',
+            ['listing_id' => $listingId, 'bidder_id' => $buyerId]
+        );
+        if ($checkWinner) {
+            $isWinnerPending = true;
+        }
+    }
+
+    if (!in_array($listing['listing_status'], ['active', 'promoted'], true) && !$isWinnerPending) {
+        sg_flash('Listing ini sudah tidak tersedia untuk dibeli.', 'error');
+        sg_redirect_url('index.php?page=detail_tiket&listing_id=' . $listingId);
+    }
 
     if ($winningBid && (int) $winningBid['bidder_id'] !== $buyerId) {
         sg_flash('Saat ini hanya pemenang lelang yang bisa menyelesaikan pembayaran tiket ini.', 'error');
@@ -1010,10 +1107,18 @@ function sg_handle_checkout_payment(): void
         sg_redirect_url('index.php?page=detail_tiket&listing_id=' . $listingId);
     }
 
-    $serviceFee = (int) round($basePrice * 0.05);
-    $escrowInsurance = (int) round($basePrice * 0.11);
-    $totalAmount = $basePrice + $serviceFee + $escrowInsurance;
-    $sellerEarning = $basePrice - $serviceFee;
+    $serviceFee = 0;
+    $escrowInsurance = 0;
+    $totalAmount = $basePrice;
+    $sellerEarning = $basePrice;
+
+    // Hapus transaksi pending lama untuk listing ini dari buyer yang sama agar tidak duplikat di "My Tickets"
+    sg_execute(
+        'DELETE FROM transactions 
+         WHERE listing_id = :listing_id AND buyer_id = :buyer_id AND payment_status = "pending"',
+        ['listing_id' => $listingId, 'buyer_id' => $buyerId]
+    );
+
     $transactionCode = 'SG-TX-' . strtoupper(substr(uniqid(), -6));
 
     if ($method === 'usdc') {
@@ -1055,20 +1160,26 @@ function sg_handle_checkout_payment(): void
                 );
                 if ($winningBid) {
                     sg_execute('UPDATE bids SET bid_status = "paid", deposit_status = "refunded" WHERE id = :id', ['id' => $winningBid['id']]);
-                    sg_execute(
-                        'UPDATE buyer_wallet_transactions
-                         SET direction = "debit", status = "completed", description = :description
-                         WHERE bid_id = :bid_id AND type = "bid_deposit_lock"',
-                        ['bid_id' => $winningBid['id'], 'description' => 'Jaminan lelang selesai dipakai dan siap dikembalikan.']
-                    );
-                    $refundExists = sg_fetch_one(
-                        'SELECT id FROM buyer_wallet_transactions
-                         WHERE bid_id = :bid_id AND user_id = :user_id AND type = "bid_deposit_refund"
-                         LIMIT 1',
+                    $lockExists = sg_fetch_one(
+                        'SELECT id FROM buyer_wallet_transactions WHERE bid_id = :bid_id AND user_id = :user_id AND type = "bid_deposit_lock" LIMIT 1',
                         ['bid_id' => $winningBid['id'], 'user_id' => $buyerId]
                     );
-                    if (!$refundExists) {
-                        sg_wallet_activity($buyerId, 'bid_deposit_refund', sg_bid_deposit_amount(), 'release', 'completed', 'Jaminan lelang dikembalikan setelah pembayaran selesai.', (int) $transaction['id'], (int) $winningBid['id']);
+                    if ($lockExists) {
+                        sg_execute(
+                            'UPDATE buyer_wallet_transactions
+                             SET direction = "debit", status = "completed", description = :description
+                             WHERE bid_id = :bid_id AND type = "bid_deposit_lock"',
+                            ['bid_id' => $winningBid['id'], 'description' => 'Jaminan lelang selesai dipakai dan siap dikembalikan.']
+                        );
+                        $refundExists = sg_fetch_one(
+                            'SELECT id FROM buyer_wallet_transactions
+                             WHERE bid_id = :bid_id AND user_id = :user_id AND type = "bid_deposit_refund"
+                             LIMIT 1',
+                            ['bid_id' => $winningBid['id'], 'user_id' => $buyerId]
+                        );
+                        if (!$refundExists) {
+                            sg_wallet_activity($buyerId, 'bid_deposit_refund', sg_bid_deposit_amount(), 'release', 'completed', 'Jaminan lelang dikembalikan setelah pembayaran selesai.', (int) $transaction['id'], (int) $winningBid['id']);
+                        }
                     }
                 }
             }
@@ -1119,7 +1230,7 @@ function sg_handle_checkout_payment(): void
             if ($transaction) {
                 // Fetch buyer details
                 $buyer = sg_fetch_one('SELECT full_name, email, phone_number FROM users WHERE id = :id', ['id' => $buyerId]);
-                
+
                 // Initialize Midtrans Snap SDK
                 \Midtrans\Config::$serverKey = SG_MIDTRANS_SERVER_KEY;
                 \Midtrans\Config::$isProduction = SG_MIDTRANS_IS_PRODUCTION;
@@ -1166,7 +1277,7 @@ function sg_handle_checkout_payment(): void
                         'UPDATE transactions SET midtrans_snap_token = :token WHERE id = :id',
                         ['token' => $snapToken, 'id' => $transaction['id']]
                     );
-                    
+
                     // Redirect to pembayaran page with snap token to trigger popup automatically
                     sg_redirect_url('index.php?page=pembayaran&listing_id=' . $listingId . '&snap_token=' . $snapToken);
                 } catch (\Throwable $e) {
@@ -1237,47 +1348,30 @@ function sg_handle_submit_bid(): void
     }
 
     $deposit = sg_bid_deposit_amount();
-    $hasLockedDeposit = sg_fetch_one(
-        'SELECT id FROM bids WHERE listing_id = :listing_id AND bidder_id = :bidder_id AND deposit_status = "locked" LIMIT 1',
-        ['listing_id' => $listingId, 'bidder_id' => $buyerId]
-    );
-
-    $requiredDepositAmount = $hasLockedDeposit ? 0 : $deposit;
-
-    if ($requiredDepositAmount > 0) {
-        $wallet = sg_get_buyer_wallet_summary($buyerId);
-        if ($wallet['available'] < $requiredDepositAmount) {
-            sg_flash('Saldo jaminan belum cukup. Top up minimal ' . sg_rupiah($requiredDepositAmount) . ' di Wallet & Escrow pembeli untuk mengikuti lelang.', 'error');
-            sg_redirect('buyer_wallet');
-        }
+    $wallet = sg_get_buyer_wallet_summary($buyerId);
+    if ($wallet['available'] < $deposit) {
+        sg_flash('Untuk dapat mengajukan penawaran, Anda harus memiliki saldo aktif minimal ' . sg_rupiah($deposit) . ' di Wallet & Escrow.', 'error');
+        sg_redirect('buyer_wallet');
     }
 
-    sg_execute('UPDATE bids SET is_winning_bid = 0, bid_status = "outbid" WHERE listing_id = :listing_id AND is_winning_bid = 1', [
+    // Set penawaran aktif sebelumnya sebagai outbid
+    sg_execute('UPDATE bids SET bid_status = "outbid" WHERE listing_id = :listing_id AND bid_status = "active"', [
         'listing_id' => $listingId,
     ]);
 
     $created = sg_execute(
         'INSERT INTO bids (listing_id, bidder_id, bid_amount, deposit_amount, deposit_status, payment_deadline_at, bid_status, is_winning_bid, ip_address)
-         VALUES (:listing_id, :bidder_id, :bid_amount, :deposit_amount, "locked", DATE_ADD(NOW(), INTERVAL 2 HOUR), "winner_pending_payment", 1, :ip_address)',
+         VALUES (:listing_id, :bidder_id, :bid_amount, :deposit_amount, "locked", NULL, "active", 0, :ip_address)',
         [
             'listing_id' => $listingId,
             'bidder_id' => $buyerId,
             'bid_amount' => $bidAmount,
-            'deposit_amount' => $requiredDepositAmount,
+            'deposit_amount' => $deposit,
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
         ]
     );
 
     if ($created) {
-        if ($requiredDepositAmount > 0) {
-            $bidRow = sg_fetch_one(
-                'SELECT id FROM bids WHERE listing_id = :listing_id AND bidder_id = :bidder_id ORDER BY id DESC LIMIT 1',
-                ['listing_id' => $listingId, 'bidder_id' => $buyerId]
-            );
-            if ($bidRow) {
-                sg_wallet_activity($buyerId, 'bid_deposit_lock', $requiredDepositAmount, 'hold', 'locked', 'Jaminan lelang dikunci untuk ' . $listing['title'] . '.', null, (int) $bidRow['id']);
-            }
-        }
 
         sg_execute('UPDATE ticket_listings SET current_highest_bid = :amount WHERE id = :id', [
             'amount' => $bidAmount,
@@ -1412,8 +1506,8 @@ function sg_handle_open_dispute(): void
         sg_notify(
             (int) $transaction['seller_id'],
             'dispute_opened',
-            'Dispute Baru',
-            'Buyer membuka dispute untuk ' . $transaction['title'] . '. Dana escrow sementara dibekukan.',
+            'Laporan Masalah Transaksi (Admin)',
+            'Admin menangguhkan dana escrow transaksi ' . $transaction['transaction_code'] . ' karena laporan masalah dari pembeli. Silakan kirim penjelasan Anda ke Admin.',
             $transactionId
         );
         sg_notify_admins(
@@ -1426,6 +1520,119 @@ function sg_handle_open_dispute(): void
 
     sg_flash($created ? 'Dispute berhasil dibuka. Admin akan meninjau escrow transaksi ini.' : 'Dispute gagal dibuat: ' . sg_db_error(), $created ? 'success' : 'error');
     sg_redirect('my_tickets');
+}
+
+function sg_handle_seller_report_buyer(): void
+{
+    if (!sg_db()) {
+        sg_flash('Database belum aktif. Nyalakan MySQL dulu.', 'error');
+        sg_redirect('home');
+    }
+
+    $sellerId = sg_current_user_id();
+    $transactionId = (int) ($_POST['transaction_id'] ?? 0);
+    $claim = trim((string) ($_POST['seller_claim'] ?? ''));
+
+    if (!$sellerId) {
+        sg_flash('Login dulu sebelum melaporkan.', 'error');
+        sg_redirect('login');
+    }
+
+    if ($transactionId <= 0 || strlen($claim) < 12) {
+        sg_flash('Pilih transaksi dan tulis alasan laporan minimal 12 karakter.', 'error');
+        sg_redirect('home');
+    }
+
+    $transaction = sg_fetch_one(
+        'SELECT t.id, t.buyer_id, t.seller_id, t.escrow_status, t.transaction_code, e.title
+         FROM transactions t
+         JOIN ticket_listings tl ON tl.id = t.listing_id
+         JOIN events e ON e.id = tl.event_id
+         WHERE t.id = :id AND t.seller_id = :seller_id
+         LIMIT 1',
+        ['id' => $transactionId, 'seller_id' => $sellerId]
+    );
+
+    if (!$transaction) {
+        sg_flash('Transaksi tidak ditemukan di akun seller kamu.', 'error');
+        sg_redirect('home');
+    }
+
+    if (in_array($transaction['escrow_status'], ['released', 'refunded'], true)) {
+        sg_flash('Transaksi ini sudah selesai, tidak bisa dilaporkan.', 'error');
+        sg_redirect_url('index.php?page=transaction_detail&code=' . urlencode($transaction['transaction_code']));
+    }
+
+    $existing = sg_fetch_one(
+        'SELECT id FROM disputes WHERE transaction_id = :transaction_id AND status IN ("open", "under_review") LIMIT 1',
+        ['transaction_id' => $transactionId]
+    );
+
+    if ($existing) {
+        sg_flash('Laporan/Dispute untuk transaksi ini sudah aktif dan sedang ditinjau admin.', 'error');
+        sg_redirect_url('index.php?page=transaction_detail&code=' . urlencode($transaction['transaction_code']));
+    }
+
+    $created = sg_execute(
+        'INSERT INTO disputes (transaction_id, buyer_id, seller_id, buyer_claim, ip_origin, status, reported_by)
+         VALUES (:transaction_id, :buyer_id, :seller_id, :claim, :ip_origin, "open", "seller")',
+        [
+            'transaction_id' => $transactionId,
+            'buyer_id' => $transaction['buyer_id'],
+            'seller_id' => $sellerId,
+            'claim' => $claim,
+            'ip_origin' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+        ]
+    );
+
+    if ($created) {
+        $disputeRow = sg_fetch_one(
+            'SELECT id FROM disputes WHERE transaction_id = :transaction_id AND seller_id = :seller_id ORDER BY id DESC LIMIT 1',
+            ['transaction_id' => $transactionId, 'seller_id' => $sellerId]
+        );
+        if ($disputeRow) {
+            sg_execute(
+                'INSERT INTO dispute_messages (dispute_id, sender_id, sender_role, message)
+                 VALUES (:dispute_id, :sender_id, "seller", :message)',
+                [
+                    'dispute_id' => $disputeRow['id'],
+                    'sender_id' => $sellerId,
+                    'message' => $claim,
+                ]
+            );
+        }
+
+        sg_execute('UPDATE transactions SET escrow_status = "disputed" WHERE id = :id', ['id' => $transactionId]);
+        
+        // Notify buyer
+        sg_notify(
+            (int) $transaction['buyer_id'],
+            'dispute_opened',
+            'Laporan Masalah Transaksi (Admin)',
+            'Admin menangguhkan dana escrow transaksi ' . $transaction['transaction_code'] . ' karena laporan masalah dari penjual. Silakan kirim penjelasan Anda ke Admin.',
+            $transactionId
+        );
+
+        // Notify seller themselves
+        sg_notify(
+            $sellerId,
+            'dispute_opened',
+            'Laporan Dikirim',
+            'Laporan Anda untuk transaksi ' . $transaction['transaction_code'] . ' sedang menunggu tinjauan admin.',
+            $transactionId
+        );
+
+        // Notify admins
+        sg_notify_admins(
+            'dispute_opened',
+            'Laporan Seller Baru Dibuka',
+            'Transaksi ' . $transaction['transaction_code'] . ' dilaporkan oleh seller, membutuhkan investigasi admin.',
+            $transactionId
+        );
+    }
+
+    sg_flash($created ? 'Laporan berhasil dikirim. Admin akan meninjau dan mengonsolidasikan transaksi ini.' : 'Gagal memproses laporan: ' . sg_db_error(), $created ? 'success' : 'error');
+    sg_redirect_url('index.php?page=transaction_detail&code=' . urlencode($transaction['transaction_code']));
 }
 
 function sg_handle_buyer_confirm_ticket(): void
@@ -1558,7 +1765,9 @@ function sg_handle_dispute_message(): void
         sg_execute('UPDATE disputes SET status = "under_review" WHERE id = :id', ['id' => $disputeId]);
     }
 
-    if ($created && $role === 'seller' && trim((string) ($dispute['seller_defense'] ?? '')) === '') {
+    $reportedBy = $dispute['reported_by'] ?? 'buyer';
+    $isTargetParty = ($reportedBy === 'buyer' && $role === 'seller') || ($reportedBy === 'seller' && $role === 'buyer');
+    if ($created && $isTargetParty && trim((string) ($dispute['seller_defense'] ?? '')) === '') {
         sg_execute(
             'UPDATE disputes SET seller_defense = :message WHERE id = :id',
             ['message' => $message, 'id' => $disputeId]
@@ -1651,7 +1860,13 @@ function sg_handle_mark_notifications_read(): void
         ]);
     }
 
-    sg_redirect(sg_role_home());
+    $referer = $_SERVER['HTTP_REFERER'] ?? '';
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    if ($referer && parse_url($referer, PHP_URL_HOST) === $host) {
+        sg_redirect_url($referer);
+    } else {
+        sg_redirect(sg_role_home());
+    }
 }
 
 function sg_handle_export_transactions(): void
@@ -1714,109 +1929,114 @@ function sg_handle_export_seller_transactions(): void
 
     echo "\xEF\xBB\xBF";
     ?>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <style>
-        body {
-            font-family: Calibri, Arial, sans-serif;
-            color: #111827;
-        }
+    <!DOCTYPE html>
+    <html>
 
-        .report-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: #111827;
-        }
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {
+                font-family: Calibri, Arial, sans-serif;
+                color: #111827;
+            }
 
-        .report-meta {
-            color: #475569;
-            font-size: 12px;
-        }
+            .report-title {
+                font-size: 20px;
+                font-weight: 700;
+                color: #111827;
+            }
 
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
+            .report-meta {
+                color: #475569;
+                font-size: 12px;
+            }
 
-        th {
-            background: #b7dce8;
-            border: 1px solid #1f2937;
-            color: #111827;
-            font-size: 14px;
-            font-weight: 700;
-            text-align: center;
-            padding: 8px 10px;
-            mso-pattern: auto none;
-        }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
 
-        td {
-            border: 1px solid #1f2937;
-            font-size: 13px;
-            padding: 7px 10px;
-            vertical-align: middle;
-        }
+            th {
+                background: #b7dce8;
+                border: 1px solid #1f2937;
+                color: #111827;
+                font-size: 14px;
+                font-weight: 700;
+                text-align: center;
+                padding: 8px 10px;
+                mso-pattern: auto none;
+            }
 
-        .text-center {
-            text-align: center;
-        }
+            td {
+                border: 1px solid #1f2937;
+                font-size: 13px;
+                padding: 7px 10px;
+                vertical-align: middle;
+            }
 
-        .text-right {
-            text-align: right;
-        }
+            .text-center {
+                text-align: center;
+            }
 
-        .empty-row {
-            color: #64748b;
-            font-style: italic;
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-    <table>
-        <tr>
-            <td colspan="7" class="report-title">SafeGate Seller Transaction History</td>
-        </tr>
-        <tr>
-            <td colspan="7" class="report-meta">Generated At: <?= sg_h(date('d M Y H:i')) ?></td>
-        </tr>
-        <tr>
-            <td colspan="7" class="report-meta">
-                Filter: <?= sg_h($_GET['q'] ?? '-') ?> |
-                Date Range: <?= sg_h($_GET['date_range'] ?? 'Last 30 Days') ?> |
-                Status: <?= sg_h($_GET['status'] ?? 'All Status') ?>
-            </td>
-        </tr>
-        <tr><td colspan="7"></td></tr>
-        <tr>
-            <th>Date</th>
-            <th>Transaction ID</th>
-            <th>Event</th>
-            <th>Type</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Note</th>
-        </tr>
-        <?php if (empty($ledger['transactions'])): ?>
+            .text-right {
+                text-align: right;
+            }
+
+            .empty-row {
+                color: #64748b;
+                font-style: italic;
+                text-align: center;
+            }
+        </style>
+    </head>
+
+    <body>
+        <table>
             <tr>
-                <td colspan="7" class="empty-row">No transactions found</td>
+                <td colspan="7" class="report-title">SafeGate Seller Transaction History</td>
             </tr>
-        <?php endif; ?>
-        <?php foreach ($ledger['transactions'] as $row): ?>
             <tr>
-                <td class="text-center"><?= sg_h($row['date'] . ' ' . $row['time']) ?></td>
-                <td class="text-center"><?= sg_h($row['id']) ?></td>
-                <td><?= sg_h($row['title']) ?></td>
-                <td class="text-center"><?= sg_h($row['type']) ?></td>
-                <td class="text-right"><?= sg_h($row['amount']) ?></td>
-                <td class="text-center"><?= sg_h($row['status']) ?></td>
-                <td><?= sg_h($row['note']) ?></td>
+                <td colspan="7" class="report-meta">Generated At: <?= sg_h(date('d M Y H:i')) ?></td>
             </tr>
-        <?php endforeach; ?>
-    </table>
-</body>
-</html>
+            <tr>
+                <td colspan="7" class="report-meta">
+                    Filter: <?= sg_h($_GET['q'] ?? '-') ?> |
+                    Date Range: <?= sg_h($_GET['date_range'] ?? 'Last 30 Days') ?> |
+                    Status: <?= sg_h($_GET['status'] ?? 'All Status') ?>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="7"></td>
+            </tr>
+            <tr>
+                <th>Date</th>
+                <th>Transaction ID</th>
+                <th>Event</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Note</th>
+            </tr>
+            <?php if (empty($ledger['transactions'])): ?>
+                <tr>
+                    <td colspan="7" class="empty-row">No transactions found</td>
+                </tr>
+            <?php endif; ?>
+            <?php foreach ($ledger['transactions'] as $row): ?>
+                <tr>
+                    <td class="text-center"><?= sg_h($row['date'] . ' ' . $row['time']) ?></td>
+                    <td class="text-center"><?= sg_h($row['id']) ?></td>
+                    <td><?= sg_h($row['title']) ?></td>
+                    <td class="text-center"><?= sg_h($row['type']) ?></td>
+                    <td class="text-right"><?= sg_h($row['amount']) ?></td>
+                    <td class="text-center"><?= sg_h($row['status']) ?></td>
+                    <td><?= sg_h($row['note']) ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </table>
+    </body>
+
+    </html>
     <?php
     exit;
 }
@@ -1870,6 +2090,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         sg_handle_signup();
     } elseif ($action === 'login') {
         sg_handle_login();
+    } elseif ($action === 'admin_signup') {
+        sg_handle_admin_signup();
+    } elseif ($action === 'admin_login') {
+        sg_handle_admin_login();
     } elseif ($action === 'checkout_payment') {
         sg_handle_checkout_payment();
     } elseif ($action === 'submit_bid') {
@@ -1884,5 +2108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         sg_handle_dispute_message();
     } elseif ($action === 'listing_status') {
         sg_handle_listing_status();
+    } elseif ($action === 'seller_report_buyer') {
+        sg_handle_seller_report_buyer();
     }
 }

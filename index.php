@@ -33,6 +33,8 @@ $routes = [
     'admin_transactions' => __DIR__ . '/views/admin/transactions.php',
     'admin_disputes' => __DIR__ . '/views/admin/disputes.php',
     'admin_kyc' => __DIR__ . '/views/admin/kyc_center.php',
+    'admin_login' => __DIR__ . '/views/admin/login.php',
+    'admin_signup' => __DIR__ . '/views/admin/signup.php',
     'midtrans_notification' => __DIR__ . '/views/public/midtrans_notification.php',
 ];
 

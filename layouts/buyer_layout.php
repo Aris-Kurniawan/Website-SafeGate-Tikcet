@@ -24,6 +24,17 @@
                 <div class="sg-buyer-top-actions">
                     <a href="index.php?page=home" title="Home"><iconify-icon icon="ph:house"></iconify-icon></a>
                     <a href="index.php?page=buyer_wallet" title="Wallet"><iconify-icon icon="ph:wallet"></iconify-icon></a>
+                    <?php
+                    $unread_count = sg_current_user_id() ? sg_unread_notification_count(sg_current_user_id()) : 0;
+                    ?>
+                    <a href="index.php?page=buyer_dashboard" title="Notifications" style="position: relative;">
+                        <iconify-icon icon="ph:bell"></iconify-icon>
+                        <?php if ($unread_count > 0): ?>
+                            <span style="position: absolute; top: -6px; right: -6px; background: var(--safegate-danger, #FF4C4C); color: #fff; font-size: 8px; font-weight: 800; padding: 2px 4px; border-radius: 50%; line-height: 1; text-align: center; border: 1px solid var(--safegate-bg, #090B10); min-width: 14px;">
+                                <?= $unread_count ?>
+                            </span>
+                        <?php endif; ?>
+                    </a>
                 </div>
             </header>
             <?= isset($content) ? $content : '' ?>

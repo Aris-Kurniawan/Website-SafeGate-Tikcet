@@ -20,6 +20,10 @@ $first_case = $cases[0] ?? [
 ];
 $flash = sg_flash();
 
+$isFirstCaseSellerReport = ($first_case['reported_by_raw'] ?? 'buyer') === 'seller';
+$firstBuyerIcon = $isFirstCaseSellerReport ? 'ph:storefront-fill' : 'ph:user-fill';
+$firstSellerIcon = $isFirstCaseSellerReport ? 'ph:user-fill' : 'ph:storefront-fill';
+
 ob_start();
 ?>
 
@@ -94,8 +98,8 @@ ob_start();
         <!-- Buyer Claim -->
         <div class="sg-claim-block">
             <div class="sg-claim-block-title is-buyer">
-                <iconify-icon icon="ph:user-fill"></iconify-icon>
-                <span>Buyer Claim</span>
+                <iconify-icon id="det-buyer-icon" icon="<?= $firstBuyerIcon ?>"></iconify-icon>
+                <span id="det-buyer-label"><?= $isFirstCaseSellerReport ? 'Seller Claim' : 'Buyer Claim' ?></span>
             </div>
             <div class="sg-claim-content-box is-buyer">
                 <p class="sg-claim-text" id="det-buyer-claim">"<?= sg_h($first_case['buyer_claim']) ?>"</p>
@@ -109,8 +113,8 @@ ob_start();
         <!-- Seller Defense -->
         <div class="sg-claim-block">
             <div class="sg-claim-block-title is-seller">
-                <iconify-icon icon="ph:storefront-fill"></iconify-icon>
-                <span>Seller Defense</span>
+                <iconify-icon id="det-seller-icon" icon="<?= $firstSellerIcon ?>"></iconify-icon>
+                <span id="det-seller-label"><?= $isFirstCaseSellerReport ? 'Buyer Response' : 'Seller Defense' ?></span>
             </div>
             <div class="sg-claim-content-box is-seller">
                 <p class="sg-claim-text" id="det-seller-defense">"<?= sg_h($first_case['seller_defense']) ?>"</p>
@@ -141,6 +145,10 @@ ob_start();
         </div>
 
         <!-- Escrow Override Decision -->
+        <?php
+        $firstCaseStatus = $first_case['status_raw'] ?? 'open';
+        $isFirstCaseResolved = in_array($firstCaseStatus, ['resolved_refund', 'resolved_release'], true);
+        ?>
         <div class="sg-override-section">
             <div class="sg-override-notice">
                 <iconify-icon icon="ph:info-fill"></iconify-icon>
@@ -150,7 +158,17 @@ ob_start();
                 </span>
             </div>
             
-            <div class="sg-decision-cards">
+            <div class="sg-override-decision-summary" id="det-decision-summary" style="display: <?= $isFirstCaseResolved ? 'block' : 'none' ?>; padding: 20px; border-radius: 12px; background: rgba(217, 255, 0, 0.06); border: 1px solid rgba(217, 255, 0, 0.25); color: #fff; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 800; color: var(--safegate-neon, #d9ff00); text-transform: uppercase;">Dispute Resolved</h4>
+                <p style="margin: 0; font-size: 13px; color: var(--admin-text-muted);" id="det-decision-summary-text">
+                    <?php if ($isFirstCaseResolved): ?>
+                        Kasus ini telah diselesaikan oleh Admin <?= sg_h($first_case['admin_id']) ?>.<br>
+                        <strong>Keputusan Final:</strong> <?= ($first_case['resolution_raw'] ?? '') === 'release_seller' ? 'Dana dilepas ke Penjual (Seller)' : 'Dana di-refund ke Pembeli (Buyer)' ?>.
+                    <?php endif; ?>
+                </p>
+            </div>
+
+            <div class="sg-decision-cards" style="display: <?= $isFirstCaseResolved ? 'none' : 'flex' ?>;">
                 <button class="sg-decision-card-btn is-refund" onclick="handleDecision('refund')" <?= $cases ? '' : 'disabled' ?>>
                     <iconify-icon icon="ph:arrow-counter-clockwise-fill"></iconify-icon>
                     <span class="sg-decision-card-btn-title">Refund Buyer (Ban Seller)</span>
@@ -202,6 +220,18 @@ function selectCase(caseId) {
         document.getElementById('det-pool').textContent = cData.pool;
         document.getElementById('det-buyer-claim').textContent = '"' + cData.buyer_claim + '"';
         document.getElementById('det-seller-defense').textContent = '"' + cData.seller_defense + '"';
+        
+        const isSellerReport = cData.reported_by_raw === 'seller';
+        document.getElementById('det-buyer-label').textContent = isSellerReport ? 'Seller Claim' : 'Buyer Claim';
+        document.getElementById('det-seller-label').textContent = isSellerReport ? 'Buyer Response' : 'Seller Defense';
+        
+        const buyerIcon = document.getElementById('det-buyer-icon');
+        const sellerIcon = document.getElementById('det-seller-icon');
+        if (buyerIcon && sellerIcon) {
+            buyerIcon.setAttribute('icon', isSellerReport ? 'ph:storefront-fill' : 'ph:user-fill');
+            sellerIcon.setAttribute('icon', isSellerReport ? 'ph:user-fill' : 'ph:storefront-fill');
+        }
+
         document.getElementById('det-ip').textContent = cData.ip_origin;
         document.getElementById('det-wallet').textContent = cData.wallet_age;
         
@@ -222,6 +252,25 @@ function selectCase(caseId) {
         
         document.getElementById('det-auth').textContent = cData.auth_level;
         document.getElementById('det-admin-id').textContent = cData.admin_id;
+
+        // Dynamic summary of resolved case
+        const decisionSummaryEl = document.getElementById('det-decision-summary');
+        const decisionSummaryTextEl = document.getElementById('det-decision-summary-text');
+        const decisionCardsEl = document.querySelector('.sg-decision-cards');
+        const isResolved = cData.status_raw === 'resolved_refund' || cData.status_raw === 'resolved_release';
+        
+        if (isResolved) {
+            if (decisionCardsEl) decisionCardsEl.style.display = 'none';
+            if (decisionSummaryEl) {
+                decisionSummaryEl.style.display = 'block';
+                const actionTeks = cData.resolution_raw === 'release_seller' ? 'Dana dilepas ke Penjual (Seller)' : 'Dana di-refund ke Pembeli (Buyer)';
+                decisionSummaryTextEl.innerHTML = `Kasus ini telah diselesaikan oleh Admin ${cData.admin_id}.<br><strong>Keputusan Final:</strong> ${actionTeks}.`;
+            }
+        } else {
+            if (decisionCardsEl) decisionCardsEl.style.display = 'flex';
+            if (decisionSummaryEl) decisionSummaryEl.style.display = 'none';
+        }
+
         const evidenceLink = document.getElementById('det-evidence-link');
         if (evidenceLink) {
             evidenceLink.href = cData.detail_link || 'index.php?page=admin_transactions';

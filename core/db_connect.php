@@ -8,16 +8,20 @@ if (PHP_SAPI !== 'cli' && session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Load Composer autoloader only when dependencies are installed.
+// Load Composer autoloader and initialize Dotenv
 $sgComposerAutoload = dirname(__DIR__) . '/vendor/autoload.php';
 if (is_file($sgComposerAutoload)) {
     require_once $sgComposerAutoload;
+    if (class_exists('Dotenv\Dotenv') && file_exists(dirname(__DIR__) . '/.env')) {
+        $dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
+        $dotenv->load();
+    }
 }
 
 function sg_env(string $key, string $default = ''): string
 {
-    $value = getenv($key);
-    return $value === false || $value === '' ? $default : $value;
+    $value = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key) ?? false;
+    return $value === false || $value === '' || $value === null ? $default : (string) $value;
 }
 
 define('SG_DB_HOST', sg_env('SG_DB_HOST', 'localhost'));
@@ -28,7 +32,7 @@ define('SG_DB_PASS', sg_env('SG_DB_PASS', ''));
 // Midtrans Configurations (Default Sandbox from User)
 define('SG_MIDTRANS_SERVER_KEY', sg_env('SG_MIDTRANS_SERVER_KEY'));
 define('SG_MIDTRANS_CLIENT_KEY', sg_env('SG_MIDTRANS_CLIENT_KEY'));
-define('SG_MIDTRANS_IS_PRODUCTION', getenv('SG_MIDTRANS_IS_PRODUCTION') === 'true');
+define('SG_MIDTRANS_IS_PRODUCTION', sg_env('SG_MIDTRANS_IS_PRODUCTION') === 'true');
 
 
 function sg_db(): ?PDO
@@ -51,6 +55,10 @@ function sg_db(): ?PDO
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
         ]);
+
+        // Sync database connection timezone with PHP default timezone
+        $offset = (new DateTime())->format('P');
+        $pdo->exec("SET time_zone = '$offset'");
 
         return $pdo;
     } catch (Throwable $error) {
@@ -214,4 +222,60 @@ function sg_flash(?string $message = null, string $type = 'success'): ?array
     $flash = $_SESSION['sg_flash'] ?? null;
     unset($_SESSION['sg_flash']);
     return $flash;
+}
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+function sg_send_email(string $toEmail, string $toName, string $subject, string $body): bool
+{
+    $host = $_ENV['SMTP_HOST'] ?? getenv('SMTP_HOST') ?? '';
+    $port = $_ENV['SMTP_PORT'] ?? getenv('SMTP_PORT') ?? '';
+    $user = $_ENV['SMTP_USER'] ?? getenv('SMTP_USER') ?? '';
+    $pass = $_ENV['SMTP_PASS'] ?? getenv('SMTP_PASS') ?? '';
+
+    if (empty($host) || empty($user) || empty($pass) || empty($port)) {
+        $errorMsg = "[" . date('Y-m-d H:i:s') . "] Mailer Error: SMTP settings are incomplete in environment.";
+        file_put_contents(dirname(__DIR__) . '/cron_debug.log', $errorMsg . PHP_EOL, FILE_APPEND);
+        return false;
+    }
+
+    try {
+        $mail = new PHPMailer(true);
+        $mail->isSMTP();
+        $mail->Host = $host;
+        $mail->SMTPAuth = true;
+        $mail->Username = $user;
+        $mail->Password = $pass;
+        $mail->Port = (int) $port;
+
+        if ($port == 2525 || $port == 587) {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        } elseif ($port == 465) {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        } else {
+            $mail->SMTPSecure = '';
+            $mail->SMTPAutoTLS = false;
+        }
+
+        $senderEmail = $_ENV['SMTP_FROM'] ?? getenv('SMTP_FROM') ?? 'ariskurniawn12@gmail.com';
+        $mail->setFrom($senderEmail, 'SafeGate Auction Alert');
+        $mail->addAddress($toEmail, $toName);
+
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body = $body;
+
+        $sent = $mail->send();
+
+        $logMsg = "[" . date('Y-m-d H:i:s') . "] Email sent successfully to " . $toEmail . " (" . $toName . ") | Subject: " . $subject;
+        file_put_contents(dirname(__DIR__) . '/cron_debug.log', $logMsg . PHP_EOL, FILE_APPEND);
+
+        return $sent;
+    } catch (\Throwable $e) {
+        $errorMsg = "[" . date('Y-m-d H:i:s') . "] Mailer Exception to " . $toEmail . ": " . $e->getMessage();
+        error_log('Mailer Error: ' . $e->getMessage());
+        file_put_contents(dirname(__DIR__) . '/cron_debug.log', $errorMsg . PHP_EOL, FILE_APPEND);
+        return false;
+    }
 }

@@ -55,15 +55,41 @@ ob_start();
         <article class="sg-buyer-kpi sg-wallet-recent-card">
             <span>Aktivitas Terbaru</span>
             <div class="sg-wallet-recent-list">
-                <?php foreach (array_slice($user_notifications, 0, 2) as $notification): ?>
-                    <p class="<?= (int) $notification['is_read'] ? 'is-read' : '' ?>">
+                <?php foreach (array_slice($user_notifications, 0, 2) as $notification):
+                    $type = $notification['type'] ?? '';
+                    $isRead = (int) ($notification['is_read'] ?? 0);
+                    
+                    $itemClass = '';
+                    if ($type === 'auction_won' || $type === 'payment_success' || $type === 'kyc_approved' || $type === 'escrow_released') {
+                        $itemClass = 'is-success';
+                    } elseif ($type === 'auction_lost' || $type === 'kyc_rejected') {
+                        $itemClass = 'is-danger';
+                    } elseif ($type === 'bid_placed' || $type === 'dispute_opened') {
+                        $itemClass = 'is-warning';
+                    } else {
+                        $itemClass = 'is-info';
+                    }
+                    
+                    if ($isRead) {
+                        $itemClass .= ' is-read';
+                    }
+                ?>
+                    <?php if ($type === 'auction_won'): ?>
+                        <a href="index.php?page=pembayaran&listing_id=<?= (int) $notification['related_id'] ?>" class="<?= $itemClass ?>" style="text-decoration: none; color: inherit; display: grid; grid-template-columns: 9px minmax(0, 1fr); align-items: start; column-gap: 12px; margin: 0; padding: 0;">
+                    <?php else: ?>
+                        <p class="<?= $itemClass ?>">
+                    <?php endif; ?>
                         <i></i>
                         <span>
                             <strong><?= sg_h($notification['title']) ?></strong>
                             <small><?= sg_h($notification['body']) ?></small>
                             <em><?= strtoupper(sg_time_ago($notification['created_at'])) ?></em>
                         </span>
-                    </p>
+                    <?php if ($type === 'auction_won'): ?>
+                        </a>
+                    <?php else: ?>
+                        </p>
+                    <?php endif; ?>
                 <?php endforeach; ?>
                 <?php if (!$user_notifications): ?>
                     <p class="is-empty"><i></i><span><strong>Belum ada notifikasi</strong><small>Aktivitas lelang, KYC, dan tiket akan muncul di sini.</small><em>MENUNGGU AKTIVITAS</em></span></p>

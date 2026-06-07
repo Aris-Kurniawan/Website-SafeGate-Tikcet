@@ -79,6 +79,20 @@ if ($current_page === 'detail_tiket') {
                     $dashboardLabel = 'Seller Panel';
                 }
             ?>
+                <!-- Notifications Bell -->
+                <?php if ($userRole === 'buyer'): 
+                    $unread_count = sg_unread_notification_count($userId);
+                ?>
+                    <a href="index.php?page=buyer_dashboard" class="text-white text-decoration-none hover-neon position-relative me-2" style="font-size: 1.2rem; display: inline-flex; align-items: center;" title="Notifications">
+                        <iconify-icon icon="ph:bell"></iconify-icon>
+                        <?php if ($unread_count > 0): ?>
+                            <span class="position-absolute translate-middle badge rounded-pill bg-danger" style="font-size: 8px; padding: 2px 4px; top: 0px; left: 16px; border: 1.5px solid var(--safegate-bg);">
+                                <?= $unread_count ?>
+                            </span>
+                        <?php endif; ?>
+                    </a>
+                <?php endif; ?>
+
                 <!-- User Profile Dropdown -->
                 <div class="dropdown">
                     <button class="btn btn-link text-white d-flex align-items-center gap-2 text-decoration-none dropdown-toggle p-0" type="button" id="userMenuDropdown" data-bs-toggle="dropdown" aria-expanded="false">

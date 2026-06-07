@@ -74,11 +74,19 @@ ob_start();
                 <a href="#">View All</a>
             </div>
             <table>
-                <thead><tr><th>Tanggal</th><th>Metode</th><th>Jumlah</th><th>Status</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Metode</th>
+                        <th>Jumlah</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
                 <tbody>
                     <?php if (!$withdrawals): ?>
                         <tr>
-                            <td colspan="4" style="color: var(--safegate-text-sec);">Belum ada riwayat penarikan dari database.</td>
+                            <td colspan="4" style="color: var(--safegate-text-sec);">Belum ada riwayat penarikan dari
+                                database.</td>
                         </tr>
                     <?php endif; ?>
                     <?php foreach ($withdrawals as $withdrawal): ?>
@@ -86,7 +94,9 @@ ob_start();
                             <td><?= $withdrawal['date'] ?></td>
                             <td><?= $withdrawal['method'] ?></td>
                             <td><strong><?= $withdrawal['amount'] ?></strong></td>
-                            <td><span class="sg-withdraw-status is-<?= $withdrawal['class'] ?>"><?= $withdrawal['status'] ?></span></td>
+                            <td><span
+                                    class="sg-withdraw-status is-<?= $withdrawal['class'] ?>"><?= $withdrawal['status'] ?></span>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
