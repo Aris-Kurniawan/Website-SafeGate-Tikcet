@@ -177,7 +177,7 @@ function sg_handle_create_listing(): void
          FROM ticket_listings
          WHERE event_id = :event_id
            AND section = :section
-           AND row = :row
+           AND `row` = :row
            AND seat = :seat
            AND listing_status NOT IN ("cancelled", "sold")
          LIMIT 1',
@@ -195,7 +195,7 @@ function sg_handle_create_listing(): void
 
     $created = sg_execute(
         'INSERT INTO ticket_listings
-            (seller_id, event_id, section, row, seat, face_value, starting_bid, reserve_price, current_highest_bid, auction_duration_hours, auction_end_at, ticket_proof_path, listing_status)
+            (seller_id, event_id, section, `row`, seat, face_value, starting_bid, reserve_price, current_highest_bid, auction_duration_hours, auction_end_at, ticket_proof_path, listing_status)
          VALUES
             (:seller_id, :event_id, :section, :row, :seat, :face_value, :starting_bid, :reserve_price, :current_highest_bid, :duration, :auction_end_at, :proof, "active")',
         [
