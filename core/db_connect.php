@@ -229,52 +229,64 @@ use PHPMailer\PHPMailer\Exception;
 
 function sg_send_email(string $toEmail, string $toName, string $subject, string $body): bool
 {
-    $host = $_ENV['SMTP_HOST'] ?? getenv('SMTP_HOST') ?? '';
-    $port = $_ENV['SMTP_PORT'] ?? getenv('SMTP_PORT') ?? '';
-    $user = $_ENV['SMTP_USER'] ?? getenv('SMTP_USER') ?? '';
-    $pass = $_ENV['SMTP_PASS'] ?? getenv('SMTP_PASS') ?? '';
+    $apiKey = $_ENV['BREVO_API_KEY'] ?? getenv('BREVO_API_KEY') ?? '';
+    $senderEmail = $_ENV['SMTP_FROM'] ?? getenv('SMTP_FROM') ?? 'ariskurniawn12@gmail.com';
 
-    if (empty($host) || empty($user) || empty($pass) || empty($port)) {
-        $errorMsg = "[" . date('Y-m-d H:i:s') . "] Mailer Error: SMTP settings are incomplete in environment.";
+    if (empty($apiKey)) {
+        $errorMsg = "[" . date('Y-m-d H:i:s') . "] Mailer Error: Brevo API Key is missing in environment.";
         file_put_contents(dirname(__DIR__) . '/cron_debug.log', $errorMsg . PHP_EOL, FILE_APPEND);
         return false;
     }
 
+    $payload = [
+        'sender' => [
+            'name' => 'SafeGate Auction Alert',
+            'email' => $senderEmail
+        ],
+        'to' => [
+            [
+                'email' => $toEmail,
+                'name' => $toName
+            ]
+        ],
+        'subject' => $subject,
+        'htmlContent' => $body
+    ];
+
     try {
-        $mail = new PHPMailer(true);
-        $mail->isSMTP();
-        $mail->Host = $host;
-        $mail->SMTPAuth = true;
-        $mail->Username = $user;
-        $mail->Password = $pass;
-        $mail->Port = (int) $port;
-
-        if ($port == 2525 || $port == 587) {
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        } elseif ($port == 465) {
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-        } else {
-            $mail->SMTPSecure = '';
-            $mail->SMTPAutoTLS = false;
+        $ch = curl_init('https://api.brevo.com/v3/smtp/email');
+        if ($ch === false) {
+            throw new \Exception('Failed to initialize cURL');
         }
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'accept: application/json',
+            'api-key: ' . $apiKey,
+            'content-type: application/json'
+        ]);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
 
-        $senderEmail = $_ENV['SMTP_FROM'] ?? getenv('SMTP_FROM') ?? 'ariskurniawn12@gmail.com';
-        $mail->setFrom($senderEmail, 'SafeGate Auction Alert');
-        $mail->addAddress($toEmail, $toName);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
 
-        $mail->isHTML(true);
-        $mail->Subject = $subject;
-        $mail->Body = $body;
-
-        $sent = $mail->send();
-
-        $logMsg = "[" . date('Y-m-d H:i:s') . "] Email sent successfully to " . $toEmail . " (" . $toName . ") | Subject: " . $subject;
-        file_put_contents(dirname(__DIR__) . '/cron_debug.log', $logMsg . PHP_EOL, FILE_APPEND);
-
-        return $sent;
+        if ($httpCode >= 200 && $httpCode < 300) {
+            $logMsg = "[" . date('Y-m-d H:i:s') . "] Email sent successfully via Brevo API to " . $toEmail . " (" . $toName . ") | Subject: " . $subject;
+            file_put_contents(dirname(__DIR__) . '/cron_debug.log', $logMsg . PHP_EOL, FILE_APPEND);
+            return true;
+        } else {
+            $errorMsg = "[" . date('Y-m-d H:i:s') . "] Mailer Error via Brevo API to " . $toEmail . ": HTTP Code " . $httpCode . " | cURL Error: " . $curlError . " | Response: " . $response;
+            error_log($errorMsg);
+            file_put_contents(dirname(__DIR__) . '/cron_debug.log', $errorMsg . PHP_EOL, FILE_APPEND);
+            return false;
+        }
     } catch (\Throwable $e) {
-        $errorMsg = "[" . date('Y-m-d H:i:s') . "] Mailer Exception to " . $toEmail . ": " . $e->getMessage();
-        error_log('Mailer Error: ' . $e->getMessage());
+        $errorMsg = "[" . date('Y-m-d H:i:s') . "] Mailer Exception via Brevo API to " . $toEmail . ": " . $e->getMessage();
+        error_log($errorMsg);
         file_put_contents(dirname(__DIR__) . '/cron_debug.log', $errorMsg . PHP_EOL, FILE_APPEND);
         return false;
     }
