@@ -3,5 +3,5 @@
 /assets/uploads/
 /vendor/
 .env
-
+/database/clear_dummy_data.sql
 
