@@ -1801,7 +1801,7 @@ function sg_handle_listing_status(): void
     $sellerId = sg_current_user_id();
     $listingId = (int) ($_POST['listing_id'] ?? 0);
     $status = $_POST['listing_status'] ?? '';
-    $allowed = ['active', 'paused', 'cancelled', 'promoted'];
+    $allowed = ['active', 'paused', 'cancelled', 'promoted', 'delete'];
 
     if (!$sellerId) {
         sg_flash('Login dulu untuk mengelola listing.', 'error');
@@ -1823,17 +1823,28 @@ function sg_handle_listing_status(): void
         sg_redirect('active_listings');
     }
 
-    $updated = sg_execute(
-        'UPDATE ticket_listings SET listing_status = :status, is_promoted = :promoted WHERE id = :id AND seller_id = :seller_id',
-        [
-            'status' => $status,
-            'promoted' => $status === 'promoted' ? 1 : 0,
-            'id' => $listingId,
-            'seller_id' => $sellerId,
-        ]
-    );
-
-    sg_flash($updated ? 'Status listing berhasil diperbarui.' : 'Gagal update listing: ' . sg_db_error(), $updated ? 'success' : 'error');
+    if ($status === 'delete') {
+        if ($listing['listing_status'] !== 'cancelled') {
+            sg_flash('Hanya listing yang dibatalkan (cancelled) yang dapat dihapus.', 'error');
+            sg_redirect('active_listings');
+        }
+        $deleted = sg_execute(
+            'DELETE FROM ticket_listings WHERE id = :id AND seller_id = :seller_id',
+            ['id' => $listingId, 'seller_id' => $sellerId]
+        );
+        sg_flash($deleted ? 'Listing tiket berhasil dihapus.' : 'Gagal menghapus listing: ' . sg_db_error(), $deleted ? 'success' : 'error');
+    } else {
+        $updated = sg_execute(
+            'UPDATE ticket_listings SET listing_status = :status, is_promoted = :promoted WHERE id = :id AND seller_id = :seller_id',
+            [
+                'status' => $status,
+                'promoted' => $status === 'promoted' ? 1 : 0,
+                'id' => $listingId,
+                'seller_id' => $sellerId,
+            ]
+        );
+        sg_flash($updated ? 'Status listing berhasil diperbarui.' : 'Gagal update listing: ' . sg_db_error(), $updated ? 'success' : 'error');
+    }
     sg_redirect('active_listings');
 }
 

@@ -46,12 +46,16 @@ ob_start();
                     <form action="index.php?page=active_listings" method="post" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
                         <input type="hidden" name="sg_action" value="listing_status">
                         <input type="hidden" name="listing_id" value="<?= (int) $listing['id'] ?>">
-                        <?php if (in_array(($listing['status_raw'] ?? ''), ['paused', 'pending_review'], true)): ?>
-                            <button type="submit" name="listing_status" value="active">Activate</button>
+                        <?php if (($listing['status_raw'] ?? '') === 'cancelled'): ?>
+                            <button type="submit" name="listing_status" value="delete" class="is-danger" onclick="return confirm('Apakah Anda yakin ingin menghapus listing tiket ini secara permanen?')">Delete</button>
                         <?php else: ?>
-                            <button type="submit" name="listing_status" value="paused">Pause</button>
+                            <?php if (in_array(($listing['status_raw'] ?? ''), ['paused', 'pending_review'], true)): ?>
+                                <button type="submit" name="listing_status" value="active">Activate</button>
+                            <?php else: ?>
+                                <button type="submit" name="listing_status" value="paused">Pause</button>
+                            <?php endif; ?>
+                            <button type="submit" name="listing_status" value="cancelled">Cancel</button>
                         <?php endif; ?>
-                        <button type="submit" name="listing_status" value="cancelled">Cancel</button>
                     </form>
                 <?php else: ?>
                     <a href="<?= !empty($listing['id']) ? 'index.php?page=detail_tiket&listing_id=' . urlencode($listing['id']) : 'index.php?page=sell_ticket' ?>" style="text-decoration:none;">Manage</a>

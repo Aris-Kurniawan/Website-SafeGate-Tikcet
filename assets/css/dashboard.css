@@ -2061,6 +2061,16 @@
     font-size: 13px;
 }
 
+.sg-listing-card button.is-danger {
+    background: var(--safegate-danger);
+    border-color: rgba(255, 76, 76, .3);
+}
+
+.sg-listing-card button.is-danger:hover {
+    background: #ff3333;
+    border-color: rgba(255, 76, 76, .5);
+}
+
 .sg-listing-card-empty {
     grid-template-columns: 52px minmax(0, 1fr) auto auto auto;
     gap: 19px;
