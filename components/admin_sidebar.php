@@ -33,6 +33,12 @@ $asset_prefix = isset($asset_prefix) ? $asset_prefix : ((strpos($_SERVER['SCRIPT
             <iconify-icon icon="ph:user-focus-fill"></iconify-icon>
             <span>Identity Verification</span>
         </a>
+
+        <!-- Mobile only logout item -->
+        <a href="<?= $asset_prefix ?>index.php?sg_action=logout" class="sg-admin-menu-item sg-admin-mobile-logout" style="display: none;">
+            <iconify-icon icon="ph:sign-out-fill"></iconify-icon>
+            <span>Log Out</span>
+        </a>
     </nav>
 
     <div class="sg-admin-sidebar-footer">

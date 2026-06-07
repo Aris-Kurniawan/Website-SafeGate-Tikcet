@@ -2357,4 +2357,92 @@ body.sg-admin-shell::-webkit-scrollbar-thumb:hover {
     box-shadow: 0 0 20px rgba(217, 255, 0, 0.35);
 }
 
+/* --- Responsive Admin Layout & Sidebar Toggle --- */
+.sg-admin-hamburger {
+    display: none;
+}
+
+@media (max-width: 991.98px) {
+    .sg-admin-header {
+        position: relative;
+        z-index: 1000;
+        padding: 0 16px !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .sg-admin-header-right {
+        display: none !important;
+    }
+    
+    .sg-admin-hamburger {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 28px;
+        cursor: pointer;
+        padding: 8px;
+        outline: none;
+    }
+    
+    .sg-admin-frame {
+        flex-direction: column !important;
+        min-height: auto !important;
+    }
+    
+    .sg-admin-sidebar {
+        display: none !important;
+        width: 100% !important;
+        height: auto !important;
+        position: absolute !important;
+        top: 70px !important;
+        left: 0 !important;
+        right: 0 !important;
+        background-color: #080A0E !important;
+        border-right: none !important;
+        border-bottom: 1px solid var(--admin-border) !important;
+        padding: 16px 0 !important;
+        z-index: 999 !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    .sg-admin-sidebar.is-open {
+        display: flex !important;
+    }
+    
+    .sg-admin-sidebar-header {
+        display: none !important;
+    }
+    
+    .sg-admin-sidebar-menu {
+        padding: 0 16px !important;
+        gap: 4px !important;
+        flex: none !important;
+    }
+    
+    .sg-admin-menu-item {
+        padding: 12px 16px !important;
+        border-radius: 6px !important;
+    }
+    
+    .sg-admin-sidebar-footer {
+        padding: 16px !important;
+        margin-top: 12px !important;
+        border-top: 1px solid var(--admin-border) !important;
+    }
+    
+    .sg-admin-mobile-logout {
+        display: flex !important;
+    }
+    
+    .sg-admin-main {
+        padding: 24px 16px !important;
+        gap: 24px !important;
+    }
+}
+
 
