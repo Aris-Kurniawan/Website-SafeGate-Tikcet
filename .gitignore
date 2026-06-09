@@ -4,4 +4,5 @@
 /vendor/
 .env
 /database/clear_dummy_data.sql
-
+/materi_backend_safegate.md
+/database/dataupload.sql

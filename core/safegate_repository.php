@@ -1503,6 +1503,7 @@ function sg_get_dispute_messages(int $disputeId): array
         'SELECT dm.*, u.full_name
          FROM dispute_messages dm
          JOIN users u ON u.id = dm.sender_id
+         
          WHERE dm.dispute_id = :dispute_id
          ORDER BY dm.created_at ASC',
         ['dispute_id' => $disputeId]
