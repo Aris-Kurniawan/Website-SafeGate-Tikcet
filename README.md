@@ -99,7 +99,6 @@ Projek ini dikembangkan dan dikelola oleh kontributor berikut yang terdaftar sec
 * **Sabilu Rosyada** ([@sabiluu](https://github.com/sabiluu))
 * **Hanif** ([@biru16660](https://github.com/biru16660))
 * **Putri Nurma** ([@putrinurma2007](https://github.com/putrinurma2007))
-* **Adikatrok** ([@adikatrok2](https://github.com/adikatrok2))
 
 Dibuat dengan kontribusi aktif. Anda dapat melihat daftar lengkap kontributor dan kontribusi mereka secara langsung di GitHub.
 
