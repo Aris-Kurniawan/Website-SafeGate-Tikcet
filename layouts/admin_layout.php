@@ -18,7 +18,7 @@
     ?>
     <!-- Styled Theme & Base Styles -->
     <link href="<?= $assets_path ?>/css/global.css" rel="stylesheet">
-    <link href="<?= $assets_path ?>/css/admin.css" rel="stylesheet">
+    <link href="<?= $assets_path ?>/css/admin.css?v=<?= time() ?>" rel="stylesheet">
 
     <!-- Global JS Utils & Admin Interactions -->
     <script src="<?= $assets_path ?>/js/utils.js"></script>

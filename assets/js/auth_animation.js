@@ -44,3 +44,18 @@ document.addEventListener('DOMContentLoaded', () => {
         visualCol.style.transform = 'translateX(0)';
     }
 });
+
+// Fungsi untuk menampilkan/menyembunyikan password
+function togglePasswordVisibility(inputId, iconId) {
+    const passwordInput = document.getElementById(inputId);
+    const toggleIcon = document.getElementById(iconId);
+    if (!passwordInput || !toggleIcon) return;
+
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.setAttribute('icon', 'ph:eye');
+    } else {
+        passwordInput.type = 'password';
+        toggleIcon.setAttribute('icon', 'ph:eye-slash');
+    }
+}

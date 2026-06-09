@@ -1,6 +1,11 @@
 <?php
+require_once __DIR__ . '/../../core/safegate_repository.php';
+
 $page_title = 'Active Listings - SafeGate';
 $dashboard_page = 'active_listings';
+$seller_id = sg_current_user_id();
+$listings = sg_get_seller_listings($seller_id);
+$flash = sg_flash();
 
 ob_start();
 ?>
@@ -11,24 +16,50 @@ ob_start();
         <p>Pantau tiket aktif, status lelang, dan performa listing Anda.</p>
     </header>
 
+    <?php if ($flash): ?>
+        <p class="sg-list-status <?= $flash['type'] === 'error' ? 'is-error' : '' ?>"><?= sg_h($flash['message']) ?></p>
+    <?php endif; ?>
+
     <div class="sg-active-grid">
-        <?php
-        $listings = [
-            ['title' => 'The Eras Tour - London', 'price' => 'Rp 1.500.000', 'status' => 'Auction Live', 'meta' => 'Wembley Stadium · 18 bids'],
-            ['title' => 'Coldplay Music of the Spheres', 'price' => 'Rp 950.000', 'status' => 'Under Review', 'meta' => 'GBK Jakarta · Verification'],
-            ['title' => 'Premier League: London Derby', 'price' => 'Rp 1.800.000', 'status' => 'Fixed Price', 'meta' => 'North Stand · 4 watchers'],
-        ];
-        foreach ($listings as $listing):
-        ?>
+        <?php if (!$listings): ?>
+            <article class="sg-panel sg-listing-card sg-listing-card-empty" style="grid-column: 1 / -1;">
+                <div class="sg-listing-thumb"><iconify-icon icon="ph:ticket"></iconify-icon></div>
+                <div>
+                    <h2>Belum ada listing dari database</h2>
+                    <p>Listing yang kamu buat akan muncul di sini setelah tersimpan.</p>
+                </div>
+                <strong><?= sg_rupiah(0) ?></strong>
+                <span>Empty</span>
+                <a href="index.php?page=sell_ticket" style="text-decoration:none;">Create Listing</a>
+            </article>
+        <?php endif; ?>
+        <?php foreach ($listings as $listing): ?>
             <article class="sg-panel sg-listing-card">
                 <div class="sg-listing-thumb"><iconify-icon icon="ph:ticket"></iconify-icon></div>
                 <div>
-                    <h2><?= htmlspecialchars($listing['title']) ?></h2>
-                    <p><?= htmlspecialchars($listing['meta']) ?></p>
+                    <h2><?= sg_h($listing['title']) ?></h2>
+                    <p><?= sg_h($listing['meta']) ?></p>
                 </div>
-                <strong><?= htmlspecialchars($listing['price']) ?></strong>
-                <span><?= htmlspecialchars($listing['status']) ?></span>
-                <button type="button">Manage</button>
+                <strong><?= sg_h($listing['price']) ?></strong>
+                <span><?= sg_h($listing['status']) ?></span>
+                <?php if (!empty($listing['id']) && ($listing['status_raw'] ?? '') !== 'sold'): ?>
+                    <form action="index.php?page=active_listings" method="post" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                        <input type="hidden" name="sg_action" value="listing_status">
+                        <input type="hidden" name="listing_id" value="<?= (int) $listing['id'] ?>">
+                        <?php if (($listing['status_raw'] ?? '') === 'cancelled'): ?>
+                            <button type="submit" name="listing_status" value="delete" class="is-danger" onclick="return confirm('Apakah Anda yakin ingin menghapus listing tiket ini secara permanen?')">Delete</button>
+                        <?php else: ?>
+                            <?php if (in_array(($listing['status_raw'] ?? ''), ['paused', 'pending_review'], true)): ?>
+                                <button type="submit" name="listing_status" value="active">Activate</button>
+                            <?php else: ?>
+                                <button type="submit" name="listing_status" value="paused">Pause</button>
+                            <?php endif; ?>
+                            <button type="submit" name="listing_status" value="cancelled">Cancel</button>
+                        <?php endif; ?>
+                    </form>
+                <?php else: ?>
+                    <a href="<?= !empty($listing['id']) ? 'index.php?page=detail_tiket&listing_id=' . urlencode($listing['id']) : 'index.php?page=sell_ticket' ?>" style="text-decoration:none;">Manage</a>
+                <?php endif; ?>
             </article>
         <?php endforeach; ?>
     </div>

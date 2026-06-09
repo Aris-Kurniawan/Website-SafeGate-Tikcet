@@ -1,6 +1,7 @@
 <?php
 $page_title = "Sign Up - SafeGate";
 $base_path = (strpos($_SERVER['SCRIPT_NAME'], 'views/') !== false) ? '../../' : '';
+$flash = function_exists('sg_flash') ? sg_flash() : null;
 ob_start();
 ?>
 <!-- Iconify -->
@@ -32,6 +33,12 @@ ob_start();
             <p class="mb-4" style="color: var(--safegate-text-sec); font-size: 0.95rem;">Register your credentials for
                 the terminal.</p>
 
+            <?php if ($flash): ?>
+                <div class="mb-3 rounded-3 px-3 py-2 fw-semibold" style="background: rgba(217,255,0,0.08); border: 1px solid rgba(217,255,0,0.2); color: var(--safegate-neon); font-size: .85rem;">
+                    <?= sg_h($flash['message']) ?>
+                </div>
+            <?php endif; ?>
+
             <!-- Tabs -->
             <div class="d-flex rounded-3 p-1 mb-4" style="background-color: rgba(255,255,255,0.05);">
                 <button type="button" onclick="triggerAuthTransition('<?= $base_path ?>index.php?page=login')"
@@ -43,14 +50,15 @@ ob_start();
             </div>
 
             <!-- Form -->
-            <form action="<?= $base_path ?>index.php?page=home" method="POST">
+            <form action="<?= $base_path ?>index.php?page=signup" method="POST">
+                <input type="hidden" name="sg_action" value="signup">
 
                 <div class="mb-2 d-flex align-items-center rounded-3 input-group-custom"
                     style="background-color: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.05); transition: 0.3s;">
                     <div class="px-3 d-flex align-items-center" style="color: #6c757d;">
                         <iconify-icon icon="ph:envelope-simple" class="fs-5"></iconify-icon>
                     </div>
-                    <input type="email"
+                    <input type="email" name="email"
                         class="form-control text-white py-3 pe-3 ps-0 border-0 bg-transparent shadow-none"
                         placeholder="User Name (Email)" required style="font-size: 0.85rem;"
                         onfocus="this.parentElement.style.borderColor='var(--safegate-neon)'"
@@ -62,7 +70,7 @@ ob_start();
                     <div class="px-3 d-flex align-items-center" style="color: #6c757d;">
                         <iconify-icon icon="ph:user" class="fs-5"></iconify-icon>
                     </div>
-                    <input type="text"
+                    <input type="text" name="full_name"
                         class="form-control text-white py-3 pe-3 ps-0 border-0 bg-transparent shadow-none"
                         placeholder="Full Name" required style="font-size: 0.85rem;"
                         onfocus="this.parentElement.style.borderColor='var(--safegate-neon)'"
@@ -74,7 +82,7 @@ ob_start();
                     <div class="px-3 d-flex align-items-center" style="color: #6c757d;">
                         <iconify-icon icon="ph:device-mobile" class="fs-5"></iconify-icon>
                     </div>
-                    <input type="tel" class="form-control text-white py-3 pe-3 ps-0 border-0 bg-transparent shadow-none"
+                    <input type="tel" name="phone_number" class="form-control text-white py-3 pe-3 ps-0 border-0 bg-transparent shadow-none"
                         placeholder="Phone Number" required style="font-size: 0.85rem;"
                         onfocus="this.parentElement.style.borderColor='var(--safegate-neon)'"
                         onblur="this.parentElement.style.borderColor='rgba(255,255,255,0.05)'">
@@ -85,7 +93,7 @@ ob_start();
                     <div class="px-3 d-flex align-items-center" style="color: #6c757d;">
                         <iconify-icon icon="ph:identification-card" class="fs-5"></iconify-icon>
                     </div>
-                    <input type="text"
+                    <input type="text" name="nik"
                         class="form-control text-white py-3 pe-3 ps-0 border-0 bg-transparent shadow-none"
                         placeholder="NIK (National ID)" required style="font-size: 0.85rem;"
                         onfocus="this.parentElement.style.borderColor='var(--safegate-neon)'"
@@ -97,13 +105,13 @@ ob_start();
                     <div class="px-3 d-flex align-items-center" style="color: #6c757d;">
                         <iconify-icon icon="ph:key" class="fs-5"></iconify-icon>
                     </div>
-                    <input type="password"
+                    <input type="password" name="password" id="signupPassword"
                         class="form-control text-white py-3 pe-5 ps-0 border-0 bg-transparent shadow-none"
                         placeholder="Password" required style="font-size: 0.85rem;"
                         onfocus="this.parentElement.style.borderColor='var(--safegate-neon)'"
                         onblur="this.parentElement.style.borderColor='rgba(255,255,255,0.05)'">
-                    <iconify-icon icon="ph:eye-slash" class="position-absolute end-0 me-3 fs-6"
-                        style="color: #6c757d; cursor: pointer;"></iconify-icon>
+                    <iconify-icon icon="ph:eye-slash" id="toggleSignupPassword" class="position-absolute end-0 me-3 fs-6"
+                        style="color: #6c757d; cursor: pointer;" onclick="togglePasswordVisibility('signupPassword', 'toggleSignupPassword')"></iconify-icon>
                 </div>
 
                 <div class="mb-2 d-flex align-items-center rounded-3 position-relative input-group-custom"
@@ -111,11 +119,13 @@ ob_start();
                     <div class="px-3 d-flex align-items-center" style="color: #6c757d;">
                         <iconify-icon icon="ph:key" class="fs-5"></iconify-icon>
                     </div>
-                    <input type="password"
+                    <input type="password" name="password_confirm" id="signupPasswordConfirm"
                         class="form-control text-white py-3 pe-5 ps-0 border-0 bg-transparent shadow-none"
                         placeholder="Repeat Password" required style="font-size: 0.85rem;"
                         onfocus="this.parentElement.style.borderColor='var(--safegate-neon)'"
                         onblur="this.parentElement.style.borderColor='rgba(255,255,255,0.05)'">
+                    <iconify-icon icon="ph:eye-slash" id="toggleSignupPasswordConfirm" class="position-absolute end-0 me-3 fs-6"
+                        style="color: #6c757d; cursor: pointer;" onclick="togglePasswordVisibility('signupPasswordConfirm', 'toggleSignupPasswordConfirm')"></iconify-icon>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mb-4 mt-3">

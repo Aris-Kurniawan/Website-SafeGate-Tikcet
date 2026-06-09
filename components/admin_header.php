@@ -33,9 +33,30 @@
             <iconify-icon icon="ph:gear-six"></iconify-icon>
         </button>
 
+        <a href="index.php?sg_action=logout" class="sg-admin-logout-link">Log Out</a>
+
         <div class="sg-admin-profile">
             <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=120"
                 alt="Admin Avatar" class="sg-admin-avatar">
         </div>
     </div>
+
+    <!-- Hamburger menu for mobile responsive navbar -->
+    <button class="sg-admin-hamburger" aria-label="Toggle Menu" onclick="toggleAdminMobileMenu()">
+        <iconify-icon icon="ph:list" id="sg-admin-hamburger-icon"></iconify-icon>
+    </button>
+
+    <script>
+    function toggleAdminMobileMenu() {
+        const sidebar = document.querySelector('.sg-admin-sidebar');
+        const icon = document.getElementById('sg-admin-hamburger-icon');
+        if (sidebar) {
+            sidebar.classList.toggle('is-open');
+            const isOpen = sidebar.classList.contains('is-open');
+            if (icon) {
+                icon.setAttribute('icon', isOpen ? 'ph:x' : 'ph:list');
+            }
+        }
+    }
+    </script>
 </header>

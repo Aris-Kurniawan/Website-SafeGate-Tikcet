@@ -3,57 +3,24 @@
 $page_title = 'KYC Verification - SafeGate Admin';
 
 require_once __DIR__ . '/../../core/admin_middleware.php';
+require_once __DIR__ . '/../../core/safegate_repository.php';
 
 // Calculate relative path to assets dynamically based on current script location
 $assets_path = (strpos($_SERVER['SCRIPT_NAME'], 'views/') !== false) ? '../../assets' : 'assets';
 
-// Mock Data untuk KYC Submissions
-$submissions = [
-    [
-        'id' => 'K-101',
-        'name' => 'Alexander Sterling',
-        'nik' => '3512345678901234',
-        'email' => 'a.sterling@global-assets.co',
-        'path' => 'Institutional Portal v4.2',
-        'time' => '10 mins ago',
-        'status' => 'PENDING',
-        'ktp_img' => $assets_path . '/images/national_id.png',
-        'selfie_img' => $assets_path . '/images/selfie_id.png'
-    ],
-    [
-        'id' => 'K-102',
-        'name' => 'Sarah Valerius',
-        'nik' => '3201456789123456',
-        'email' => 's.valerius@valerius-corp.id',
-        'path' => 'API Gateway Integration',
-        'time' => '42 mins ago',
-        'status' => 'PENDING',
-        'ktp_img' => $assets_path . '/images/national_id.png',
-        'selfie_img' => $assets_path . '/images/selfie_id.png'
-    ],
-    [
-        'id' => 'K-103',
-        'name' => 'Dominic Thorne',
-        'nik' => '1209384756102938',
-        'email' => 'd.thorne@thornemedia.net',
-        'path' => 'Mobile Merchant App v1.8',
-        'time' => '1 hour ago',
-        'status' => 'PENDING',
-        'ktp_img' => $assets_path . '/images/national_id.png',
-        'selfie_img' => $assets_path . '/images/selfie_id.png'
-    ],
-    [
-        'id' => 'K-104',
-        'name' => 'Elena Rodriguez',
-        'nik' => '5102938475610293',
-        'email' => 'e.rodriguez@nexustravels.com',
-        'path' => 'Partner Web Portal v2.0',
-        'time' => '3 hours ago',
-        'status' => 'PENDING',
-        'ktp_img' => $assets_path . '/images/national_id.png',
-        'selfie_img' => $assets_path . '/images/selfie_id.png'
-    ]
+$kyc_status_filter = $_GET['status'] ?? 'pending';
+$submissions = sg_get_admin_kyc_submissions($assets_path, $kyc_status_filter === 'all' ? 'all' : $kyc_status_filter);
+$first_submission = $submissions[0] ?? [
+    'id' => '',
+    'name' => 'No submission selected',
+    'nik' => '-',
+    'email' => '-',
+    'path' => 'Database KYC Queue',
+    'ktp_img' => $assets_path . '/images/national_id.png',
+    'selfie_img' => '',
+    'has_selfie' => false,
 ];
+$flash = sg_flash();
 
 ob_start();
 ?>
@@ -66,9 +33,13 @@ ob_start();
     </div>
     <div style="background-color: rgba(255, 76, 76, 0.05); border: 1px solid rgba(255, 76, 76, 0.3); color: var(--admin-peach); font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.02em;">
         <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: var(--admin-danger); box-shadow: 0 0 6px var(--admin-danger); animation: sg-pulse-live 2s infinite;"></span>
-        <span>12 Pending Requests</span>
+        <span><?= count($submissions) ?> <?= $kyc_status_filter === 'all' ? 'KYC Records' : 'Pending Requests' ?></span>
     </div>
 </div>
+
+<?php if ($flash): ?>
+    <p class="sg-list-status <?= $flash['type'] === 'error' ? 'is-error' : '' ?>"><?= sg_h($flash['message']) ?></p>
+<?php endif; ?>
 
 <!-- Main Split Layout -->
 <div class="sg-kyc-layout">
@@ -83,6 +54,11 @@ ob_start();
         </div>
         
         <div class="sg-kyc-list" id="kycList">
+            <?php if (!$submissions): ?>
+                <div style="padding: 22px; color: var(--admin-text-muted); font-size: 13px; line-height: 1.5;">
+                    Belum ada data KYC untuk filter ini.
+                </div>
+            <?php endif; ?>
             <?php foreach ($submissions as $index => $sub): ?>
                 <div class="sg-kyc-card <?= $index === 0 ? 'is-active' : '' ?>" id="card-<?= $sub['id'] ?>" onclick="selectKyc('<?= $sub['id'] ?>')">
                     <div class="sg-kyc-card-avatar">
@@ -99,7 +75,9 @@ ob_start();
             <?php endforeach; ?>
         </div>
         
-        <button class="sg-kyc-archive-btn" onclick="viewArchive()">View Archive</button>
+        <a class="sg-kyc-archive-btn" href="index.php?page=admin_kyc&status=<?= $kyc_status_filter === 'all' ? 'pending' : 'all' ?>" style="text-decoration:none; display:block; text-align:center;">
+            <?= $kyc_status_filter === 'all' ? 'View Pending Queue' : 'View Archive' ?>
+        </a>
     </div>
     
     <!-- Right Column: Current Investigation -->
@@ -108,7 +86,7 @@ ob_start();
         <div class="sg-kyc-investigation-header">
             <div class="sg-kyc-investigation-title-box">
                 <span class="sg-kyc-investigation-title-label">Current Investigation</span>
-                <h2 class="sg-kyc-investigation-title">Reviewing: <span id="det-name">Alexander Sterling</span></h2>
+                <h2 class="sg-kyc-investigation-title">Reviewing: <span id="det-name"><?= sg_h($first_submission['name']) ?></span></h2>
             </div>
             <div class="sg-kyc-header-actions">
                 <button class="sg-kyc-header-action-btn" onclick="zoomImages()" title="Zoom Images" aria-label="Zoom Images">
@@ -125,13 +103,17 @@ ob_start();
             <div class="sg-kyc-image-card">
                 <span class="sg-kyc-image-label">National ID (KTP)</span>
                 <div class="sg-kyc-image-container">
-                    <img src="<?= $submissions[0]['ktp_img'] ?>" id="det-ktp-img" class="sg-kyc-image" alt="KTP Image">
+                    <img src="<?= sg_h($first_submission['ktp_img']) ?>" id="det-ktp-img" class="sg-kyc-image" alt="KTP Image">
                 </div>
             </div>
             <div class="sg-kyc-image-card">
                 <span class="sg-kyc-image-label">Selfie with ID</span>
                 <div class="sg-kyc-image-container">
-                    <img src="<?= $submissions[0]['selfie_img'] ?>" id="det-selfie-img" class="sg-kyc-image" alt="Selfie Image">
+                    <img src="<?= sg_h($first_submission['selfie_img']) ?>" id="det-selfie-img" class="sg-kyc-image" alt="Selfie Image" <?= !empty($first_submission['has_selfie']) ? '' : 'hidden' ?>>
+                    <div id="det-selfie-empty" class="sg-kyc-image-empty" <?= !empty($first_submission['has_selfie']) ? 'hidden' : '' ?>>
+                        <iconify-icon icon="ph:user-focus"></iconify-icon>
+                        <span>Selfie belum diupload</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -143,29 +125,29 @@ ob_start();
                 <div class="sg-kyc-data-row">
                     <span class="sg-kyc-data-label">NIK (Government ID)</span>
                     <div class="sg-kyc-data-value">
-                        <span id="det-nik">3512345678901234</span>
+                        <span id="det-nik"><?= sg_h($first_submission['nik']) ?></span>
                         <span class="sg-kyc-badge-decrypted">Decrypted</span>
                     </div>
                 </div>
                 <div class="sg-kyc-data-row">
                     <span class="sg-kyc-data-label">Full Name</span>
-                    <span class="sg-kyc-data-value" id="det-fullname">Alexander Sterling</span>
+                    <span class="sg-kyc-data-value" id="det-fullname"><?= sg_h($first_submission['name']) ?></span>
                 </div>
                 <div class="sg-kyc-data-row">
                     <span class="sg-kyc-data-label">Email Address</span>
-                    <span class="sg-kyc-data-value" id="det-email">a.sterling@global-assets.co</span>
+                    <span class="sg-kyc-data-value" id="det-email"><?= sg_h($first_submission['email']) ?></span>
                 </div>
                 <div class="sg-kyc-data-row">
                     <span class="sg-kyc-data-label">Submission Path</span>
-                    <span class="sg-kyc-data-value" id="det-path">Institutional Portal v4.2</span>
+                    <span class="sg-kyc-data-value" id="det-path"><?= sg_h($first_submission['path']) ?></span>
                 </div>
             </div>
         </div>
 
         <!-- Action Buttons -->
         <div class="sg-kyc-actions">
-            <button class="sg-kyc-btn-reject" onclick="handleKycDecision('reject')">Reject Application</button>
-            <button class="sg-kyc-btn-approve" onclick="handleKycDecision('approve')">Approve & Verify</button>
+            <button class="sg-kyc-btn-reject" onclick="handleKycDecision('reject')" <?= $submissions ? '' : 'disabled' ?>>Reject Application</button>
+            <button class="sg-kyc-btn-approve" onclick="handleKycDecision('approve')" <?= $submissions ? '' : 'disabled' ?>>Approve & Verify</button>
         </div>
     </div>
 </div>
@@ -177,7 +159,7 @@ ob_start();
 <script>
 // JSON model data dari PHP
 const kycData = <?= json_encode($submissions) ?>;
-let activeKycId = 'K-101';
+let activeKycId = String(kycData[0]?.id || '');
 let zoomedState = false;
 
 // Mengubah detail KYC di panel kanan
@@ -208,15 +190,20 @@ function selectKyc(subId) {
         document.getElementById('det-email').textContent = sub.email;
         document.getElementById('det-path').textContent = sub.path;
         document.getElementById('det-ktp-img').src = sub.ktp_img;
-        document.getElementById('det-selfie-img').src = sub.selfie_img;
+        const selfieImg = document.getElementById('det-selfie-img');
+        const selfieEmpty = document.getElementById('det-selfie-empty');
+        if (sub.has_selfie && sub.selfie_img) {
+            selfieImg.src = sub.selfie_img;
+            selfieImg.hidden = false;
+            selfieEmpty.hidden = true;
+        } else {
+            selfieImg.removeAttribute('src');
+            selfieImg.hidden = true;
+            selfieEmpty.hidden = false;
+        }
         
         container.classList.remove('is-loading');
     }, 200);
-}
-
-// Simulasi view archive
-function viewArchive() {
-    showKycToast('Archive Loaded', 'Retrieving historical KYC records. Audit logs generated.', 'success');
 }
 
 // Zoom & Reset Image View
@@ -264,6 +251,20 @@ function handleKycDecision(type) {
     }
     
     if (confirm(confirmMsg)) {
+        if (/^\d+$/.test(String(activeKycId))) {
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = 'index.php?page=admin_kyc';
+            form.innerHTML = `
+                <input type="hidden" name="sg_action" value="admin_kyc_decision">
+                <input type="hidden" name="kyc_id" value="${activeKycId}">
+                <input type="hidden" name="decision" value="${type}">
+            `;
+            document.body.appendChild(form);
+            form.submit();
+            return;
+        }
+
         showKycToast(successTitle, successMsg, toastType);
         
         // Tandai status pada card

@@ -171,6 +171,20 @@ body.sg-admin-shell::-webkit-scrollbar-thumb:hover {
     font-size: 20px;
 }
 
+.sg-admin-logout-link {
+    color: #FFFFFF;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    transition: color 0.2s ease;
+    white-space: nowrap;
+}
+
+.sg-admin-logout-link:hover {
+    color: var(--admin-accent);
+}
+
 .sg-admin-badge-dot {
     position: absolute;
     top: 2px;
@@ -2011,19 +2025,30 @@ body.sg-admin-shell::-webkit-scrollbar-thumb:hover {
 }
 
 .sg-kyc-archive-btn {
-    width: 100%;
+    width: auto;
+    max-width: 100%;
+    box-sizing: border-box;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
     background-color: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--admin-border);
     color: var(--admin-text);
-    padding: 14px;
+    padding: 14px 18px;
     border-radius: 8px;
     font-size: 13px;
+    line-height: 1.2;
     font-weight: 700;
     cursor: pointer;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     transition: all 0.2s ease;
     margin-top: 12px;
+    min-height: 48px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sg-kyc-archive-btn:hover {
@@ -2142,6 +2167,7 @@ body.sg-admin-shell::-webkit-scrollbar-thumb:hover {
     border: 1px solid var(--admin-border);
     background-color: #0b0d13;
     position: relative;
+    height: 190px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     transition: border-color 0.25s ease;
 }
@@ -2156,6 +2182,31 @@ body.sg-admin-shell::-webkit-scrollbar-thumb:hover {
     object-fit: cover;
     display: block;
     transition: transform 0.4s ease;
+}
+
+.sg-kyc-image[hidden] {
+    display: none !important;
+}
+
+.sg-kyc-image-empty {
+    height: 190px;
+    display: grid;
+    place-items: center;
+    gap: 10px;
+    align-content: center;
+    color: var(--admin-text-muted);
+    background: rgba(255, 255, 255, 0.018);
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.sg-kyc-image-empty iconify-icon {
+    color: var(--admin-accent);
+    font-size: 30px;
+    opacity: 0.75;
 }
 
 .sg-kyc-image-container:hover .sg-kyc-image {
@@ -2304,6 +2355,94 @@ body.sg-admin-shell::-webkit-scrollbar-thumb:hover {
 .sg-kyc-btn-approve:hover {
     transform: translateY(-1px);
     box-shadow: 0 0 20px rgba(217, 255, 0, 0.35);
+}
+
+/* --- Responsive Admin Layout & Sidebar Toggle --- */
+.sg-admin-hamburger {
+    display: none;
+}
+
+@media (max-width: 991.98px) {
+    .sg-admin-header {
+        position: relative;
+        z-index: 1000;
+        padding: 0 16px !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .sg-admin-header-right {
+        display: none !important;
+    }
+    
+    .sg-admin-hamburger {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 28px;
+        cursor: pointer;
+        padding: 8px;
+        outline: none;
+    }
+    
+    .sg-admin-frame {
+        flex-direction: column !important;
+        min-height: auto !important;
+    }
+    
+    .sg-admin-sidebar {
+        display: none !important;
+        width: 100% !important;
+        height: auto !important;
+        position: absolute !important;
+        top: 70px !important;
+        left: 0 !important;
+        right: 0 !important;
+        background-color: #080A0E !important;
+        border-right: none !important;
+        border-bottom: 1px solid var(--admin-border) !important;
+        padding: 16px 0 !important;
+        z-index: 999 !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    .sg-admin-sidebar.is-open {
+        display: flex !important;
+    }
+    
+    .sg-admin-sidebar-header {
+        display: none !important;
+    }
+    
+    .sg-admin-sidebar-menu {
+        padding: 0 16px !important;
+        gap: 4px !important;
+        flex: none !important;
+    }
+    
+    .sg-admin-menu-item {
+        padding: 12px 16px !important;
+        border-radius: 6px !important;
+    }
+    
+    .sg-admin-sidebar-footer {
+        padding: 16px !important;
+        margin-top: 12px !important;
+        border-top: 1px solid var(--admin-border) !important;
+    }
+    
+    .sg-admin-mobile-logout {
+        display: flex !important;
+    }
+    
+    .sg-admin-main {
+        padding: 24px 16px !important;
+        gap: 24px !important;
+    }
 }
 
 

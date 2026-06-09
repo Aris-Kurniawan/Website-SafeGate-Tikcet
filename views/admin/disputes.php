@@ -3,58 +3,26 @@
 $page_title = 'Disputes Center - SafeGate Admin';
 
 require_once __DIR__ . '/../../core/admin_middleware.php';
+require_once __DIR__ . '/../../core/safegate_repository.php';
 
-// Mock Data untuk Sengketa
-$cases = [
-    [
-        'id' => 'SG-882',
-        'item' => 'Ticket #SG-882 (Coldplay)',
-        'amount' => 'Rp 3.000.000',
-        'pool' => '3,000,000 IDR',
-        'status' => 'FROZEN',
-        'reported_by' => 'Reported by Buyer',
-        'updated_time' => 'Updated 2m ago',
-        'buyer_claim' => 'Tiket tidak bisa di-scan di Gate 3. Petugas bilang barcode sudah digunakan orang lain pada jam 18:00. Saya datang jam 18:30 dan ditolak masuk.',
-        'seller_defense' => 'Saya tidak pernah membagikan PDF ke siapa pun selain SafeGate. Tiket valid saat saya beli dari vendor resmi. Buyer mungkin memalsukan bukti scan atau membagikannya ke teman.',
-        'ip_origin' => '192.168.1.45',
-        'wallet_age' => '2.4 Years',
-        'trust_score' => '98%',
-        'auth_level' => 'Biometric-Verified',
-        'admin_id' => '#99291'
-    ],
-    [
-        'id' => 'SG-901',
-        'item' => 'Asset #SG-901 (MacBook Pro)',
-        'amount' => 'Rp 1.250.000',
-        'pool' => '1,250,000 IDR',
-        'status' => 'PENDING',
-        'reported_by' => 'Merchant Defense Filed',
-        'updated_time' => 'Updated 4h ago',
-        'buyer_claim' => 'MacBook Pro yang dikirimkan memiliki retakan di layar bagian bawah dan baterai drop dalam 15 menit. Penjual menolak retur mandiri.',
-        'seller_defense' => 'Saya mengirim barang dalam kondisi sempurna dan dibungkus bubble wrap tebal. Ada video packing lengkap. Kerusakan pasti terjadi saat pengiriman atau dilakukan sendiri oleh pembeli.',
-        'ip_origin' => '180.244.12.89',
-        'wallet_age' => '6 Months',
-        'trust_score' => '82%',
-        'auth_level' => 'Sms-Verified',
-        'admin_id' => '#99292'
-    ],
-    [
-        'id' => 'SG-774',
-        'item' => 'Voucher #SG-774 (Luxury Spa)',
-        'amount' => 'Rp 500.000',
-        'pool' => '500,000 IDR',
-        'status' => 'PENDING',
-        'reported_by' => 'Automated Lock Triggered',
-        'updated_time' => 'Updated 1d ago',
-        'buyer_claim' => 'Voucher Spa ditolak di resepsionis karena tertulis sudah kadaluarsa (expired). Padahal di SafeGate tertulis valid sampai akhir bulan depan.',
-        'seller_defense' => 'Ada kesalahan sistem pada merchant spa. Saya sudah menghubungi mereka dan bersedia memberikan kode voucher baru jika pembeli mau menunggu.',
-        'ip_origin' => '110.138.45.22',
-        'wallet_age' => '1.2 Years',
-        'trust_score' => '95%',
-        'auth_level' => 'Email-Verified',
-        'admin_id' => '#99293'
-    ]
+$cases = sg_get_admin_disputes();
+$first_case = $cases[0] ?? [
+    'id' => '-',
+    'pool' => 'Rp 0',
+    'buyer_claim' => 'Belum ada dispute aktif di database.',
+    'seller_defense' => 'Tidak ada pembelaan seller.',
+    'ip_origin' => '-',
+    'wallet_age' => '-',
+    'trust_score' => '0%',
+    'auth_level' => '-',
+    'admin_id' => '#AUTO',
+    'detail_link' => 'index.php?page=admin_transactions',
 ];
+$flash = sg_flash();
+
+$isFirstCaseSellerReport = ($first_case['reported_by_raw'] ?? 'buyer') === 'seller';
+$firstBuyerIcon = $isFirstCaseSellerReport ? 'ph:storefront-fill' : 'ph:user-fill';
+$firstSellerIcon = $isFirstCaseSellerReport ? 'ph:user-fill' : 'ph:storefront-fill';
 
 ob_start();
 ?>
@@ -71,6 +39,10 @@ ob_start();
     </div>
 </div>
 
+<?php if ($flash): ?>
+    <p class="sg-list-status <?= $flash['type'] === 'error' ? 'is-error' : '' ?>"><?= sg_h($flash['message']) ?></p>
+<?php endif; ?>
+
 <!-- Main Split Layout -->
 <div class="sg-disputes-layout">
     
@@ -84,6 +56,11 @@ ob_start();
         
         <!-- List of cases -->
         <div class="sg-disputes-list" id="disputesList">
+            <?php if (!$cases): ?>
+                <div style="padding: 22px; color: var(--admin-text-muted); font-size: 13px; line-height: 1.5;">
+                    Belum ada dispute aktif dari database.
+                </div>
+            <?php endif; ?>
             <?php foreach ($cases as $index => $case): ?>
                 <div class="sg-dispute-card <?= $index === 0 ? 'is-active' : '' ?>" id="card-<?= $case['id'] ?>" onclick="selectCase('<?= $case['id'] ?>')">
                     <div class="sg-dispute-card-header">
@@ -110,37 +87,37 @@ ob_start();
         <div class="sg-dispute-detail-header">
             <div class="sg-dispute-dossier-info">
                 <span class="sg-dispute-dossier-label">Case Dossier</span>
-                <h2 class="sg-dispute-dossier-title" id="det-title">Dispute Details: SG-882</h2>
+                <h2 class="sg-dispute-dossier-title" id="det-title">Dispute Details: <?= sg_h($first_case['id']) ?></h2>
             </div>
             <div class="sg-dispute-escrow-pool">
                 <span class="sg-dispute-dossier-label">Escrow Pool</span>
-                <span class="sg-dispute-escrow-value" id="det-pool">3,000,000 IDR</span>
+                <span class="sg-dispute-escrow-value" id="det-pool"><?= sg_h($first_case['pool']) ?></span>
             </div>
         </div>
 
         <!-- Buyer Claim -->
         <div class="sg-claim-block">
             <div class="sg-claim-block-title is-buyer">
-                <iconify-icon icon="ph:user-fill"></iconify-icon>
-                <span>Buyer Claim</span>
+                <iconify-icon id="det-buyer-icon" icon="<?= $firstBuyerIcon ?>"></iconify-icon>
+                <span id="det-buyer-label"><?= $isFirstCaseSellerReport ? 'Seller Claim' : 'Buyer Claim' ?></span>
             </div>
             <div class="sg-claim-content-box is-buyer">
-                <p class="sg-claim-text" id="det-buyer-claim">"Tiket tidak bisa di-scan di Gate 3. Petugas bilang barcode sudah digunakan orang lain pada jam 18:00. Saya datang jam 18:30 dan ditolak masuk."</p>
-                <button class="sg-evidence-link-btn" onclick="viewEvidence()">
+                <p class="sg-claim-text" id="det-buyer-claim">"<?= sg_h($first_case['buyer_claim']) ?>"</p>
+                <a class="sg-evidence-link-btn" id="det-evidence-link" href="<?= sg_h($first_case['detail_link']) ?>" style="text-decoration:none;">
                     <iconify-icon icon="ph:play-circle-fill"></iconify-icon>
-                    <span>View Evidence (Video/Photo)</span>
-                </button>
+                    <span>View Evidence & Ledger</span>
+                </a>
             </div>
         </div>
 
         <!-- Seller Defense -->
         <div class="sg-claim-block">
             <div class="sg-claim-block-title is-seller">
-                <iconify-icon icon="ph:storefront-fill"></iconify-icon>
-                <span>Seller Defense</span>
+                <iconify-icon id="det-seller-icon" icon="<?= $firstSellerIcon ?>"></iconify-icon>
+                <span id="det-seller-label"><?= $isFirstCaseSellerReport ? 'Buyer Response' : 'Seller Defense' ?></span>
             </div>
             <div class="sg-claim-content-box is-seller">
-                <p class="sg-claim-text" id="det-seller-defense">"Saya tidak pernah membagikan PDF ke siapa pun selain SafeGate. Tiket valid saat saya beli dari vendor resmi. Buyer mungkin memalsukan bukti scan atau membagikannya ke teman."</p>
+                <p class="sg-claim-text" id="det-seller-defense">"<?= sg_h($first_case['seller_defense']) ?>"</p>
             </div>
         </div>
 
@@ -150,41 +127,55 @@ ob_start();
             <div class="sg-metadata-grid">
                 <div class="sg-metadata-card">
                     <span class="sg-metadata-card-label">IP Origin</span>
-                    <span class="sg-metadata-card-value" id="det-ip">192.168.1.45</span>
+                    <span class="sg-metadata-card-value" id="det-ip"><?= sg_h($first_case['ip_origin']) ?></span>
                 </div>
                 <div class="sg-metadata-card">
                     <span class="sg-metadata-card-label">Wallet Age</span>
-                    <span class="sg-metadata-card-value" id="det-wallet">2.4 Years</span>
+                    <span class="sg-metadata-card-value" id="det-wallet"><?= sg_h($first_case['wallet_age']) ?></span>
                 </div>
                 <div class="sg-metadata-card">
                     <span class="sg-metadata-card-label">Trust Score</span>
-                    <span class="sg-metadata-card-value is-high" id="det-trust">98%</span>
+                    <span class="sg-metadata-card-value is-high" id="det-trust"><?= sg_h($first_case['trust_score']) ?></span>
                 </div>
                 <div class="sg-metadata-card">
                     <span class="sg-metadata-card-label">Auth Level</span>
-                    <span class="sg-metadata-card-value" id="det-auth">Biometric-Verified</span>
+                    <span class="sg-metadata-card-value" id="det-auth"><?= sg_h($first_case['auth_level']) ?></span>
                 </div>
             </div>
         </div>
 
         <!-- Escrow Override Decision -->
+        <?php
+        $firstCaseStatus = $first_case['status_raw'] ?? 'open';
+        $isFirstCaseResolved = in_array($firstCaseStatus, ['resolved_refund', 'resolved_release'], true);
+        ?>
         <div class="sg-override-section">
             <div class="sg-override-notice">
                 <iconify-icon icon="ph:info-fill"></iconify-icon>
                 <span>
                     <strong class="sg-override-notice-strong">Escrow Override (The Judge's Decision)</strong><br>
-                    Keputusan ini bersifat final dan memindahkan dana yang ditahan secara permanen. Admin ID: <span id="det-admin-id">#99291</span> trace logged.
+                    Keputusan ini bersifat final dan memindahkan dana yang ditahan secara permanen. Admin ID: <span id="det-admin-id"><?= sg_h($first_case['admin_id']) ?></span> trace logged.
                 </span>
             </div>
             
-            <div class="sg-decision-cards">
-                <button class="sg-decision-card-btn is-refund" onclick="handleDecision('refund')">
+            <div class="sg-override-decision-summary" id="det-decision-summary" style="display: <?= $isFirstCaseResolved ? 'block' : 'none' ?>; padding: 20px; border-radius: 12px; background: rgba(217, 255, 0, 0.06); border: 1px solid rgba(217, 255, 0, 0.25); color: #fff; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 800; color: var(--safegate-neon, #d9ff00); text-transform: uppercase;">Dispute Resolved</h4>
+                <p style="margin: 0; font-size: 13px; color: var(--admin-text-muted);" id="det-decision-summary-text">
+                    <?php if ($isFirstCaseResolved): ?>
+                        Kasus ini telah diselesaikan oleh Admin <?= sg_h($first_case['admin_id']) ?>.<br>
+                        <strong>Keputusan Final:</strong> <?= ($first_case['resolution_raw'] ?? '') === 'release_seller' ? 'Dana dilepas ke Penjual (Seller)' : 'Dana di-refund ke Pembeli (Buyer)' ?>.
+                    <?php endif; ?>
+                </p>
+            </div>
+
+            <div class="sg-decision-cards" style="display: <?= $isFirstCaseResolved ? 'none' : 'flex' ?>;">
+                <button class="sg-decision-card-btn is-refund" onclick="handleDecision('refund')" <?= $cases ? '' : 'disabled' ?>>
                     <iconify-icon icon="ph:arrow-counter-clockwise-fill"></iconify-icon>
                     <span class="sg-decision-card-btn-title">Refund Buyer (Ban Seller)</span>
                     <p class="sg-decision-card-btn-desc">Funds returned to buyer wallet. Seller account restricted.</p>
                 </button>
                 
-                <button class="sg-decision-card-btn is-release" onclick="handleDecision('release')">
+                <button class="sg-decision-card-btn is-release" onclick="handleDecision('release')" <?= $cases ? '' : 'disabled' ?>>
                     <iconify-icon icon="ph:coins-fill"></iconify-icon>
                     <span class="sg-decision-card-btn-title">Release Fund to Seller (Dismiss Claim)</span>
                     <p class="sg-decision-card-btn-desc">Funds moved to seller payout. Dispute closed.</p>
@@ -201,7 +192,7 @@ ob_start();
 <script>
 // JSON model data dari PHP
 const casesData = <?= json_encode($cases) ?>;
-let activeCaseId = 'SG-882';
+let activeCaseId = String(casesData[0]?.id || '');
 
 // Mengubah detail case di panel kanan
 function selectCase(caseId) {
@@ -229,6 +220,18 @@ function selectCase(caseId) {
         document.getElementById('det-pool').textContent = cData.pool;
         document.getElementById('det-buyer-claim').textContent = '"' + cData.buyer_claim + '"';
         document.getElementById('det-seller-defense').textContent = '"' + cData.seller_defense + '"';
+        
+        const isSellerReport = cData.reported_by_raw === 'seller';
+        document.getElementById('det-buyer-label').textContent = isSellerReport ? 'Seller Claim' : 'Buyer Claim';
+        document.getElementById('det-seller-label').textContent = isSellerReport ? 'Buyer Response' : 'Seller Defense';
+        
+        const buyerIcon = document.getElementById('det-buyer-icon');
+        const sellerIcon = document.getElementById('det-seller-icon');
+        if (buyerIcon && sellerIcon) {
+            buyerIcon.setAttribute('icon', isSellerReport ? 'ph:storefront-fill' : 'ph:user-fill');
+            sellerIcon.setAttribute('icon', isSellerReport ? 'ph:user-fill' : 'ph:storefront-fill');
+        }
+
         document.getElementById('det-ip').textContent = cData.ip_origin;
         document.getElementById('det-wallet').textContent = cData.wallet_age;
         
@@ -249,6 +252,29 @@ function selectCase(caseId) {
         
         document.getElementById('det-auth').textContent = cData.auth_level;
         document.getElementById('det-admin-id').textContent = cData.admin_id;
+
+        // Dynamic summary of resolved case
+        const decisionSummaryEl = document.getElementById('det-decision-summary');
+        const decisionSummaryTextEl = document.getElementById('det-decision-summary-text');
+        const decisionCardsEl = document.querySelector('.sg-decision-cards');
+        const isResolved = cData.status_raw === 'resolved_refund' || cData.status_raw === 'resolved_release';
+        
+        if (isResolved) {
+            if (decisionCardsEl) decisionCardsEl.style.display = 'none';
+            if (decisionSummaryEl) {
+                decisionSummaryEl.style.display = 'block';
+                const actionTeks = cData.resolution_raw === 'release_seller' ? 'Dana dilepas ke Penjual (Seller)' : 'Dana di-refund ke Pembeli (Buyer)';
+                decisionSummaryTextEl.innerHTML = `Kasus ini telah diselesaikan oleh Admin ${cData.admin_id}.<br><strong>Keputusan Final:</strong> ${actionTeks}.`;
+            }
+        } else {
+            if (decisionCardsEl) decisionCardsEl.style.display = 'flex';
+            if (decisionSummaryEl) decisionSummaryEl.style.display = 'none';
+        }
+
+        const evidenceLink = document.getElementById('det-evidence-link');
+        if (evidenceLink) {
+            evidenceLink.href = cData.detail_link || 'index.php?page=admin_transactions';
+        }
         
         container.classList.remove('is-loading');
     }, 200);
@@ -271,11 +297,6 @@ function filterCases() {
             card.style.display = 'none';
         }
     });
-}
-
-// Simulasi view evidence
-function viewEvidence() {
-    showToast('Success', 'Initiating secure media player... Evidence payload decrypted.', 'success');
 }
 
 // Decision Handler
@@ -301,6 +322,21 @@ function handleDecision(type) {
     }
     
     if (confirm(confirmMsg)) {
+        const numericId = String(activeCaseId).replace(/[^\d]/g, '');
+        if (numericId && !String(activeCaseId).includes('882')) {
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = 'index.php?page=admin_disputes';
+            form.innerHTML = `
+                <input type="hidden" name="sg_action" value="dispute_decision">
+                <input type="hidden" name="dispute_id" value="${numericId}">
+                <input type="hidden" name="decision" value="${type}">
+            `;
+            document.body.appendChild(form);
+            form.submit();
+            return;
+        }
+
         showToast(successTitle, successMsg, toastType);
         
         // Tandai status pada card sebagai RESOLVED

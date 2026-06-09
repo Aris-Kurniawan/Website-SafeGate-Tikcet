@@ -7,8 +7,8 @@ ob_start();
 ?>
 
 <!-- KONTEN UTAMA HALAMAN CARA KERJA -->
-<main class="container mx-auto py-5"
-    style="max-width: 1200px; padding-left: 1.5rem; padding-right: 1.5rem; margin-top: 5rem; margin-bottom: 5rem;">
+<main class="container mx-auto py-4"
+    style="max-width: 1200px; padding-left: 1.5rem; padding-right: 1.5rem; margin-bottom: 5rem;">
     <div class="row align-items-center" style="row-gap: 4rem;">
 
         <!-- Left Column: Protocol Details -->
@@ -104,9 +104,9 @@ ob_start();
                     <!-- Card Header -->
                     <div class="d-flex align-items-center justify-content-between mb-5">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="d-flex align-items-center justify-content-center rounded-circle bg-safegate-neon"
-                                style="width: 44px; height: 44px; box-shadow: 0 0 14px rgba(217, 255, 0, 0.35);">
-                                <iconify-icon icon="ph:cpu-fill" class="text-black fs-4"></iconify-icon>
+                            <div class="d-flex align-items-center justify-content-center rounded-circle bg-safegate-neon flex-shrink-0"
+                                style="width: 36px; height: 36px; box-shadow: 0 0 10px rgba(217, 255, 0, 0.35);">
+                                <iconify-icon icon="ph:cpu-fill" class="text-black fs-5"></iconify-icon>
                             </div>
                             <span class="fw-bold text-white fs-6"
                                 style="letter-spacing: 0.06em; font-family: 'Inter', sans-serif;">SECURITY
@@ -150,9 +150,9 @@ ob_start();
                     <!-- Biometric Sync Panel -->
                     <div class="d-flex align-items-center gap-3 p-3 rounded-3"
                         style="background-color: rgba(9, 11, 16, 0.4); border: 1px solid rgba(255,255,255,0.05); margin-top: 2rem;">
-                        <div class="d-flex align-items-center justify-content-center rounded-circle"
-                            style="width: 38px; height: 38px; background-color: rgba(217, 255, 0, 0.08); border: 1px solid rgba(217, 255, 0, 0.15);">
-                            <iconify-icon icon="ph:fingerprint-bold" class="text-safegate-neon fs-4"></iconify-icon>
+                        <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                            style="width: 32px; height: 32px; background-color: rgba(217, 255, 0, 0.08); border: 1px solid rgba(217, 255, 0, 0.15);">
+                            <iconify-icon icon="ph:fingerprint-bold" class="text-safegate-neon fs-5"></iconify-icon>
                         </div>
                         <div>
                             <div class="text-white fw-bold" style="font-size: 0.85rem;">Biometric Sync Active</div>

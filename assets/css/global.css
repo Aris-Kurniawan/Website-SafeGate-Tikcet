@@ -711,16 +711,22 @@ input:focus {
     gap: 10px;
 }
 
-.sg-pagination button {
+.sg-pagination button,
+.sg-pagination a {
     width: 40px;
     height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border: 1px solid rgba(132, 150, 179, 0.24);
     border-radius: 5px;
     color: #d5dbe6;
     font-weight: 900;
+    text-decoration: none;
 }
 
-.sg-pagination button.is-active {
+.sg-pagination button.is-active,
+.sg-pagination a.is-active {
     border-color: var(--safegate-neon);
     color: var(--safegate-neon);
     box-shadow: 0 0 14px rgba(217, 255, 0, 0.18);
@@ -1945,4 +1951,161 @@ input:-webkit-autofill:active {
 
 input::placeholder {
     color: #8d929b !important;
+}
+
+/* --- Production polish: smoother interaction without changing layout --- */
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    text-rendering: optimizeLegibility;
+}
+
+button,
+a,
+input,
+select,
+textarea,
+.btn,
+.card,
+.sg-glass,
+.sg-panel,
+.sg-summary-card,
+.sg-dashboard-modal__dialog,
+.sg-sidebar-nav a,
+.sg-admin-sidebar a,
+.sg-ticket-card,
+.card-hover {
+    -webkit-tap-highlight-color: transparent;
+}
+
+a,
+button,
+.btn,
+.sg-sidebar-nav a,
+.sg-admin-sidebar a,
+.sg-glass,
+.sg-panel,
+.sg-summary-card,
+.sg-ticket-card,
+.card-hover {
+    transition:
+        color 180ms ease,
+        background-color 180ms ease,
+        border-color 180ms ease,
+        box-shadow 220ms ease,
+        transform 220ms ease,
+        opacity 180ms ease;
+}
+
+.btn:active,
+button:active,
+.sg-sidebar-nav a:active,
+.sg-admin-sidebar a:active {
+    transform: translateY(1px) scale(0.99);
+}
+
+.card-hover:hover,
+.sg-ticket-card:hover,
+.sg-panel:hover,
+.sg-summary-card:hover {
+    transform: translateY(-2px);
+}
+
+input,
+select,
+textarea,
+.form-control,
+.form-select {
+    transition:
+        border-color 180ms ease,
+        box-shadow 180ms ease,
+        background-color 180ms ease,
+        color 180ms ease;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible,
+.btn:focus-visible {
+    outline: 2px solid rgba(217, 255, 0, 0.75) !important;
+    outline-offset: 3px;
+}
+
+input.sg-bid-input,
+input.sg-bid-input:focus,
+input.sg-bid-input:focus-visible,
+input.sg-bid-input:-webkit-autofill,
+input.sg-bid-input:-webkit-autofill:hover,
+input.sg-bid-input:-webkit-autofill:focus {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    border: 0 !important;
+    outline: 0 !important;
+    outline-offset: 0 !important;
+    box-shadow: none !important;
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    background: transparent !important;
+}
+
+.input-group-custom:focus-within {
+    border-color: var(--safegate-neon) !important;
+}
+
+.input-group-custom .form-control:focus,
+.input-group-custom .form-control:focus-visible {
+    outline: 0 !important;
+    box-shadow: none !important;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #07090d;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #303846;
+    border: 2px solid #07090d;
+    border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #4a5566;
+}
+
+.sg-lift-in {
+    opacity: 0;
+    transform: translateY(12px);
+}
+
+.sg-lift-in.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .sg-lift-in {
+        opacity: 1;
+        transform: none;
+    }
 }

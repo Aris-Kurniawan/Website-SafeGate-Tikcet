@@ -37,6 +37,57 @@
         }, 2600);
     }
 
+    function initDashboardPageTransitions() {
+        const isDashboard = body.classList.contains('sg-dashboard-shell') || body.classList.contains('sg-buyer-shell');
+        if (!isDashboard || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        window.requestAnimationFrame(() => {
+            body.classList.add('sg-dashboard-page-ready');
+        });
+
+        qsa('.sg-sidebar-nav a[href]').forEach((link) => {
+            link.addEventListener('click', (event) => {
+                if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                if (link.target && link.target !== '_self') return;
+                if (link.classList.contains('is-active')) return;
+
+                const href = link.getAttribute('href') || '';
+                if (!href || href.startsWith('#') || href.includes('sg_action=logout')) return;
+
+                const nextUrl = new URL(href, window.location.href);
+                if (nextUrl.origin !== window.location.origin || nextUrl.href === window.location.href) return;
+
+                event.preventDefault();
+
+                // Visual feedback: mark exiting link & deactivate current
+                link.classList.add('sg-nav-exiting');
+                const currentActive = link.closest('.sg-sidebar-nav')?.querySelector('a.is-active');
+                if (currentActive && currentActive !== link) {
+                    currentActive.classList.remove('is-active');
+                    currentActive.style.opacity = '.45';
+                    currentActive.style.transition = 'opacity .3s ease';
+                }
+
+                // Apply leaving state to body (triggers CSS exit animation + shimmer bar)
+                body.classList.add('sg-dashboard-page-leaving');
+                if (body.classList.contains('sg-buyer-shell')) {
+                    body.classList.add('sg-buyer-page-leaving');
+                }
+
+                // Smooth scroll to top during exit
+                const mainEl = document.querySelector('.sg-dashboard-main, .sg-buyer-main');
+                if (mainEl && mainEl.scrollTop > 0) {
+                    mainEl.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+
+                // Navigate after exit animation completes (synced with CSS .32s transition)
+                window.setTimeout(() => {
+                    window.location.href = nextUrl.href;
+                }, 320);
+            });
+        });
+    }
+
     function openModal(title, rows) {
         let modal = qs('.sg-dashboard-modal');
         if (!modal) {
@@ -146,12 +197,8 @@
             }
         }
 
-        form?.addEventListener('submit', (event) => event.preventDefault());
         search?.addEventListener('input', updateRows);
         statusSelect?.addEventListener('change', updateRows);
-        qs('select[name="date_range"]', form)?.addEventListener('change', () => {
-            showToast('Filter tanggal siap disambungkan ke database.');
-        });
 
         qsa('.sg-details-button').forEach((button) => {
             button.addEventListener('click', () => {
@@ -166,31 +213,12 @@
             });
         });
 
-        qs('.sg-icon-button')?.addEventListener('click', () => {
-            const csv = ['Event,ID,Date,Type,Amount,Status'].concat(rows.map((row) => [
-                qs('.sg-event-cell h2', row)?.textContent || '',
-                qs('.sg-event-cell p', row)?.textContent.replace('ID: ', '') || '',
-                qs('.sg-date-cell strong', row)?.textContent || '',
-                qs('.sg-type-pill', row)?.textContent || '',
-                qs('.sg-amount-cell strong', row)?.textContent || '',
-                qs('.sg-status', row)?.textContent.trim() || '',
-            ].map((value) => `"${value.replace(/"/g, '""')}"`).join(','))).join('\n');
-
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-            link.download = 'safegate-transactions.csv';
-            link.click();
-            URL.revokeObjectURL(link.href);
-            showToast('CSV transaksi dibuat.');
-        });
-
         qsa('.sg-pagination button:not([disabled])').forEach((button) => {
             button.addEventListener('click', () => {
                 qsa('.sg-pagination button').forEach((item) => item.classList.remove('is-active'));
                 if (!/[‹›]/.test(button.textContent.trim())) {
                     button.classList.add('is-active');
                 }
-                showToast('Pagination demo siap disambungkan ke database.');
             });
         });
     }
@@ -204,7 +232,6 @@
         const destination = inputs[0];
         const amount = inputs[1];
         const button = qs('button', panel);
-        const tbody = qs('.sg-withdraw-table tbody');
 
         function validate() {
             const value = parseNumber(amount.value);
@@ -223,33 +250,14 @@
             amount.value = value ? formatRupiah(value) : '';
         });
 
-        button?.addEventListener('click', () => {
-            const value = parseNumber(amount.value);
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>Hari ini</td>
-                <td>${method.value.split(' ')[0]}</td>
-                <td><strong>${formatRupiah(value)}</strong></td>
-                <td><span class="sg-withdraw-status is-processing">Processing</span></td>
-            `;
-            tbody?.prepend(row);
-            destination.value = '';
-            amount.value = '';
-            validate();
-            showToast('Permintaan tarik dana masuk antrean verifikasi.');
-        });
-
-        qs('.sg-withdraw-table a')?.addEventListener('click', (event) => {
-            event.preventDefault();
-            showToast('Riwayat lengkap siap ditarik dari database.');
-        });
+        button?.addEventListener('click', validate);
     }
 
     function initActiveListings() {
         if (!body.classList.contains('sg-page-active_listings')) return;
 
         qsa('.sg-listing-card').forEach((card) => {
-            const button = qs('button', card);
+            const button = qs(':scope > button', card);
             button?.addEventListener('click', () => {
                 let actions = qs('.sg-listing-actions', card);
                 if (!actions) {
@@ -266,7 +274,7 @@
                         if (!actionButton) return;
                         const title = qs('h2', card)?.textContent || 'Listing';
                         const action = actionButton.dataset.action;
-                        showToast(`${title}: ${action} siap disambungkan ke backend.`);
+                        showToast(`${title}: ${action}`);
                     });
                 }
                 actions.classList.toggle('is-open');
@@ -279,21 +287,59 @@
         if (!body.classList.contains('sg-page-settings')) return;
 
         const kycPanel = qs('.sg-kyc-panel');
-        const nik = qs('input', kycPanel);
-        const submit = qs('button', kycPanel);
-        const drop = qs('.sg-doc-drop', kycPanel);
+        const kycForm = kycPanel;
+        const nik = qs('input[name="nik"]', kycPanel);
+        const submit = qs('button[type="submit"]', kycPanel);
         const danger = qs('.sg-danger-label', kycPanel);
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = '.jpg,.jpeg,.png,.pdf';
-        fileInput.hidden = true;
-        drop?.appendChild(fileInput);
+        const uploadDrops = qsa('.sg-doc-drop', kycPanel).map((drop) => {
+            const input = qs('input[type="file"]', drop);
+            const preview = qs('img', drop);
+            const title = qs('strong', drop);
+            const status = qs('small', drop);
+            const acceptsPdf = input?.accept?.toLowerCase().includes('pdf') || false;
+
+            return {
+                drop,
+                input,
+                preview,
+                title,
+                status,
+                defaultTitle: title?.textContent || 'Drag & drop or click to upload',
+                defaultStatus: status?.textContent || '',
+                allowedExtensions: acceptsPdf ? ['jpg', 'jpeg', 'png', 'pdf'] : ['jpg', 'jpeg', 'png'],
+                previewLabel: input?.name === 'selfie_photo' ? 'Preview selfie siap.' : 'Preview KTP siap.',
+                missingMessage: input?.name === 'selfie_photo' ? 'Upload selfie dengan KTP dulu sebelum submit.' : 'Upload dokumen KTP dulu sebelum submit.',
+            };
+        });
 
         function validateKyc() {
-            const validNik = /^\d{16}$/.test(nik.value.trim());
-            const hasFile = fileInput.files.length > 0;
-            submit.disabled = !(validNik && hasFile);
-            submit.classList.toggle('is-ready', validNik && hasFile);
+            const validNik = nik ? /^\d{16}$/.test(nik.value.trim()) : false;
+            const missingUpload = uploadDrops.find(({ input }) => input && !input.disabled && input.files.length === 0);
+            const hasUploads = !missingUpload;
+            submit?.classList.toggle('is-ready', validNik && hasUploads);
+            return { validNik, hasUploads, missingUpload };
+        }
+
+        function setKycStatus(target, message, isError = false) {
+            const status = target?.status || null;
+            if (!status) return;
+            status.textContent = message;
+            status.style.color = isError ? '#ff6868' : '';
+        }
+
+        function resetKycPreview(target, resetText = false) {
+            if (!target) return;
+            const { preview, drop, title } = target;
+            if (preview) {
+                preview.hidden = true;
+                preview.style.display = 'none';
+                preview.removeAttribute('src');
+            }
+            drop?.classList.remove('has-preview');
+            if (resetText) {
+                if (title) title.textContent = target.defaultTitle;
+                setKycStatus(target, target.defaultStatus);
+            }
         }
 
         nik?.addEventListener('input', () => {
@@ -301,47 +347,121 @@
             validateKyc();
         });
 
-        drop?.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', () => {
-            const file = fileInput.files[0];
-            if (!file) return;
-            qs('strong', drop).textContent = file.name;
-            qs('small', drop).textContent = 'Dokumen siap dikirim untuk verifikasi.';
+        function handleKycFile(file, target) {
+            if (!target) return;
+            const { input, preview, drop, title } = target;
+
+            if (!file) {
+                resetKycPreview(target, true);
+                validateKyc();
+                return;
+            }
+
+            const extension = file.name.split('.').pop().toLowerCase();
+            if (!target.allowedExtensions.includes(extension)) {
+                input.value = '';
+                resetKycPreview(target);
+                if (title) title.textContent = target.defaultTitle;
+                setKycStatus(target, target.allowedExtensions.includes('pdf') ? 'Format harus JPG, PNG, atau PDF.' : 'Format harus JPG atau PNG.', true);
+                validateKyc();
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                input.value = '';
+                resetKycPreview(target);
+                if (title) title.textContent = target.defaultTitle;
+                setKycStatus(target, 'Ukuran file maksimal 5MB.', true);
+                validateKyc();
+                return;
+            }
+
+            if (title) title.textContent = file.name;
+            const isImage = ['jpg', 'jpeg', 'png'].includes(extension);
+            if (isImage && preview) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    preview.src = reader.result;
+                    preview.hidden = false;
+                    preview.style.display = 'block';
+                    drop?.classList.add('has-preview');
+                };
+                reader.readAsDataURL(file);
+                setKycStatus(target, `${target.previewLabel} Dokumen bisa dikirim untuk verifikasi.`);
+            } else {
+                resetKycPreview(target);
+                if (title) title.textContent = file.name;
+                setKycStatus(target, `${file.name} siap dikirim untuk verifikasi. Preview hanya tersedia untuk JPG/PNG.`);
+            }
             validateKyc();
+        }
+
+        uploadDrops.forEach((target) => {
+            const { drop, input } = target;
+
+            drop?.addEventListener('click', (event) => {
+                if (event.target === input) return;
+                event.preventDefault();
+                event.stopPropagation();
+                input?.click();
+            });
+
+            input?.addEventListener('change', () => {
+                handleKycFile(input.files[0], target);
+            });
+
+            ['dragenter', 'dragover'].forEach((eventName) => {
+                drop?.addEventListener(eventName, (event) => {
+                    event.preventDefault();
+                    drop.classList.add('is-dragging');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach((eventName) => {
+                drop?.addEventListener(eventName, (event) => {
+                    event.preventDefault();
+                    drop.classList.remove('is-dragging');
+                });
+            });
+
+            drop?.addEventListener('drop', (event) => {
+                const file = event.dataTransfer?.files?.[0];
+                if (!file || !input) return;
+                const transfer = new DataTransfer();
+                transfer.items.add(file);
+                input.files = transfer.files;
+                handleKycFile(file, target);
+            });
         });
 
-        submit?.addEventListener('click', () => {
-            danger.innerHTML = '<iconify-icon icon="ph:clock"></iconify-icon> Status: Waiting Review';
-            danger.classList.add('is-warning');
-            showToast('Dokumen KYC tersimpan untuk review admin.');
+        kycForm?.addEventListener('submit', (event) => {
+            const { validNik, hasUploads, missingUpload } = validateKyc();
+            if (!validNik || !hasUploads) {
+                event.preventDefault();
+                const message = !validNik ? 'Isi NIK 16 digit dulu sebelum submit KYC.' : missingUpload?.missingMessage || 'Upload dokumen KYC dulu sebelum submit.';
+                if (missingUpload) setKycStatus(missingUpload, message, true);
+                showToast(message, 'error');
+                return;
+            }
+            if (danger) {
+                danger.innerHTML = '<iconify-icon icon="ph:clock"></iconify-icon> Status: Waiting Review';
+                danger.classList.add('is-warning');
+            }
+            showToast('Dokumen KYC sedang dikirim untuk review admin.');
         });
         validateKyc();
 
         const profilePanel = qs('.sg-profile-panel');
-        const editButton = qs('.sg-panel-title-row button', profilePanel);
         const profileInputs = qsa('input', profilePanel);
-        profileInputs.forEach((input) => input.readOnly = true);
-        editButton?.addEventListener('click', () => {
-            const editing = profilePanel.classList.toggle('is-editing');
-            profileInputs.forEach((input) => input.readOnly = !editing);
-            editButton.innerHTML = editing
-                ? '<iconify-icon icon="ph:check"></iconify-icon>'
-                : '<iconify-icon icon="ph:pencil-simple"></iconify-icon>';
-            showToast(editing ? 'Mode edit profil aktif.' : 'Perubahan profil tersimpan lokal.');
-        });
-
-        qs('.sg-change-photo')?.addEventListener('click', () => {
-            showToast('Upload foto profil siap disambungkan ke storage.');
-        });
-
-        qsa('.sg-security-grid button').forEach((button) => {
-            button.addEventListener('click', () => {
-                showToast(`${button.textContent.trim()} siap disambungkan ke auth backend.`);
-            });
+        profileInputs.forEach((input) => {
+            if (input.name) {
+                input.readOnly = false;
+            }
         });
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        initDashboardPageTransitions();
         initOverview();
         initTransactions();
         initWallet();
